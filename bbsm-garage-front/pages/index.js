@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from "next/head";
 import Link from "next/link";
@@ -10,8 +10,27 @@ export default function Home() {
   const { loading, setLoading } = useLoading();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const [rememberMe, setRememberMe] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const { login, user, isLoading } = useAuth();
   const router = useRouter();
+
+  // Eğer zaten giriş yapılmışsa panele yönlendir
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.push('/login/kartlar');
+    }
+  }, [user, isLoading, router]);
+
+  // Sayfa yüklendiğinde kaydedilmiş kullanıcı adını yükle
+  useEffect(() => {
+    const rememberedUsername = localStorage.getItem('rememberedUsername');
+    if (rememberedUsername) {
+      setUsername(rememberedUsername);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleUsernameChange = (e) => {
     setUsername(e.target.value);
@@ -45,17 +64,47 @@ export default function Home() {
       console.log('Login response:', data);
       
       if (response.ok && data.result) {
+        // Başarılı giriş - önce token'ı kaydet
         login(data.token);
-        // Smooth geçiş için kısa bir gecikme
-        setTimeout(() => {
-          router.push('/login/kartlar');
-        }, 300);
+        
+        // Beni Hatırla işaretliyse kullanıcı adını kaydet
+        if (rememberMe) {
+          localStorage.setItem('rememberedUsername', username.trim());
+        } else {
+          // İşaretli değilse kayıtlı kullanıcı adını sil
+          localStorage.removeItem('rememberedUsername');
+        }
+        
+        // Başarı mesajını göster
+        setIsSuccess(true);
+        setSuccessMessage('Giriş başarılı! Panele yönlendiriliyorsunuz...');
+        
+        // Minimum 2 saniye bekle (profesyonel görünüm için)
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Form'u fade-out yap
+        const formElement = document.querySelector('.login-form');
+        if (formElement) {
+          formElement.style.opacity = '0';
+          formElement.style.transform = 'translateY(-20px)';
+        }
+        
+        // Ekstra 500ms bekle (animasyon için)
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Panel açılışını 1.5 saniye geciktir
+        await new Promise(resolve => setTimeout(resolve, 6000));
+        
+        // Panele yönlendir
+        router.push('/login/kartlar');
       } else {
         console.error('Login failed:', data);
         alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
+        setLoading(false);
       }
     } catch (error) {
       console.error('Giriş hatası:', error);
+      setIsSuccess(false);
       if (error.message.includes('Failed to fetch')) {
         alert('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
       } else if (error.message.includes('NetworkError')) {
@@ -63,7 +112,6 @@ export default function Home() {
       } else {
         alert('Giriş yapılırken bir hata oluştu. Lütfen tekrar deneyin.');
       }
-    } finally {
       setLoading(false);
     }
   };
@@ -77,9 +125,30 @@ export default function Home() {
       </Head>
       <div className="min-h-screen bg-my-home bg-cover bg-center bg-fixed page-enter">
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-8">
-          <form onSubmit={handleSubmit} className="form-container bg-my-siyah border-2 border-my-4b4b4bgri bg-opacity-50 backdrop-blur-sm p-4 sm:p-8 rounded-3xl shadow-lg w-full max-w-sm">
-            <h1 className="font-extrabold text-transparent text-2xl sm:text-3xl bg-clip-text bg-gradient-to-r from-blue-400 via-blue-900 to-red-600 text-center">Hoş Geldiniz!</h1>
-            <h2 className="text-xl sm:text-2xl font-bold text-my-beyaz mb-4 text-center">Giriş Yapınız</h2>
+          <form onSubmit={handleSubmit} className="login-form form-container bg-my-siyah border-2 border-my-4b4b4bgri bg-opacity-50 backdrop-blur-sm p-4 sm:p-8 rounded-3xl shadow-lg w-full max-w-sm transition-all duration-500 ease-in-out">
+            {isSuccess ? (
+              <div className="flex flex-col items-center justify-center py-8">
+                <div className="mb-4">
+                  <svg className="w-16 h-16 text-green-400 animate-scale-in" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-green-400 mb-2 text-center animate-fade-in">Giriş Başarılı!</h2>
+                <p className="text-my-beyaz text-center animate-fade-in-delay">{successMessage}</p>
+                <div className="mt-6">
+                  <div className="flex items-center justify-center gap-2">
+                    <svg className="animate-spin h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-my-açıkgri text-sm">Yönlendiriliyor...</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                <h1 className="font-extrabold text-transparent text-2xl sm:text-3xl bg-clip-text bg-gradient-to-r from-blue-400 via-blue-900 to-red-600 text-center">Hoş Geldiniz!</h1>
+                <h2 className="text-xl sm:text-2xl font-bold text-my-beyaz mb-4 text-center">Giriş Yapınız</h2>
             
             <div className="space-y-2 sm:space-y-4">
               <div>
@@ -104,6 +173,19 @@ export default function Home() {
                   onChange={handlePasswordChange}
                   required
                 />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="rememberMe"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
+                />
+                <label htmlFor="rememberMe" className="ml-2 text-sm text-my-beyaz cursor-pointer select-none">
+                  Beni Hatırla
+                </label>
               </div>
             </div>
 
@@ -138,6 +220,8 @@ export default function Home() {
                 )}
               </button>
             </div>
+              </>
+            )}
           </form>
         </div>
       </div>

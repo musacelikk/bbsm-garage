@@ -4,17 +4,19 @@ import { useEffect } from 'react';
 
 const withAuth = (WrappedComponent) => {
   return (props) => {
-    const { user } = useAuth();
+    const { user, isLoading } = useAuth();
     const router = useRouter();
 
     useEffect(() => {
-      if (!user) {
+      // Loading tamamlanana kadar bekle
+      if (!isLoading && !user) {
         router.push('/'); // Kullanıcı giriş yapmamışsa giriş sayfasına yönlendir
       }
-    }, [user, router]);
+    }, [user, isLoading, router]);
 
-    if (!user) {
-      return null; // Kullanıcı yoksa hiçbir şey render etme
+    // Loading durumunda veya user yoksa hiçbir şey render etme
+    if (isLoading || !user) {
+      return null;
     }
 
     return <WrappedComponent {...props} />;

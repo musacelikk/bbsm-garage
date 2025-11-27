@@ -8,9 +8,27 @@ import { useAuth } from '../../../auth-context';
 import { API_URL } from '../../../config';
 
 export default function Detay() {
-  const { fetchWithAuth } = useAuth();
+  const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_URL}/auth/profile`);
+        if (response.ok) {
+          const data = await response.json();
+          setProfileData(data);
+        }
+      } catch (error) {
+        console.error('Profil yükleme hatası:', error);
+      }
+    };
+    loadProfile();
+  }, []);
   const [detay_id, setDetay_id] = useState(0);
   const [veri, setVeri] = useState({});
   const [adSoyad, setadSoyad] = useState('');
@@ -381,10 +399,6 @@ export default function Detay() {
             <li>
               <Link href="/login/bizeulasin" className="block p-2 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group">Bize Ulaşın</Link>
             </li>
-            <div className="divider mt-10 mb-10"></div>
-            <li>
-              <Link href="/" className="block p-2 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group">Çıkış Yap</Link>
-            </li>
           </ul>
         </div>
       </aside>
@@ -404,12 +418,78 @@ export default function Detay() {
 
                 </a>
               </div>
-              <div className="flex items-center">
-                <button type="button" className="flex items-center text-sm">
+              <div className="flex items-center relative">
+                <button 
+                  type="button" 
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  className="flex items-center text-sm hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   <span className="sr-only">Open user menu</span>
-                  <p className="text-center text-my-siyah font-semibold items-center pr-8">Yasin Ufuk ORHANLAR</p>
-                  <img src="/images/yasin.webp" className="h-16 w-16 rounded-full" alt="Yasin Bey" />
+                  <p className="text-center text-my-siyah font-semibold items-center pr-8">{username}</p>
+                  <img 
+                    src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
+                    className="h-16 w-16 rounded-full object-cover" 
+                    alt="Kullanıcı"
+                    onError={(e) => {
+                      e.target.src = '/images/yasin.webp';
+                    }}
+                  />
                 </button>
+                
+                {/* Settings Dropdown */}
+                {isSettingsOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsSettingsOpen(false)}
+                    ></div>
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 animate-fade-in">
+                      <div className="py-2">
+                        <div className="px-4 py-3 border-b border-gray-200">
+                          <p className="text-sm font-semibold text-my-siyah">{username}</p>
+                          <p className="text-xs text-gray-500 mt-1">Firma Hesabı</p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            alert('Profil ayarları yakında eklenecek');
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Profil Bilgileri
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            alert('Şifre değiştirme yakında eklenecek');
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                          Şifre Değiştir
+                        </button>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <button
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            logout();
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Çıkış Yap
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>

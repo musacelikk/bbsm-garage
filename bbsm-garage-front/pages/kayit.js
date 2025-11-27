@@ -76,7 +76,13 @@ export default function Kayit() {
         },
         body: JSON.stringify({ 
           username: formData.username.trim(),
-          password: formData.password.trim()
+          password: formData.password.trim(),
+          firmaAdi: formData.firmaAdi.trim() || null,
+          yetkiliKisi: formData.yetkiliKisi.trim() || null,
+          telefon: formData.telefon.trim() || null,
+          email: formData.email.trim() || null,
+          adres: formData.adres.trim() || null,
+          vergiNo: formData.vergiNo.trim() || null
         }),
       });
 
@@ -107,10 +113,10 @@ export default function Kayit() {
           if (loginResponse.ok && loginData.result) {
             // Token'ı kaydet ve panele yönlendir
             login(loginData.token);
-            // Smooth geçiş için kısa bir gecikme
+            // Panel açılışını 1.5 saniye geciktir
             setTimeout(() => {
               router.push('/login/kartlar');
-            }, 300);
+            }, 3000);
           } else {
             alert('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen manuel olarak giriş yapın.');
             router.push('/');

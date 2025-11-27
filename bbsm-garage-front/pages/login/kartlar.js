@@ -8,10 +8,42 @@ import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 
 const Kartlar = () => {
-  const { fetchWithAuth } = useAuth();
+  const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isYeniKartEkleModalOpen, setIsYeniKartEkleModalOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isPageLoaded, setIsPageLoaded] = useState(false);
+
+  // Sayfa yüklendiğinde fade-in animasyonu
+  useEffect(() => {
+    setIsPageLoaded(false);
+    const timer = setTimeout(() => {
+      setIsPageLoaded(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Profil verilerini yükle
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_URL}/auth/profile`);
+        if (response.ok) {
+          const data = await response.json();
+          setProfileData(data);
+        }
+      } catch (error) {
+        console.error('Profil yükleme hatası:', error);
+      }
+    };
+    loadProfile();
+  }, []);
   const [kartlar, setKartlar] = useState([]);
   const [secilenKartlar, setSecilenKartlar] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
@@ -386,13 +418,13 @@ const secilenKartlariIndir = async (type) => {
   
 
   return (
-    <>
+    <div className={`min-h-screen transition-all duration-1000 ease-out ${isPageLoaded ? 'opacity-100' : 'opacity-0'}`}>
       <Head>
         <title>BBSM Garage - Kartlar</title>
         <link rel="icon" href="/BBSM.ico" />
       </Head>
 
-      <aside className={`fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} bg-white border-r border-gray-200 lg:translate-x-0`} aria-label="Sidebar">
+      <aside className={`fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-all duration-500 ease-out ${isSidebarOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} bg-white border-r border-gray-200 lg:translate-x-0`} aria-label="Sidebar">
         <div className="h-full px-4 pt-6 pb-4 text-center overflow-y-auto bg-my-beyaz">
           <ul className="space-y-4">
             <li>
@@ -406,10 +438,6 @@ const secilenKartlariIndir = async (type) => {
             </li>
             <li>
               <Link href="/login/bizeulasin" className="block p-2 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group">Bize Ulaşın</Link>
-            </li>
-            <div className="divider mt-10 mb-10"></div>
-            <li>
-              <Link href="/" className="block p-2 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group">Çıkış Yap</Link>
             </li>
           </ul>
         </div>
@@ -430,12 +458,87 @@ const secilenKartlariIndir = async (type) => {
                   <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-my-siyah"></span>
                 </a>
               </div>
-              <div className="flex items-center">
-                <button type="button" className="flex items-center text-sm hidden md:flex">
+              <div className="flex items-center relative">
+                <button 
+                  type="button" 
+                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+                  className="flex items-center text-sm hidden md:flex hover:opacity-80 transition-opacity cursor-pointer"
+                >
                   <span className="sr-only">Open user menu</span>
-                  <p className="text-center text-my-siyah font-semibold items-center pr-8">Yasin Ufuk ORHANLAR</p>
-                  <img src="/images/yasin.webp" className="h-16 w-16 rounded-full" alt="Yasin Bey" />
+                  <p className="text-center text-my-siyah font-semibold items-center pr-8">{username}</p>
+                  <img 
+                    src="/images/yasin.webp" 
+                    className="h-16 w-16 rounded-full object-cover" 
+                    alt="Kullanıcı"
+                  />
                 </button>
+                
+                {/* Settings Dropdown */}
+                {isSettingsOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-40" 
+                      onClick={() => setIsSettingsOpen(false)}
+                    ></div>
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 dropdown-enter">
+                      <div className="py-2">
+                        <div className="px-4 py-3 border-b border-gray-200">
+                          <p className="text-sm font-semibold text-my-siyah">{username}</p>
+                          <p className="text-xs text-gray-500 mt-1">Firma Hesabı</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            setIsSettingsOpen(false);
+                            try {
+                              const response = await fetchWithAuth(`${API_URL}/auth/profile`);
+                              if (response.ok) {
+                                const data = await response.json();
+                                setProfileData(data);
+                                setIsProfileModalOpen(true);
+                              } else {
+                                alert('Profil bilgileri yüklenemedi');
+                              }
+                            } catch (error) {
+                              console.error('Profil yükleme hatası:', error);
+                              alert('Profil bilgileri yüklenirken bir hata oluştu');
+                            }
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          Profil Bilgileri
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            setIsChangePasswordModalOpen(true);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                          Şifre Değiştir
+                        </button>
+                        <div className="border-t border-gray-200 my-1"></div>
+                        <button
+                          onClick={() => {
+                            setIsSettingsOpen(false);
+                            logout();
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          Çıkış Yap
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -655,8 +758,8 @@ const secilenKartlariIndir = async (type) => {
 
       {/* Modal - moved outside the main content div */}
       {isYeniKartEkleModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
-          <div className="relative">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 modal-overlay" onClick={() => setIsYeniKartEkleModalOpen(false)}>
+          <div className="relative modal-content" onClick={(e) => e.stopPropagation()}>
             <AnaBilesen 
               onClose={() => setIsYeniKartEkleModalOpen(false)} 
               onKartEkle={handleKartEkle} 
@@ -665,7 +768,496 @@ const secilenKartlariIndir = async (type) => {
           </div>
         </div>
       )}
-    </>
+
+      {/* Profil Bilgileri Modal */}
+      {isProfileModalOpen && (
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={async () => {
+            setIsProfileModalOpen(false);
+            setIsEditingProfile(false);
+              // Modal kapandığında profil verilerini yeniden yükle
+              try {
+                const response = await fetchWithAuth(`${API_URL}/auth/profile`);
+                if (response.ok) {
+                  const data = await response.json();
+                  setProfileData(data);
+                }
+              } catch (error) {
+                console.error('Profil yükleme hatası:', error);
+              }
+          }}
+          profileData={profileData}
+          setProfileData={(data) => {
+            setProfileData(data);
+          }}
+          isEditing={isEditingProfile}
+          setIsEditing={setIsEditingProfile}
+          fetchWithAuth={fetchWithAuth}
+          API_URL={API_URL}
+          setLoading={setLoading}
+        />
+      )}
+
+      {/* Şifre Değiştirme Modal */}
+      {isChangePasswordModalOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => setIsChangePasswordModalOpen(false)}
+          fetchWithAuth={fetchWithAuth}
+          API_URL={API_URL}
+          setLoading={setLoading}
+        />
+      )}
+    </div>
+  );
+};
+
+// Profil Bilgileri Modal Component
+const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing, setIsEditing, fetchWithAuth, API_URL, setLoading }) => {
+  const [formData, setFormData] = useState({
+    firmaAdi: '',
+    yetkiliKisi: '',
+    telefon: '',
+    email: '',
+    adres: '',
+    vergiNo: ''
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (profileData) {
+      setFormData({
+        firmaAdi: profileData.firmaAdi || '',
+        yetkiliKisi: profileData.yetkiliKisi || '',
+        telefon: profileData.telefon || '',
+        email: profileData.email || '',
+        adres: profileData.adres || '',
+        vergiNo: profileData.vergiNo || ''
+      });
+    }
+  }, [profileData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSave = async () => {
+    setError('');
+    setSuccess(false);
+    setLoading(true);
+
+    try {
+      const response = await fetchWithAuth(`${API_URL}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (response.ok) {
+        const updatedData = await response.json();
+        setProfileData(updatedData);
+        setSuccess(true);
+        setIsEditing(false);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Profil güncellenemedi');
+      }
+    } catch (error) {
+      console.error('Profil güncelleme hatası:', error);
+      setError('Profil güncellenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !profileData) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 modal-overlay overflow-y-auto py-8" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full mx-4 my-8 modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-my-siyah">Profil Bilgileri</h2>
+            <div className="flex items-center gap-3">
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center gap-2"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Düzenle
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {success && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-sm text-green-600">Profil başarıyla güncellendi!</p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
+            {/* Sistem Bilgileri - Düzenlenemez */}
+            <div className="border-b border-gray-200 pb-4">
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Sistem Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Kullanıcı Adı</label>
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-my-siyah">{profileData.username}</p>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Tenant ID</label>
+                  <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-my-siyah font-mono">{profileData.tenant_id}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Firma Bilgileri - Düzenlenebilir */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">Firma Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Firma Adı</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="firmaAdi"
+                      value={formData.firmaAdi}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      placeholder="Firma Adı"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-my-siyah">{formData.firmaAdi || 'Belirtilmemiş'}</p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Vergi No</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="vergiNo"
+                      value={formData.vergiNo}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      placeholder="Vergi Numarası"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-my-siyah">{formData.vergiNo || 'Belirtilmemiş'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* İletişim Bilgileri - Düzenlenebilir */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700 mb-3">İletişim Bilgileri</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Yetkili Kişi</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="yetkiliKisi"
+                      value={formData.yetkiliKisi}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      placeholder="Yetkili Kişi Adı"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-my-siyah">{formData.yetkiliKisi || 'Belirtilmemiş'}</p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Telefon</label>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      name="telefon"
+                      value={formData.telefon}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      placeholder="05XX XXX XX XX"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-my-siyah">{formData.telefon || 'Belirtilmemiş'}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">E-posta</label>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                      placeholder="ornek@firma.com"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-my-siyah">{formData.email || 'Belirtilmemiş'}</p>
+                    </div>
+                  )}
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Adres</label>
+                  {isEditing ? (
+                    <textarea
+                      name="adres"
+                      value={formData.adres}
+                      onChange={handleChange}
+                      rows="3"
+                      className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                      placeholder="Firma Adresi"
+                    />
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <p className="text-my-siyah whitespace-pre-wrap">{formData.adres || 'Belirtilmemiş'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-3">
+            {isEditing ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setError('');
+                    // Form verilerini sıfırla
+                    if (profileData) {
+                      setFormData({
+                        firmaAdi: profileData.firmaAdi || '',
+                        yetkiliKisi: profileData.yetkiliKisi || '',
+                        telefon: profileData.telefon || '',
+                        email: profileData.email || '',
+                        adres: profileData.adres || '',
+                        vergiNo: profileData.vergiNo || ''
+                      });
+                    }
+                  }}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-6 py-2 bg-my-siyah text-white rounded-lg hover:bg-my-4b4b4bgri transition-colors"
+                >
+                  Kaydet
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={onClose}
+                className="px-6 py-2 bg-my-siyah text-white rounded-lg hover:bg-my-4b4b4bgri transition-colors"
+              >
+                Kapat
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Şifre Değiştirme Modal Component
+const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoading }) => {
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess(false);
+
+    if (newPassword.length < 3) {
+      setError('Yeni şifre en az 3 karakter olmalıdır');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Yeni şifreler eşleşmiyor');
+      return;
+    }
+
+    if (oldPassword === newPassword) {
+      setError('Yeni şifre eski şifre ile aynı olamaz');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetchWithAuth(`${API_URL}/auth/change-password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          oldPassword,
+          newPassword
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccess(true);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => {
+          onClose();
+          setSuccess(false);
+        }, 2000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Şifre değiştirilemedi');
+      }
+    } catch (error) {
+      console.error('Şifre değiştirme hatası:', error);
+      setError('Şifre değiştirilirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 modal-overlay" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-my-siyah">Şifre Değiştir</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {success ? (
+            <div className="text-center py-8">
+              <div className="mb-4">
+                <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-lg font-semibold text-green-600">Şifre başarıyla değiştirildi!</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Eski Şifre</label>
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Yeni Şifre</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  required
+                  minLength={3}
+                />
+                <p className="text-xs text-gray-500 mt-1">En az 3 karakter olmalıdır</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">Yeni Şifre Tekrar</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  required
+                  minLength={3}
+                />
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  İptal
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-2 bg-my-siyah text-white rounded-lg hover:bg-my-4b4b4bgri transition-colors"
+                >
+                  Değiştir
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

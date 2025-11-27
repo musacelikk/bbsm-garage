@@ -15,8 +15,21 @@ function MyApp({ Component, pageProps }) {
   const router = useRouter();
 
   useEffect(() => {
-    const handleStart = () => setLoading(true);
-    const handleComplete = () => setLoading(false);
+    const handleStart = (url) => {
+      setLoading(true);
+      // Sayfa geçişi başladığında fade-out efekti - Ultra Smooth
+      document.body.style.transition = 'opacity 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+      document.body.style.opacity = '0.85';
+    };
+    
+    const handleComplete = (url) => {
+      setLoading(false);
+      // Sayfa geçişi tamamlandığında fade-in efekti - Ultra Smooth
+      setTimeout(() => {
+        document.body.style.transition = 'opacity 1s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        document.body.style.opacity = '1';
+      }, 200);
+    };
 
     router.events.on('routeChangeStart', handleStart);
     router.events.on('routeChangeComplete', handleComplete);

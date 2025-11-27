@@ -29,7 +29,13 @@ export class AuthService {
     // Entity oluştur (BeforeInsert hook'u çalışsın)
     const newUser = this.databaseRepository.create({
       username: database.username,
-      password: database.password
+      password: database.password,
+      firmaAdi: database.firmaAdi || null,
+      yetkiliKisi: database.yetkiliKisi || null,
+      telefon: database.telefon || null,
+      email: database.email || null,
+      adres: database.adres || null,
+      vergiNo: database.vergiNo || null
     });
 
     // Benzersiz tenant_id kontrolü
@@ -92,5 +98,78 @@ export class AuthService {
     } catch (error) {
       throw new Error('Invalid token');
     }
-  }  
+  }
+
+  async getProfile(username: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { username }
+    });
+
+    if (!user) {
+      throw new Error('Kullanıcı bulunamadı');
+    }
+
+    return {
+      id: user.id,
+      username: user.username,
+      tenant_id: user.tenant_id,
+      firmaAdi: user.firmaAdi,
+      yetkiliKisi: user.yetkiliKisi,
+      telefon: user.telefon,
+      email: user.email,
+      adres: user.adres,
+      vergiNo: user.vergiNo
+    };
+  }
+
+  async updateProfile(username: string, profileData: Partial<AuthEntity>) {
+    const user = await this.databaseRepository.findOne({
+      where: { username }
+    });
+
+    if (!user) {
+      throw new Error('Kullanıcı bulunamadı');
+    }
+
+    // Güncellenebilir alanlar
+    if (profileData.firmaAdi !== undefined) user.firmaAdi = profileData.firmaAdi;
+    if (profileData.yetkiliKisi !== undefined) user.yetkiliKisi = profileData.yetkiliKisi;
+    if (profileData.telefon !== undefined) user.telefon = profileData.telefon;
+    if (profileData.email !== undefined) user.email = profileData.email;
+    if (profileData.adres !== undefined) user.adres = profileData.adres;
+    if (profileData.vergiNo !== undefined) user.vergiNo = profileData.vergiNo;
+
+    await this.databaseRepository.save(user);
+
+    return {
+      id: user.id,
+      username: user.username,
+      tenant_id: user.tenant_id,
+      firmaAdi: user.firmaAdi,
+      yetkiliKisi: user.yetkiliKisi,
+      telefon: user.telefon,
+      email: user.email,
+      adres: user.adres,
+      vergiNo: user.vergiNo
+    };
+  }
+
+  async changePassword(username: string, oldPassword: string, newPassword: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { username, password: oldPassword }
+    });
+
+    if (!user) {
+      throw new Error('Eski şifre hatalı');
+    }
+
+    if (newPassword.length < 3) {
+      throw new Error('Yeni şifre en az 3 karakter olmalıdır');
+    }
+
+    user.password = newPassword;
+    await this.databaseRepository.save(user);
+
+    return { success: true, message: 'Şifre başarıyla değiştirildi' };
+  }
 }

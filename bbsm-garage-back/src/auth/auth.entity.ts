@@ -14,6 +14,24 @@ export class AuthEntity {
     @Column()
     password: string;
 
+    @Column({ nullable: true })
+    firmaAdi: string;
+
+    @Column({ nullable: true })
+    yetkiliKisi: string;
+
+    @Column({ nullable: true })
+    telefon: string;
+
+    @Column({ nullable: true })
+    email: string;
+
+    @Column({ type: 'text', nullable: true })
+    adres: string;
+
+    @Column({ nullable: true })
+    vergiNo: string;
+
     @BeforeInsert()
     generateTenantId() {
         if (!this.tenant_id) {
