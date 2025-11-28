@@ -31,20 +31,30 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
     setBirimFiyati('');
   };
 
-  const handleSubmit = () => {
-    const yeniKart = {
-      ...ilkModalBilgi,
-      yapilanlar: localYapilanlar
-    };
-    onKartEkle(yeniKart);
+  const handleSubmit = async () => {
+    try {
+      const yeniKart = {
+        ...ilkModalBilgi,
+        yapilanlar: localYapilanlar
+      };
+      await onKartEkle(yeniKart);
+    } catch (error) {
+      console.error('Kart eklenirken hata oluştu:', error);
+      alert('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
-  const handleTeklifEkle = () => {
-    const yeniTeklif = {
-      ...ilkModalBilgi,
-      yapilanlar: localYapilanlar
-    };
-    onTeklifEkle(yeniTeklif);
+  const handleTeklifEkle = async () => {
+    try {
+      const yeniTeklif = {
+        ...ilkModalBilgi,
+        yapilanlar: localYapilanlar
+      };
+      await onTeklifEkle(yeniTeklif);
+    } catch (error) {
+      console.error('Teklif eklenirken hata oluştu:', error);
+      alert('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+    }
   };
 
   const handleClearItems = () => {

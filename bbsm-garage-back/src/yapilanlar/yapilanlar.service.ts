@@ -12,17 +12,17 @@ export class YapilanlarService {
     private databaseRepository: Repository<YapilanlarEntity>,
   ) {}
 
-  create(createYapilanlarDto: CreateYapilanlarDto) {
-    let yeniYapilanlar = this.databaseRepository.create(createYapilanlarDto);
+  create(createYapilanlarDto: CreateYapilanlarDto, tenant_id: number) {
+    let yeniYapilanlar = this.databaseRepository.create({ ...createYapilanlarDto, tenant_id });
     return this.databaseRepository.save(yeniYapilanlar);
   }
 
-  findAll() {
-    return this.databaseRepository.find();
+  findAll(tenant_id: number) {
+    return this.databaseRepository.find({ where: { tenant_id } });
   }
 
-  async findOne(id: number) {
-    let yapilanlar = await this.databaseRepository.findOne({ where: { id } });
+  async findOne(id: number, tenant_id: number) {
+    let yapilanlar = await this.databaseRepository.findOne({ where: { id, tenant_id } });
     if (!yapilanlar) {
       throw new NotFoundException(`Yapılan işlem ID: ${id} bulunamadı.`);
     }
@@ -56,14 +56,14 @@ export class YapilanlarService {
     }
   }
 
-  async update(id: number, updateYapilanlarDto: UpdateYapilanlarDto) {
-    let yapilanlar = await this.findOne(id);
+  async update(id: number, updateYapilanlarDto: UpdateYapilanlarDto, tenant_id: number) {
+    let yapilanlar = await this.findOne(id, tenant_id);
     Object.assign(yapilanlar, updateYapilanlarDto);
     return this.databaseRepository.save(yapilanlar);
   }
 
-  async remove(id: number) {
-    let yapilanlar = await this.findOne(id);
+  async remove(id: number, tenant_id: number) {
+    let yapilanlar = await this.findOne(id, tenant_id);
     return this.databaseRepository.remove(yapilanlar);
   }
 }

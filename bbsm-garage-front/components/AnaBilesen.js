@@ -25,7 +25,7 @@ const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle }) => {
     onClose();
   };
 
-  const handleKartEkle = (yeniKart) => {
+  const handleKartEkle = async (yeniKart) => {
     const km = parseInt(yeniKart.km, 10) || 0;
     const modelYili = parseInt(yeniKart.modelYili, 10) || 0;
 
@@ -35,7 +35,7 @@ const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle }) => {
       modelYili
     };
 
-    onKartEkle(kart);
+    await onKartEkle(kart);
   };
 
   const handleYapilanlarEkle = (yeniYapilan) => {

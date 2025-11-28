@@ -1,11 +1,13 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
+import { Controller, Post, Body, Res, UseGuards } from '@nestjs/common';
 import { ExcelService } from './excel.service';
 import { Response } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('excel')
 export class ExcelController {
   constructor(private readonly excelService: ExcelService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post('download')
   async downloadExcel(
     @Body() data: any,
@@ -22,6 +24,7 @@ export class ExcelController {
     }
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('pdf')
   async downloadPDF(
     @Body() data: any,

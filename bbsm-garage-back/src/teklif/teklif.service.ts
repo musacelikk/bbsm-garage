@@ -12,11 +12,40 @@ export class TeklifService {
   constructor(
     @InjectRepository(TeklifEntity)
     private databaseRepository: Repository<TeklifEntity>,
+    @InjectRepository(YapilanlarEntity)
+    private yapilanlarRepository: Repository<YapilanlarEntity>,
   ) {}
 
   async create(createTeklifDto: CreateTeklifDto, tenant_id: number): Promise<TeklifEntity> {
-    const teklif = await this.databaseRepository.create({ ...createTeklifDto as unknown as Partial<TeklifEntity>, tenant_id });
-    return this.databaseRepository.save(teklif);
+    try {
+      // teklif_id ve yapilanlar'ı çıkar çünkü auto-increment ve ayrı kaydedilecek
+      const { teklif_id, yapilanlar, ...teklifDataWithoutId } = createTeklifDto;
+      // TeklifEntity oluşturuluyor ve veritabanına kaydediliyor (yapilanlar olmadan)
+      const teklif = await this.databaseRepository.create({ ...teklifDataWithoutId as unknown as Partial<TeklifEntity>, tenant_id });
+      const savedTeklif = await this.databaseRepository.save(teklif);
+
+      // Yapilanlar ekleniyor (teklif kaydedildikten sonra)
+      if (yapilanlar && yapilanlar.length > 0) {
+        const yapilanlarEntities = yapilanlar.map(dto => {
+          const yapilan = new YapilanlarEntity();
+          // id'yi çıkar çünkü auto-increment
+          yapilan.birimAdedi = dto.birimAdedi;
+          yapilan.parcaAdi = dto.parcaAdi;
+          yapilan.birimFiyati = dto.birimFiyati;
+          yapilan.toplamFiyat = dto.toplamFiyat;
+          yapilan.tenant_id = tenant_id;
+          yapilan.teklif = savedTeklif; // İlişkiyi belirtmek için teklif referansı ekleniyor
+          return yapilan;
+        });
+
+        // Yapilanlar'ı direkt kaydet (tenant_id'nin kaybolmaması için)
+        await this.yapilanlarRepository.save(yapilanlarEntities);
+      }
+
+      return this.databaseRepository.findOne({ where: { teklif_id: savedTeklif.teklif_id }, relations: ["yapilanlar"] });
+    } catch (error) {
+      throw error;
+    }
   }
 
   findAll(tenant_id: number): Promise<TeklifEntity[]> {
@@ -41,10 +70,14 @@ export class TeklifService {
   async updateYapilanlar(id: number, updateYapilanlarDto: UpdateYapilanlarDto[], tenant_id: number): Promise<TeklifEntity> {
     const teklif = await this.findOne(id, tenant_id);
 
-    // Clear existing yapilanlar and create new ones from the DTO
-    teklif.yapilanlar = updateYapilanlarDto.map(dto => {
+    // Mevcut yapilanlar'ı sil
+    if (teklif.yapilanlar && teklif.yapilanlar.length > 0) {
+      await this.yapilanlarRepository.remove(teklif.yapilanlar);
+    }
+
+    // Yeni yapilanlar oluştur
+    const yapilanlarEntities = updateYapilanlarDto.map(dto => {
       const yapilan = new YapilanlarEntity();
-      yapilan.id = dto.id;
       yapilan.birimAdedi = dto.birimAdedi;
       yapilan.parcaAdi = dto.parcaAdi;
       yapilan.birimFiyati = dto.birimFiyati;
@@ -54,7 +87,9 @@ export class TeklifService {
       return yapilan;
     });
 
-    await this.databaseRepository.save(teklif);
+    // Yapilanlar'ı direkt kaydet (tenant_id'nin kaybolmaması için)
+    await this.yapilanlarRepository.save(yapilanlarEntities);
+    
     return this.findOne(id, tenant_id);
   }
 

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { API_URL } from '../../config'; 
+import { API_URL } from '../../config';
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
 import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
-import { API_URL } from '../../config';
+import ProfileModal from '../../components/ProfileModal';
 
 export default function stok() {
     const { fetchWithAuth, getUsername, logout } = useAuth();
@@ -15,7 +15,10 @@ export default function stok() {
     const [isOpen, setIsOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [profileData, setProfileData] = useState(null);
+    const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
     const [isPageLoaded, setIsPageLoaded] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
 
     // Sayfa yüklendiğinde fade-in animasyonu
     useEffect(() => {
@@ -240,7 +243,7 @@ export default function stok() {
                     className="flex items-center text-sm hidden md:flex hover:opacity-80 transition-opacity cursor-pointer"
                   >
                     <span className="sr-only">Open user menu</span>
-                    <p className="text-center text-my-siyah font-semibold items-center pr-8">{username}</p>
+                    <p className="text-center text-my-siyah font-semibold items-center pr-8">{firmaAdi}</p>
                     <img 
                         src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
                         className="h-16 w-16 rounded-full object-cover" 
@@ -261,13 +264,25 @@ export default function stok() {
                       <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 animate-fade-in">
                         <div className="py-2">
                           <div className="px-4 py-3 border-b border-gray-200">
-                            <p className="text-sm font-semibold text-my-siyah">{username}</p>
+                            <p className="text-sm font-semibold text-my-siyah">{firmaAdi}</p>
                             <p className="text-xs text-gray-500 mt-1">Firma Hesabı</p>
                           </div>
                           <button
-                            onClick={() => {
+                            onClick={async () => {
                               setIsSettingsOpen(false);
-                              alert('Profil ayarları yakında eklenecek');
+                              try {
+                                const response = await fetchWithAuth(`${API_URL}/auth/profile`);
+                                if (response.ok) {
+                                  const data = await response.json();
+                                  setProfileData(data);
+                                  setIsProfileModalOpen(true);
+                                } else {
+                                  alert('Profil bilgileri yüklenemedi');
+                                }
+                              } catch (error) {
+                                console.error('Profil yükleme hatası:', error);
+                                alert('Profil bilgileri yüklenirken bir hata oluştu');
+                              }
                             }}
                             className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
                           >
@@ -516,6 +531,36 @@ export default function stok() {
             </div>
           </div>
         </div>
+
+        {/* Profil Bilgileri Modal */}
+        {isProfileModalOpen && (
+          <ProfileModal
+            isOpen={isProfileModalOpen}
+            onClose={async () => {
+              setIsProfileModalOpen(false);
+              setIsEditingProfile(false);
+              // Modal kapandığında profil verilerini yeniden yükle
+              try {
+                const response = await fetchWithAuth(`${API_URL}/auth/profile`);
+                if (response.ok) {
+                  const data = await response.json();
+                  setProfileData(data);
+                }
+              } catch (error) {
+                console.error('Profil yükleme hatası:', error);
+              }
+            }}
+            profileData={profileData}
+            setProfileData={(data) => {
+              setProfileData(data);
+            }}
+            isEditing={isEditingProfile}
+            setIsEditing={setIsEditingProfile}
+            fetchWithAuth={fetchWithAuth}
+            API_URL={API_URL}
+            setLoading={setLoading}
+          />
+        )}
       </div>
     );
   }

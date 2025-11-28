@@ -17,14 +17,17 @@ export class CardService {
 
   async create(createCardDto: CreateCardDto, tenant_id: number) {
     try {
-      // CardEntity oluşturuluyor ve veritabanına kaydediliyor
-      const card = await this.databaseRepository.create({ ...createCardDto, tenant_id });
+      // card_id ve yapilanlar'ı çıkar çünkü auto-increment ve ayrı kaydedilecek
+      const { card_id, yapilanlar, ...cardDataWithoutId } = createCardDto;
+      // CardEntity oluşturuluyor ve veritabanına kaydediliyor (yapilanlar olmadan)
+      const card = await this.databaseRepository.create({ ...cardDataWithoutId, tenant_id });
       const savedCard = await this.databaseRepository.save(card);
 
-      // Yapilanlar ekleniyor
-      if (createCardDto.yapilanlar && createCardDto.yapilanlar.length > 0) {
-        const yapilanlarEntities = createCardDto.yapilanlar.map(dto => {
+      // Yapilanlar ekleniyor (card kaydedildikten sonra)
+      if (yapilanlar && yapilanlar.length > 0) {
+        const yapilanlarEntities = yapilanlar.map(dto => {
           const yapilan = new YapilanlarEntity();
+          // id'yi çıkar çünkü auto-increment
           yapilan.birimAdedi = dto.birimAdedi;
           yapilan.parcaAdi = dto.parcaAdi;
           yapilan.birimFiyati = dto.birimFiyati;
@@ -34,7 +37,8 @@ export class CardService {
           return yapilan;
         });
 
-        //await this.yapilanlarRepository.save(yapilanlarEntities);
+        // Yapilanlar'ı direkt kaydet (tenant_id'nin kaybolmaması için)
+        await this.yapilanlarRepository.save(yapilanlarEntities);
       }
 
       return await this.databaseRepository.findOne({ where: { card_id: savedCard.card_id }, relations: ["yapilanlar"] });
@@ -44,7 +48,6 @@ export class CardService {
   }
 
   async updateCardYapilanlar(createYapilanlarDtoArray: CreateYapilanlarDto[], card_id: number, tenant_id: number) {
-    console.log("Gelen Yapilanlar:", createYapilanlarDtoArray);
 
     let card = await this.databaseRepository.findOne({ where: { card_id, tenant_id }, relations: ['yapilanlar'] });
 
@@ -114,9 +117,9 @@ export class CardService {
         await this.databaseRepository.remove(card);
       }
 
-      console.log("Tüm veriler başarıyla silindi.");
+      // Tüm veriler başarıyla silindi
     } catch (error) {
-      console.error("Hata oluştu:", error);
+      throw error;
     }
   }
   
@@ -127,7 +130,6 @@ export class CardService {
     });
     if (card) {
       await this.databaseRepository.remove(card);
-      console.log(`Card with ID ${card_id} and its related records have been removed.`);
     } else {
       throw new NotFoundException(`Card with ID ${card_id} not found.`);
     }

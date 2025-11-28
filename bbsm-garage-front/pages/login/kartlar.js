@@ -17,6 +17,7 @@ const Kartlar = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
+  const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
@@ -82,7 +83,7 @@ const Kartlar = () => {
     }
     try {
       const deleteRequests = secilenKartlar.map(kartId =>
-        fetch(`${API_URL}/card/${kartId}`, { method: 'DELETE' })
+        fetchWithAuth(`${API_URL}/card/${kartId}`, { method: 'DELETE' })
       );
       await Promise.all(deleteRequests);
 
@@ -106,9 +107,9 @@ const Kartlar = () => {
   const fetchTeklifListesi = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/teklif`, { method: 'GET' });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await fetchWithAuth(`${API_URL}/teklif`, { method: 'GET' });
+      if (!response || !response.ok) {
+        throw new Error(`HTTP error! status: ${response?.status || 'unknown'}`);
       }
       const data = await response.json();
       setTeklifler(data);
@@ -121,9 +122,9 @@ const Kartlar = () => {
   const fetchKartListesi = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/card`, { method: 'GET' });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      const response = await fetchWithAuth(`${API_URL}/card`, { method: 'GET' });
+      if (!response || !response.ok) {
+        throw new Error(`HTTP error! status: ${response?.status || 'unknown'}`);
       }
       const data = await response.json();
       setKartlar(data);
@@ -145,7 +146,7 @@ const Kartlar = () => {
   const handleKartEkle = async (yeniKart) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/card`, {
+      const response = await fetchWithAuth(`${API_URL}/card`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,15 +154,18 @@ const Kartlar = () => {
         body: JSON.stringify(yeniKart),
       });
 
-      if (response.ok) {
-        const eklenenKart = await response.json();
-        setKartlar([...kartlar, eklenenKart]);
+      if (response && response.ok) {
+        // Kart başarıyla eklendi, listeyi yeniden yükle
+        await fetchKartListesi();
         toggleYeniKartEkleModal();
       } else {
-        console.error('Kart eklenirken bir hata oluştu');
+        const errorData = await response?.json().catch(() => ({}));
+        console.error('Kart eklenirken bir hata oluştu:', errorData);
+        alert('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
       }
     } catch (error) {
       console.error('Kart eklenirken bir hata oluştu:', error);
+      alert('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
     }
     setLoading(false);
   };
@@ -183,7 +187,7 @@ const Kartlar = () => {
 
     try {
       // Teklifi teklif tablosuna ekle
-      const response = await fetch(`${API_URL}/teklif`, {
+      const response = await fetchWithAuth(`${API_URL}/teklif`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -191,17 +195,19 @@ const Kartlar = () => {
         body: JSON.stringify(teklif),
       });
 
-      if (response.ok) {
-        const eklenenTeklif = await response.json();
-        setTeklifler(prevTeklifler => [...prevTeklifler, eklenenTeklif]);
-
+      if (response && response.ok) {
+        // Teklif başarıyla eklendi, listeyi yeniden yükle
+        await fetchTeklifListesi();
         // Modalı kapat
         toggleYeniKartEkleModal();
       } else {
-        console.error('Teklif eklenirken bir hata oluştu');
+        const errorData = await response?.json().catch(() => ({}));
+        console.error('Teklif eklenirken bir hata oluştu:', errorData);
+        alert('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
       }
     } catch (error) {
       console.error('İşlem sırasında bir hata oluştu:', error);
+      alert('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
     }
     setLoading(false);
   };
@@ -465,7 +471,7 @@ const secilenKartlariIndir = async (type) => {
                   className="flex items-center text-sm hidden md:flex hover:opacity-80 transition-opacity cursor-pointer"
                 >
                   <span className="sr-only">Open user menu</span>
-                  <p className="text-center text-my-siyah font-semibold items-center pr-8">{username}</p>
+                  <p className="text-center text-my-siyah font-semibold items-center pr-8">{firmaAdi}</p>
                   <img 
                     src="/images/yasin.webp" 
                     className="h-16 w-16 rounded-full object-cover" 
@@ -483,7 +489,7 @@ const secilenKartlariIndir = async (type) => {
                     <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 dropdown-enter">
                       <div className="py-2">
                         <div className="px-4 py-3 border-b border-gray-200">
-                          <p className="text-sm font-semibold text-my-siyah">{username}</p>
+                          <p className="text-sm font-semibold text-my-siyah">{firmaAdi}</p>
                           <p className="text-xs text-gray-500 mt-1">Firma Hesabı</p>
                         </div>
                         <button

@@ -43,7 +43,6 @@ export class StokController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@Param('id') id: string, @TenantId() tenant_id: number) {
-    console.log(id);
     return this.stokService.remove(+id, tenant_id);
   }
 

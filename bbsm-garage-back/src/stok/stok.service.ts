@@ -25,7 +25,7 @@ export class StokService {
         tenant_id: tenant_id
       }
     });
-    console.log(result);
+    // Stok güncellendi
     return result;
   }
 

@@ -31,7 +31,6 @@ export class CardController {
   @UseGuards(JwtAuthGuard)
   @Get(':card_id/yapilanlar')
   findYapilanlarByCardId(@Param('card_id') card_id: number, @TenantId() tenant_id: number) {
-    console.log("Finding yapilanlar for card_id:", card_id);
     return this.cardService.findYapilanlarByCardId(card_id, tenant_id);
   }
 
@@ -44,14 +43,12 @@ export class CardController {
   @UseGuards(JwtAuthGuard)
   @Post('update-card/:card_id')
   updateCardYapilanlar(@Body() updateYapilan: CreateYapilanlarDto[], @Param('card_id') card_id: number, @TenantId() tenant_id: number) {
-    console.log("Updating yapilanlar for card_id:", card_id, "with data:", updateYapilan);
     return this.cardService.updateCardYapilanlar(updateYapilan, +card_id, tenant_id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch(':card_id')
   update(@Param('card_id') card_id: string, @Body() updateCardDto: any, @TenantId() tenant_id: number) {
-    console.log("Updating card_id:", card_id, "with data:", updateCardDto);
     return this.cardService.update(parseInt(card_id, 10), updateCardDto, tenant_id);
   }
 
@@ -61,21 +58,18 @@ export class CardController {
     if (!Array.isArray(yapilanlar)) {
       throw new BadRequestException('Yapilanlar bir dizi olmalıdır');
     }
-    console.log("Updating yapilanlar for card_id:", card_id, "with data:", yapilanlar);
     return this.cardService.updateCardYapilanlar(yapilanlar, card_id, tenant_id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete("delAll")
   removeAll(@TenantId() tenant_id: number) {
-    console.log("Removing all cards and their yapilanlar");
     return this.cardService.removeAll(tenant_id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Delete(':card_id')
   remove(@Param('card_id') card_id: string, @TenantId() tenant_id: number) {
-    console.log("Removing card_id:", card_id);
     return this.cardService.removeid(parseInt(card_id, 10), tenant_id);
   }
 }
