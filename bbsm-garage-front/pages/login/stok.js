@@ -7,6 +7,7 @@ import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import ProfileModal from '../../components/ProfileModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import { useSwipe } from '../../hooks/useTouchGestures';
 
 export default function stok() {
@@ -19,6 +20,7 @@ export default function stok() {
     const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
     const [isPageLoaded, setIsPageLoaded] = useState(false);
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
 
     // Sayfa yüklendiğinde fade-in animasyonu
@@ -327,7 +329,7 @@ export default function stok() {
                           <button
                             onClick={() => {
                               setIsSettingsOpen(false);
-                              alert('Şifre değiştirme yakında eklenecek');
+                              setIsChangePasswordModalOpen(true);
                             }}
                             className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
                           >
@@ -589,6 +591,17 @@ export default function stok() {
             }}
             isEditing={isEditingProfile}
             setIsEditing={setIsEditingProfile}
+            fetchWithAuth={fetchWithAuth}
+            API_URL={API_URL}
+            setLoading={setLoading}
+          />
+        )}
+
+        {/* Şifre Değiştirme Modal */}
+        {isChangePasswordModalOpen && (
+          <ChangePasswordModal
+            isOpen={isChangePasswordModalOpen}
+            onClose={() => setIsChangePasswordModalOpen(false)}
             fetchWithAuth={fetchWithAuth}
             API_URL={API_URL}
             setLoading={setLoading}

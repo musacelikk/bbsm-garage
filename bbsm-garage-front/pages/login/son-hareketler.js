@@ -6,6 +6,7 @@ import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import { useSwipe } from '../../hooks/useTouchGestures';
 
 function SonHareketler() {
@@ -18,6 +19,7 @@ function SonHareketler() {
   const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [hareketler, setHareketler] = useState([]);
 
@@ -224,6 +226,18 @@ function SonHareketler() {
                         <button
                           onClick={() => {
                             setIsSettingsOpen(false);
+                            setIsChangePasswordModalOpen(true);
+                          }}
+                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                          Şifre Değiştir
+                        </button>
+                        <button
+                          onClick={() => {
+                            setIsSettingsOpen(false);
                             logout();
                           }}
                           className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
@@ -395,6 +409,17 @@ function SonHareketler() {
               alert('Profil güncellenirken bir hata oluştu');
             }
           }}
+        />
+      )}
+
+      {/* Şifre Değiştirme Modal */}
+      {isChangePasswordModalOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => setIsChangePasswordModalOpen(false)}
+          fetchWithAuth={fetchWithAuth}
+          API_URL={API_URL}
+          setLoading={setLoading}
         />
       )}
     </div>

@@ -6,6 +6,7 @@ import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
 
 function Gelir() {
@@ -18,6 +19,7 @@ function Gelir() {
   const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   // Sayfa yüklendiğinde fade-in animasyonu
@@ -401,7 +403,7 @@ function Gelir() {
                         <button
                           onClick={() => {
                             setIsSettingsOpen(false);
-                            alert('Şifre değiştirme yakında eklenecek');
+                            setIsChangePasswordModalOpen(true);
                           }}
                           className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >
@@ -648,6 +650,17 @@ function Gelir() {
             }}
             isEditing={isEditingProfile}
             setIsEditing={setIsEditingProfile}
+            fetchWithAuth={fetchWithAuth}
+            API_URL={API_URL}
+            setLoading={setLoading}
+          />
+        )}
+
+        {/* Şifre Değiştirme Modal */}
+        {isChangePasswordModalOpen && (
+          <ChangePasswordModal
+            isOpen={isChangePasswordModalOpen}
+            onClose={() => setIsChangePasswordModalOpen(false)}
             fetchWithAuth={fetchWithAuth}
             API_URL={API_URL}
             setLoading={setLoading}

@@ -1,20 +1,24 @@
 import { useState, useEffect } from 'react';
 import Head from "next/head";
 import Link from "next/link";
+import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
+import ChangePasswordModal from '../../components/ChangePasswordModal';
 import { useSwipe } from '../../hooks/useTouchGestures';
 
 function BizeUlasin() {
   const { getUsername, logout, fetchWithAuth } = useAuth();
+  const { loading, setLoading } = useLoading();
   const username = getUsername() || 'Kullanıcı';
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
@@ -160,7 +164,7 @@ function BizeUlasin() {
                           <button
                             onClick={() => {
                               setIsSettingsOpen(false);
-                              alert('Şifre değiştirme yakında eklenecek');
+                              setIsChangePasswordModalOpen(true);
                             }}
                             className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
                           >
@@ -240,7 +244,18 @@ function BizeUlasin() {
           setIsEditing={setIsEditingProfile}
           fetchWithAuth={fetchWithAuth}
           API_URL={API_URL}
-          setLoading={() => {}}
+          setLoading={setLoading}
+        />
+      )}
+
+      {/* Şifre Değiştirme Modal */}
+      {isChangePasswordModalOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => setIsChangePasswordModalOpen(false)}
+          fetchWithAuth={fetchWithAuth}
+          API_URL={API_URL}
+          setLoading={setLoading}
         />
       )}
 
