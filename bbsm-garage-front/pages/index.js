@@ -19,7 +19,7 @@ export default function Home() {
   // Eğer zaten giriş yapılmışsa panele yönlendir
   useEffect(() => {
     if (!isLoading && user) {
-      router.push('/login/kartlar');
+      router.push('/login/dashboard');
     }
   }, [user, isLoading, router]);
 
@@ -96,10 +96,15 @@ export default function Home() {
         await new Promise(resolve => setTimeout(resolve, 6000));
         
         // Panele yönlendir
-        router.push('/login/kartlar');
+        router.push('/login/dashboard');
       } else {
         console.error('Login failed:', data);
-        alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
+        // Email doğrulanmamış hatası kontrolü
+        if (data.message && data.message.includes('email')) {
+          alert(data.message + '\n\nEmail\'inizi kontrol edin ve doğrulama linkine tıklayın.');
+        } else {
+          alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
+        }
         setLoading(false);
       }
     } catch (error) {

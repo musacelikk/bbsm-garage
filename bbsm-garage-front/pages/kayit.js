@@ -94,37 +94,50 @@ export default function Kayit() {
       console.log('Kayıt response:', data);
       
       if (response.ok) {
-        // Kayıt başarılı, şimdi otomatik giriş yap
-        try {
-          const loginResponse = await fetch(`${API_URL}/auth/control`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ 
-              username: formData.username.trim(),
-              password: formData.password.trim()
-            }),
-          });
+        // Kayıt başarılı
+        const hasEmail = formData.email && formData.email.trim();
+        
+        if (hasEmail) {
+          // Email varsa doğrulama email'i gönderildi mesajı göster
+          alert('Kayıt başarılı! Email adresinize doğrulama linki gönderildi.\n\nLütfen email\'inizi kontrol edin ve doğrulama linkine tıklayın.\n\nEmail\'i doğrulamadan hesabınıza giriş yapamazsınız.');
+          router.push('/');
+        } else {
+          // Email yoksa direkt giriş yap (email zorunlu değilse)
+          try {
+            const loginResponse = await fetch(`${API_URL}/auth/control`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+              },
+              body: JSON.stringify({ 
+                username: formData.username.trim(),
+                password: formData.password.trim()
+              }),
+            });
 
-          const loginData = await loginResponse.json();
-          
-          if (loginResponse.ok && loginData.result) {
-            // Token'ı kaydet ve panele yönlendir
-            login(loginData.token);
-            // Panel açılışını 1.5 saniye geciktir
-            setTimeout(() => {
-              router.push('/login/kartlar');
-            }, 3000);
-          } else {
+            const loginData = await loginResponse.json();
+            
+            if (loginResponse.ok && loginData.result) {
+              // Token'ı kaydet ve panele yönlendir
+              login(loginData.token);
+              setTimeout(() => {
+                router.push('/login/dashboard');
+              }, 2000);
+            } else {
+              // Email doğrulanmamış hatası kontrolü
+              if (loginData.message && loginData.message.includes('email')) {
+                alert(loginData.message + '\n\nEmail\'inizi kontrol edin ve doğrulama linkine tıklayın.');
+              } else {
+                alert('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen manuel olarak giriş yapın.');
+              }
+              router.push('/');
+            }
+          } catch (loginError) {
+            console.error('Otomatik giriş hatası:', loginError);
             alert('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen manuel olarak giriş yapın.');
             router.push('/');
           }
-        } catch (loginError) {
-          console.error('Otomatik giriş hatası:', loginError);
-          alert('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen manuel olarak giriş yapın.');
-          router.push('/');
         }
       } else {
         console.error('Kayıt başarısız:', data);

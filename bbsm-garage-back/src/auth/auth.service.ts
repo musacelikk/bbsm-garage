@@ -5,13 +5,16 @@ import { AuthEntity } from './auth.entity';
 import { AuthDto } from './auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LogService } from '../log/log.service';
+import { EmailService } from '../email/email.service';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(AuthEntity) private databaseRepository: Repository<AuthEntity>,
     private readonly jwtService: JwtService,
-    private readonly logService: LogService
+    private readonly logService: LogService,
+    private readonly emailService: EmailService
   ) {}
 
   findAll(): any {
@@ -60,7 +63,32 @@ export class AuthService {
       throw new Error('Tenant ID oluşturulamadı, lütfen tekrar deneyin');
     }
 
-    return this.databaseRepository.save(newUser);
+    // Email doğrulama token'ı oluştur
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date();
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24); // 24 saat geçerli
+
+    newUser.verificationToken = verificationToken;
+    newUser.verificationTokenExpiry = verificationTokenExpiry;
+    newUser.emailVerified = false;
+
+    const savedUser = await this.databaseRepository.save(newUser);
+
+    // Email gönder (eğer email varsa)
+    if (savedUser.email) {
+      try {
+        await this.emailService.sendVerificationEmail(
+          savedUser.email,
+          verificationToken,
+          savedUser.username
+        );
+      } catch (error) {
+        console.error('Email gönderme hatası:', error);
+        // Email gönderme hatası kaydı engellemez
+      }
+    }
+
+    return savedUser;
   }
 
   async findUserPass(database: AuthDto) {
@@ -76,6 +104,16 @@ export class AuthService {
   
     if (result.length > 0) {
       const user = result[0];
+      
+      // Email doğrulama kontrolü - Email varsa ve doğrulanmamışsa giriş engellenir
+      if (user.email && !user.emailVerified) {
+        return { 
+          result: false, 
+          message: 'Hesabınızı aktifleştirmek için email adresinize gönderilen doğrulama linkine tıklayın.',
+          emailVerified: false 
+        };
+      }
+      
       const payload = { 
         username: user.username, 
         sub: user.id,
@@ -91,7 +129,7 @@ export class AuthService {
         // Log hatası login'i engellemez
       }
       
-      return { result: true, token };
+      return { result: true, token, emailVerified: user.emailVerified };
     } else {
       return { result: false };
     }
@@ -194,5 +232,66 @@ export class AuthService {
       // Log hatası logout'u engellemez
       return { success: true, message: 'Çıkış yapıldı' };
     }
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { verificationToken: token }
+    });
+
+    if (!user) {
+      throw new Error('Geçersiz doğrulama token\'ı');
+    }
+
+    if (user.emailVerified) {
+      throw new Error('Email zaten doğrulanmış');
+    }
+
+    if (user.verificationTokenExpiry && new Date() > user.verificationTokenExpiry) {
+      throw new Error('Doğrulama token\'ı süresi dolmuş');
+    }
+
+    user.emailVerified = true;
+    user.verificationToken = null;
+    user.verificationTokenExpiry = null;
+    await this.databaseRepository.save(user);
+
+    return { success: true, message: 'Email başarıyla doğrulandı' };
+  }
+
+  async resendVerificationEmail(username: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { username }
+    });
+
+    if (!user) {
+      throw new Error('Kullanıcı bulunamadı');
+    }
+
+    if (user.emailVerified) {
+      throw new Error('Email zaten doğrulanmış');
+    }
+
+    if (!user.email) {
+      throw new Error('Kullanıcının email adresi yok');
+    }
+
+    // Yeni token oluştur
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationTokenExpiry = new Date();
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24);
+
+    user.verificationToken = verificationToken;
+    user.verificationTokenExpiry = verificationTokenExpiry;
+    await this.databaseRepository.save(user);
+
+    // Email gönder
+    await this.emailService.sendVerificationEmail(
+      user.email,
+      verificationToken,
+      user.username
+    );
+
+    return { success: true, message: 'Doğrulama email\'i tekrar gönderildi' };
   }
 }

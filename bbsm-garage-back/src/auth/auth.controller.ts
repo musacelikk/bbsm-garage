@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Post, Put, UseGuards, Headers, Request } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UseGuards, Headers, Request, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './auth.dto';
 import { ChangePasswordDto } from './change-password.dto';
 import { UpdateProfileDto } from './update-profile.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -14,11 +15,13 @@ export class AuthController {
     return this.authService.findAll();
   }
 
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 kayıt / 1 dakika (spam kayıt koruması)
   @Post()
   setOne(@Body() authDto: AuthDto) {
     return this.authService.addOne(authDto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 deneme / 5 dakika (brute force koruması)
   @Post('control')
   async setController(@Body() authDto: AuthDto) {
     return this.authService.findUserPass(authDto);
@@ -62,5 +65,17 @@ export class AuthController {
     const username = req.user.username;
     const tenantId = req.user.tenant_id;
     return this.authService.logout(tenantId, username);
+  }
+
+  @Get('verify-email')
+  async verifyEmail(@Query('token') token: string) {
+    return this.authService.verifyEmail(token);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-verification')
+  async resendVerification(@Request() req) {
+    const username = req.user.username;
+    return this.authService.resendVerificationEmail(username);
   }
 }

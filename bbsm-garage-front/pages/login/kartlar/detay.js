@@ -525,6 +525,9 @@ export default function Detay() {
         <div className="h-full px-4 pt-6 pb-4 text-center overflow-y-auto bg-my-beyaz">
           <ul className="space-y-4">
             <li>
+              <Link href="/login/dashboard" className="block p-2 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group">Dashboard</Link>
+            </li>
+            <li>
               <Link href="/login/kartlar" className="block p-2 f text-md border-2 border-my-açıkgri font-bold text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group">Kartlar</Link>
             </li>
             <li>
@@ -850,7 +853,7 @@ export default function Detay() {
 
       {/* WhatsApp Destek Butonu */}
       <a
-        href="https://wa.me/905551234567"
+        href="https://wa.me/905424873202"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-6 right-6 z-50 bg-[#25D366] hover:bg-[#20BA5A] text-white rounded-full px-4 py-3 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center hover:scale-110"

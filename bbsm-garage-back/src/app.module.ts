@@ -15,6 +15,8 @@ import { YapilanlarModule } from './yapilanlar/yapilanlar.module';
 import { ExcelModule } from './excel/excel.module';
 import { HttpModule } from '@nestjs/axios';
 import { LogModule } from './log/log.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 let env = new EnvDto();
 
@@ -26,6 +28,10 @@ log(env);
       envFilePath: '.env',
       isGlobal: true,
     }),
+    ThrottlerModule.forRoot([{
+      ttl: 60000, // 1 dakika
+      limit: 20, // 100 istek/dakika (genel limit)
+    }]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST,
@@ -56,6 +62,12 @@ log(env);
     LogModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

@@ -32,6 +32,15 @@ export class AuthEntity {
     @Column({ nullable: true })
     vergiNo: string;
 
+    @Column({ default: false })
+    emailVerified: boolean;
+
+    @Column({ nullable: true })
+    verificationToken: string;
+
+    @Column({ type: 'timestamp', nullable: true })
+    verificationTokenExpiry: Date;
+
     @BeforeInsert()
     generateTenantId() {
         if (!this.tenant_id) {
