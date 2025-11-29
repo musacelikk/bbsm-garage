@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthEntity } from './auth.entity';
@@ -71,6 +71,7 @@ export class AuthService {
     newUser.verificationToken = verificationToken;
     newUser.verificationTokenExpiry = verificationTokenExpiry;
     newUser.emailVerified = false;
+    newUser.isActive = false; // Yeni kayıt olan kullanıcılar pasif olarak başlar
 
     const savedUser = await this.databaseRepository.save(newUser);
 
@@ -104,6 +105,14 @@ export class AuthService {
   
     if (result.length > 0) {
       const user = result[0];
+      
+      // Kullanıcı aktif değilse giriş yapamaz
+      if (!user.isActive) {
+        return { 
+          result: false, 
+          message: 'Hesabınız henüz aktif edilmemiş. Lütfen yönetici ile iletişime geçin.' 
+        };
+      }
       
       const payload = { 
         username: user.username, 
@@ -344,5 +353,113 @@ export class AuthService {
     await this.databaseRepository.save(user);
 
     return { success: true, message: 'Şifre başarıyla sıfırlandı' };
+  }
+
+  async findAdmin(database: AuthDto) {
+    // Sabit admin kullanıcı adı ve şifre kontrolü
+    const ADMIN_USERNAME = 'musacelik';
+    const ADMIN_PASSWORD = '123456789';
+
+    if (!database.username || !database.password) {
+      return { result: false };
+    }
+
+    // Admin kontrolü
+    if (database.username === ADMIN_USERNAME && database.password === ADMIN_PASSWORD) {
+      const payload = { 
+        username: ADMIN_USERNAME, 
+        sub: 0, // Admin için özel ID
+        tenant_id: 0, // Admin için özel tenant_id
+        isAdmin: true
+      };
+      const token = this.jwtService.sign(payload);
+      
+      return { 
+        result: true, 
+        token, 
+        user: { username: ADMIN_USERNAME, isAdmin: true }
+      };
+    } else {
+      return { result: false };
+    }
+  }
+
+  async getAllUsersForAdmin(authorization: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      // Tüm kullanıcıları getir (şifre dahil - admin için)
+      const users = await this.databaseRepository.find({
+        select: [
+          'id',
+          'tenant_id',
+          'username',
+          'password',
+          'firmaAdi',
+          'yetkiliKisi',
+          'telefon',
+          'email',
+          'adres',
+          'vergiNo',
+          'emailVerified',
+          'isActive',
+        ],
+        order: {
+          id: 'DESC'
+        }
+      });
+
+      return users;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException('Geçersiz token');
+    }
+  }
+
+  async toggleUserActive(authorization: string, userId: number, isActive: boolean) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      // Kullanıcıyı bul ve aktif/pasif yap
+      const user = await this.databaseRepository.findOne({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      user.isActive = isActive;
+      await this.databaseRepository.save(user);
+
+      return { success: true, message: `Kullanıcı ${isActive ? 'aktif' : 'pasif'} edildi` };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Kullanıcı durumu güncellenemedi');
+    }
   }
 }

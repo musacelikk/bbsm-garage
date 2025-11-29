@@ -99,7 +99,8 @@ export default function Home() {
         router.push('/login/dashboard');
       } else {
         console.error('Login failed:', data);
-        alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
+        const errorMessage = data.message || 'Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.';
+        alert(errorMessage);
         setLoading(false);
       }
     } catch (error) {

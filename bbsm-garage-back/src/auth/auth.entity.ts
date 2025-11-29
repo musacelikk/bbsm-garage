@@ -47,6 +47,9 @@ export class AuthEntity {
     @Column({ type: 'timestamp', nullable: true })
     resetTokenExpiry: Date;
 
+    @Column({ default: false })
+    isActive: boolean;
+
     @BeforeInsert()
     generateTenantId() {
         if (!this.tenant_id) {

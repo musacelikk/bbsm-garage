@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, UseGuards, Headers, Request, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, UseGuards, Headers, Request, Query, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './auth.dto';
 import { ChangePasswordDto } from './change-password.dto';
@@ -16,13 +16,13 @@ export class AuthController {
     return this.authService.findAll();
   }
 
-  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 kayıt / 1 dakika (spam kayıt koruması)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 kayıt / 1 dakika (spam kayıt koruması)
   @Post()
   setOne(@Body() authDto: AuthDto) {
     return this.authService.addOne(authDto);
   }
 
-  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 deneme / 5 dakika (brute force koruması)
+  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 deneme / 5 dakika (brute force koruması)
   @Post('control')
   async setController(@Body() authDto: AuthDto) {
     return this.authService.findUserPass(authDto);
@@ -80,7 +80,7 @@ export class AuthController {
     return this.authService.resendVerificationEmail(username);
   }
 
-  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 istek / 1 dakika (spam koruması)
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 istek / 1 dakika (spam koruması)
   @Post('forgot-password')
   async forgotPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     if (!resetPasswordDto.email) {
@@ -89,12 +89,33 @@ export class AuthController {
     return this.authService.requestPasswordReset(resetPasswordDto.email);
   }
 
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 istek / 1 dakika
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 istek / 1 dakika
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     if (!resetPasswordDto.token || !resetPasswordDto.newPassword) {
       throw new Error('Token ve yeni şifre gereklidir');
     }
     return this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.newPassword);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 deneme / 5 dakika (brute force koruması)
+  @Post('admin/control')
+  async adminControl(@Body() authDto: AuthDto) {
+    return this.authService.findAdmin(authDto);
+  }
+
+  @Get('admin/users')
+  async getAdminUsers(@Headers('authorization') authorization: string) {
+    return this.authService.getAllUsersForAdmin(authorization);
+  }
+
+  @Put('admin/users/:id/toggle-active')
+  async toggleUserActive(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() body: { isActive: boolean }
+  ) {
+    const userId = parseInt(id);
+    return this.authService.toggleUserActive(authorization, userId, body.isActive);
   }
 }

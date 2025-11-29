@@ -30,7 +30,7 @@ log(env);
     }),
     ThrottlerModule.forRoot([{
       ttl: 60000, // 1 dakika
-      limit: 20, // 100 istek/dakika (genel limit)
+      limit: 100, // 100 istek/dakika (genel limit)
     }]),
     TypeOrmModule.forRoot({
       type: 'postgres',
