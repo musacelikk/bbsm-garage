@@ -14,6 +14,8 @@ export class CreateCardDto {
     girisTarihi: string;
     notlar: string;
     adres: string;
+    odemeAlindi?: boolean;
+    duzenleyen?: string;
     yapilanlar: CreateYapilanlarDto[];
 
   }

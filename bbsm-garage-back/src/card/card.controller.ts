@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { CardService } from './card.service';
 import { CreateCardDto } from './dto/create-card.dto';
 import { CreateYapilanlarDto } from 'src/yapilanlar/dto/create-yapilanlar.dto';
@@ -11,7 +11,12 @@ export class CardController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createCardDto: CreateCardDto, @TenantId() tenant_id: number) {
+  create(@Body() createCardDto: CreateCardDto, @Request() req, @TenantId() tenant_id: number) {
+    // Düzenleyen alanı zorunlu kontrolü
+    if (!createCardDto.duzenleyen || createCardDto.duzenleyen.trim() === '') {
+      throw new BadRequestException('Düzenleyen alanı zorunludur');
+    }
+
     const cardData: CreateCardDto = {
       ...createCardDto,
       km: createCardDto.km !== null ? createCardDto.km : 0,
@@ -23,9 +28,12 @@ export class CardController {
       girisTarihi: createCardDto.girisTarihi || "Tanımsız",
       notlar: createCardDto.notlar || "",
       adres: createCardDto.adres || "",
+      duzenleyen: createCardDto.duzenleyen.trim(),
       yapilanlar: createCardDto.yapilanlar || [],
     };
-    return this.cardService.create(cardData, tenant_id);
+    
+    const username = req.user?.username;
+    return this.cardService.create(cardData, tenant_id, username);
   }  
 
   @UseGuards(JwtAuthGuard)
@@ -48,8 +56,19 @@ export class CardController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':card_id')
-  update(@Param('card_id') card_id: string, @Body() updateCardDto: any, @TenantId() tenant_id: number) {
-    return this.cardService.update(parseInt(card_id, 10), updateCardDto, tenant_id);
+  update(@Param('card_id') card_id: string, @Body() updateCardDto: any, @Request() req, @TenantId() tenant_id: number) {
+    // Düzenleyen alanı zorunlu kontrolü (güncelleme sırasında)
+    if (updateCardDto.duzenleyen !== undefined && (!updateCardDto.duzenleyen || updateCardDto.duzenleyen.trim() === '')) {
+      throw new BadRequestException('Düzenleyen alanı zorunludur');
+    }
+    
+    // Eğer duzenleyen gönderildiyse trim yap
+    if (updateCardDto.duzenleyen) {
+      updateCardDto.duzenleyen = updateCardDto.duzenleyen.trim();
+    }
+    
+    const username = req.user?.username;
+    return this.cardService.update(parseInt(card_id, 10), updateCardDto, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -69,7 +88,9 @@ export class CardController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':card_id')
-  remove(@Param('card_id') card_id: string, @TenantId() tenant_id: number) {
-    return this.cardService.removeid(parseInt(card_id, 10), tenant_id);
+  remove(@Param('card_id') card_id: string, @Body() body: { duzenleyen?: string }, @Request() req, @TenantId() tenant_id: number) {
+    const username = req.user?.username;
+    const duzenleyen = body?.duzenleyen || null;
+    return this.cardService.removeid(parseInt(card_id, 10), tenant_id, username, duzenleyen);
   }
 }

@@ -55,4 +55,12 @@ export class AuthController {
     const username = req.user.username;
     return this.authService.updateProfile(username, updateProfileDto);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('logout')
+  async logout(@Request() req) {
+    const username = req.user.username;
+    const tenantId = req.user.tenant_id;
+    return this.authService.logout(tenantId, username);
+  }
 }

@@ -43,6 +43,12 @@ export class CardEntity {
   @Column({ type: 'text', nullable: true })
   adres: string;
 
+  @Column({ type: 'boolean', default: false })
+  odemeAlindi: boolean;
+
+  @Column({ type: 'text', nullable: false })
+  duzenleyen: string;
+
   @OneToMany(() => YapilanlarEntity, yapilan => yapilan.card ,{ nullable: true , cascade: true, onDelete: 'CASCADE' })
   yapilanlar: YapilanlarEntity[];
 

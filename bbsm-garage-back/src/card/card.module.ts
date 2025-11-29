@@ -6,9 +6,13 @@ import { CardEntity } from './entities/card.entity';
 import { YapilanlarController } from 'src/yapilanlar/yapilanlar.controller';
 import { YapilanlarEntity } from 'src/yapilanlar/entities/yapilanlar.entity';
 import { TeklifEntity } from 'src/teklif/entities/teklif.entity';
+import { LogModule } from '../log/log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([CardEntity,TeklifEntity,YapilanlarEntity])],
+  imports: [
+    TypeOrmModule.forFeature([CardEntity,TeklifEntity,YapilanlarEntity]),
+    LogModule
+  ],
   controllers: [CardController],
   providers: [CardService],
 })

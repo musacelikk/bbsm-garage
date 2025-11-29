@@ -4,12 +4,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { AuthEntity } from './auth.entity';
 import { AuthDto } from './auth.dto';
 import { JwtService } from '@nestjs/jwt';
+import { LogService } from '../log/log.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(AuthEntity) private databaseRepository: Repository<AuthEntity>,
-    private readonly jwtService: JwtService
+    private readonly jwtService: JwtService,
+    private readonly logService: LogService
   ) {}
 
   findAll(): any {
@@ -80,6 +82,15 @@ export class AuthService {
         tenant_id: user.tenant_id 
       };
       const token = this.jwtService.sign(payload);
+      
+      // Login logunu kaydet
+      try {
+        await this.logService.createLog(user.tenant_id, user.username, 'login');
+      } catch (error) {
+        console.error('Log kaydetme hatası:', error);
+        // Log hatası login'i engellemez
+      }
+      
       return { result: true, token };
     } else {
       return { result: false };
@@ -171,5 +182,17 @@ export class AuthService {
     await this.databaseRepository.save(user);
 
     return { success: true, message: 'Şifre başarıyla değiştirildi' };
+  }
+
+  async logout(tenantId: number, username: string) {
+    // Logout logunu kaydet
+    try {
+      await this.logService.createLog(tenantId, username, 'logout');
+      return { success: true, message: 'Çıkış yapıldı' };
+    } catch (error) {
+      console.error('Logout log kaydetme hatası:', error);
+      // Log hatası logout'u engellemez
+      return { success: true, message: 'Çıkış yapıldı' };
+    }
   }
 }

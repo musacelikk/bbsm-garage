@@ -14,6 +14,7 @@ import { TeklifModule } from './teklif/teklif.module';
 import { YapilanlarModule } from './yapilanlar/yapilanlar.module';
 import { ExcelModule } from './excel/excel.module';
 import { HttpModule } from '@nestjs/axios';
+import { LogModule } from './log/log.module';
 
 let env = new EnvDto();
 
@@ -52,6 +53,7 @@ log(env);
     YapilanlarModule,
     ExcelModule,
     HttpModule,
+    LogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

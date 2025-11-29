@@ -38,7 +38,29 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    // Logout logunu kaydet (token varsa)
+    if (user?.token) {
+      try {
+        const API_URL = typeof window !== 'undefined' 
+          ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000')
+          : 'http://localhost:4000';
+        
+        await fetch(`${API_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${user.token}`,
+            'Content-Type': 'application/json',
+          },
+        }).catch(() => {
+          // Logout endpoint hatası logout'u engellemez
+        });
+      } catch (error) {
+        // Logout endpoint hatası logout'u engellemez
+        console.error('Logout log kaydetme hatası:', error);
+      }
+    }
+    
     setUser(null);
     localStorage.removeItem('user');
     router.push('/'); // Giriş sayfasına yönlendirin
