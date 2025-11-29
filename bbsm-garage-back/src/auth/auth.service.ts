@@ -22,7 +22,6 @@ export class AuthService {
   }
 
   async addOne(database: AuthDto): Promise<AuthEntity> {
-    // Kullanıcı adı kontrolü
     const existingUser = await this.databaseRepository.findOne({
       where: { username: database.username }
     });
@@ -31,7 +30,6 @@ export class AuthService {
       throw new Error('Bu kullanıcı adı zaten kullanılıyor');
     }
 
-    // Entity oluştur (BeforeInsert hook'u çalışsın)
     const newUser = this.databaseRepository.create({
       username: database.username,
       password: database.password,
@@ -43,7 +41,6 @@ export class AuthService {
       vergiNo: database.vergiNo || null
     });
 
-    // Benzersiz tenant_id kontrolü
     let isUnique = false;
     let attempts = 0;
     while (!isUnique && attempts < 10) {
@@ -66,7 +63,7 @@ export class AuthService {
     // Email doğrulama token'ı oluştur
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationTokenExpiry = new Date();
-    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24); // 24 saat geçerli
+    verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24);
 
     newUser.verificationToken = verificationToken;
     newUser.verificationTokenExpiry = verificationTokenExpiry;
@@ -113,6 +110,25 @@ export class AuthService {
           message: 'Hesabınız henüz aktif edilmemiş. Lütfen yönetici ile iletişime geçin.' 
         };
       }
+
+      // Üyelik kontrolü
+      const now = new Date();
+      if (user.membership_end_date) {
+        const endDate = new Date(user.membership_end_date);
+        if (endDate < now) {
+          user.membership_status = 'expired';
+          await this.databaseRepository.save(user);
+          return { 
+            result: false, 
+            message: 'Üyelik süreniz dolmuş. Lütfen yönetici ile iletişime geçin.' 
+          };
+        }
+      } else if (user.membership_status === 'inactive' || !user.membership_status) {
+        return { 
+          result: false, 
+          message: 'Üyelik süreniz tanımlanmamış. Lütfen yönetici ile iletişime geçin.' 
+        };
+      }
       
       const payload = { 
         username: user.username, 
@@ -147,6 +163,39 @@ export class AuthService {
     } catch (error) {
       throw new Error('Invalid token');
     }
+  }
+
+  async getMembership(username: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { username },
+      select: [
+        'membership_start_date',
+        'membership_end_date',
+        'membership_status'
+      ]
+    });
+
+    if (!user) {
+      throw new Error('Kullanıcı bulunamadı');
+    }
+
+    const now = new Date();
+    let status = user.membership_status || 'inactive';
+    
+    if (user.membership_end_date) {
+      const endDate = new Date(user.membership_end_date);
+      if (endDate < now && status === 'active') {
+        status = 'expired';
+      }
+    }
+
+    return {
+      membership_start_date: user.membership_start_date,
+      membership_end_date: user.membership_end_date,
+      membership_status: status,
+      plan: 'Standart',
+      features: ['Sınırsız kart kaydı', 'Sınırsız teklif oluşturma', 'Raporlama']
+    };
   }
 
   async getProfile(username: string) {
@@ -413,6 +462,9 @@ export class AuthService {
           'vergiNo',
           'emailVerified',
           'isActive',
+          'membership_start_date',
+          'membership_end_date',
+          'membership_status',
         ],
         order: {
           id: 'DESC'
@@ -424,7 +476,8 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
-      throw new UnauthorizedException('Geçersiz token');
+      console.error('getAllUsersForAdmin error:', error);
+      throw new Error(error.message || 'Kullanıcılar yüklenirken bir hata oluştu');
     }
   }
 
@@ -460,6 +513,69 @@ export class AuthService {
         throw error;
       }
       throw new Error(error.message || 'Kullanıcı durumu güncellenemedi');
+    }
+  }
+
+  async addMembership(authorization: string, userId: number, months: number, customDate?: Date) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      const user = await this.databaseRepository.findOne({
+        where: { id: userId }
+      });
+
+      if (!user) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      const now = new Date();
+      let newStartDate: Date;
+      let newEndDate: Date;
+
+      if (customDate) {
+        newStartDate = customDate;
+        const endDate = new Date(customDate);
+        endDate.setMonth(endDate.getMonth() + months);
+        newEndDate = endDate;
+      } else {
+        if (user.membership_end_date && new Date(user.membership_end_date) > now) {
+          newStartDate = user.membership_start_date ? new Date(user.membership_start_date) : now;
+          newEndDate = new Date(user.membership_end_date);
+          newEndDate.setMonth(newEndDate.getMonth() + months);
+        } else {
+          newStartDate = now;
+          newEndDate = new Date(now);
+          newEndDate.setMonth(newEndDate.getMonth() + months);
+        }
+      }
+
+      user.membership_start_date = newStartDate;
+      user.membership_end_date = newEndDate;
+      user.membership_status = 'active';
+      user.isActive = true;
+
+      await this.databaseRepository.save(user);
+
+      return { 
+        success: true, 
+        message: `${months} ay üyelik eklendi`,
+        membership_start_date: newStartDate,
+        membership_end_date: newEndDate
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Üyelik eklenemedi');
     }
   }
 }

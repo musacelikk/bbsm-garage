@@ -1,13 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { EnvDto } from './env-dto/env-dto';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
-import { log } from 'console';
-import { AuthController } from './auth/auth.controller';
 import { AuthModule } from './auth/auth.module';
-import { AuthEntity } from './auth/auth.entity';
 import { CardModule } from './card/card.module';
 import { StokModule } from './stok/stok.module';
 import { TeklifModule } from './teklif/teklif.module';
@@ -18,10 +14,6 @@ import { LogModule } from './log/log.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
-let env = new EnvDto();
-
-log(env); 
-
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -29,8 +21,8 @@ log(env);
       isGlobal: true,
     }),
     ThrottlerModule.forRoot([{
-      ttl: 60000, // 1 dakika
-      limit: 100, // 100 istek/dakika (genel limit)
+      ttl: 60000,
+      limit: 100,
     }]),
     TypeOrmModule.forRoot({
       type: 'postgres',

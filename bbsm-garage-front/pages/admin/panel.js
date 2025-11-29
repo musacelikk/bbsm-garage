@@ -12,6 +12,8 @@ function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
 
   // Admin kontrolü - sayfa yüklenmeden önce kontrol et
   useEffect(() => {
@@ -70,12 +72,31 @@ function AdminPanel() {
         const data = await response.json();
         setUsers(data);
       } else {
-        console.error('Kullanıcılar yüklenemedi');
-        alert('Kullanıcılar yüklenirken bir hata oluştu');
+        const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen hata' }));
+        console.error('Kullanıcılar yüklenemedi:', errorData);
+        
+        if (response.status === 401 || errorData.message?.includes('expired') || errorData.message?.includes('jwt')) {
+          alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          router.replace('/admin/login');
+          return;
+        }
+        
+        alert(`Kullanıcılar yüklenirken bir hata oluştu: ${errorData.message || response.statusText}`);
       }
     } catch (error) {
       console.error('Kullanıcılar yükleme hatası:', error);
-      alert('Kullanıcılar yüklenirken bir hata oluştu');
+      
+      if (error.message?.includes('expired') || error.message?.includes('jwt')) {
+        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        router.replace('/admin/login');
+        return;
+      }
+      
+      alert(`Kullanıcılar yüklenirken bir hata oluştu: ${error.message || 'Bilinmeyen hata'}`);
     } finally {
       setLoading(false);
     }
@@ -92,7 +113,6 @@ function AdminPanel() {
       if (response.ok) {
         const data = await response.json();
         alert(data.message || 'Kullanıcı durumu güncellendi');
-        // Kullanıcı listesini yenile
         await fetchUsers();
       } else {
         const errorData = await response.json();
@@ -101,6 +121,38 @@ function AdminPanel() {
     } catch (error) {
       console.error('Kullanıcı durumu güncelleme hatası:', error);
       alert('Kullanıcı durumu güncellenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addMembership = async (months, customDate) => {
+    if (!selectedUser) return;
+    
+    try {
+      setLoading(true);
+      const body = customDate 
+        ? { months, customDate } 
+        : { months };
+      
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/users/${selectedUser.id}/add-membership`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message || 'Üyelik eklendi');
+        setIsMembershipModalOpen(false);
+        setSelectedUser(null);
+        await fetchUsers();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Üyelik eklenemedi');
+      }
+    } catch (error) {
+      console.error('Üyelik ekleme hatası:', error);
+      alert('Üyelik eklenirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -218,6 +270,9 @@ function AdminPanel() {
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Tenant ID</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Email Doğrulandı</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">Durum</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Başlangıç</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Bitiş</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Durum</th>
                       <th className="text-left py-3 px-4 font-semibold text-gray-700">İşlem</th>
                     </tr>
                   </thead>
@@ -265,18 +320,55 @@ function AdminPanel() {
                               </span>
                             )}
                           </td>
+                          <td className="py-3 px-4 text-gray-700">
+                            {user.membership_start_date 
+                              ? new Date(user.membership_start_date).toLocaleDateString('tr-TR')
+                              : '-'}
+                          </td>
+                          <td className="py-3 px-4 text-gray-700">
+                            {user.membership_end_date 
+                              ? new Date(user.membership_end_date).toLocaleDateString('tr-TR')
+                              : '-'}
+                          </td>
                           <td className="py-3 px-4">
-                            <button
-                              onClick={() => toggleUserActive(user.id, user.isActive)}
-                              disabled={loading}
-                              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                                user.isActive
-                                  ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200'
-                              } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                              {user.isActive ? 'Pasif Et' : 'Aktif Et'}
-                            </button>
+                            {user.membership_status === 'active' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                ✓ Aktif
+                              </span>
+                            ) : user.membership_status === 'expired' ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                ✗ Süresi Dolmuş
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                ⏸ Tanımsız
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={() => toggleUserActive(user.id, user.isActive)}
+                                disabled={loading}
+                                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                  user.isActive
+                                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                {user.isActive ? 'Pasif Et' : 'Aktif Et'}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsMembershipModalOpen(true);
+                                }}
+                                disabled={loading}
+                                className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Süre Ver
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -298,6 +390,156 @@ function AdminPanel() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Üyelik Ekleme Modal */}
+      {isMembershipModalOpen && selectedUser && (
+        <MembershipModal
+          user={selectedUser}
+          onClose={() => {
+            setIsMembershipModalOpen(false);
+            setSelectedUser(null);
+          }}
+          onAdd={addMembership}
+          loading={loading}
+        />
+      )}
+    </div>
+  );
+}
+
+function MembershipModal({ user, onClose, onAdd, loading }) {
+  const [selectedMonths, setSelectedMonths] = useState(null);
+  const [customDate, setCustomDate] = useState('');
+  const [useCustomDate, setUseCustomDate] = useState(false);
+  const [customMonths, setCustomMonths] = useState(1);
+
+  const handleSubmit = () => {
+    if (useCustomDate) {
+      if (!customDate) {
+        alert('Lütfen özel tarih seçin');
+        return;
+      }
+      if (!customMonths || customMonths < 1) {
+        alert('Lütfen geçerli bir ay sayısı girin');
+        return;
+      }
+      onAdd(customMonths, customDate);
+    } else {
+      if (!selectedMonths) {
+        alert('Lütfen süre seçin');
+        return;
+      }
+      onAdd(selectedMonths, null);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      ></div>
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-my-siyah">Üyelik Süresi Ver</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="mb-4">
+            <p className="text-gray-700 mb-2">
+              <span className="font-semibold">Kullanıcı:</span> {user.username || user.firmaAdi || '-'}
+            </p>
+            {user.membership_end_date && (
+              <p className="text-sm text-gray-600 mb-4">
+                Mevcut bitiş: {new Date(user.membership_end_date).toLocaleDateString('tr-TR')}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Kullanım Süresi</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3, 6, 12].map(month => (
+                  <button
+                    key={month}
+                    onClick={() => {
+                      setSelectedMonths(month);
+                      setUseCustomDate(false);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedMonths === month && !useCustomDate
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {month} Ay
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 mb-2">
+                <input
+                  type="checkbox"
+                  checked={useCustomDate}
+                  onChange={(e) => {
+                    setUseCustomDate(e.target.checked);
+                    if (e.target.checked) {
+                      setSelectedMonths(null);
+                    }
+                  }}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-semibold text-gray-700">Özel Gün Gir</span>
+              </label>
+              {useCustomDate && (
+                <div className="space-y-2">
+                  <input
+                    type="date"
+                    value={customDate}
+                    onChange={(e) => setCustomDate(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <input
+                    type="number"
+                    min="1"
+                    value={customMonths}
+                    onChange={(e) => setCustomMonths(parseInt(e.target.value) || 1)}
+                    placeholder="Ay sayısı"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 mt-6">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              İptal
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={loading || (!selectedMonths && !useCustomDate)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Ekleniyor...' : 'Ekle'}
+            </button>
           </div>
         </div>
       </div>

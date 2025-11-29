@@ -3,15 +3,12 @@ import { useRouter } from 'next/router';
 import Head from "next/head";
 import Link from "next/link";
 import { useLoading } from './_app';
-import { useAuth } from '../auth-context';
 import { API_URL } from '../config';
 
 export default function Kayit() {
   const { loading, setLoading } = useLoading();
-  const { login } = useAuth();
   const router = useRouter();
   
-  // Form state
   const [formData, setFormData] = useState({
     firmaAdi: '',
     yetkiliKisi: '',
@@ -60,14 +57,8 @@ export default function Kayit() {
       setLoading(false);
       return;
     }
-
-    // Minimum 2 saniye bekle (kullanıcı deneyimi için)
-    const minWaitTime = new Promise(resolve => setTimeout(resolve, 2000));
     
     try {
-      console.log('Kayıt denemesi:', { username: formData.username.trim() });
-      
-      // Kayıt isteği
       const response = await fetch(`${API_URL}/auth`, {
         method: 'POST',
         headers: {
@@ -86,24 +77,16 @@ export default function Kayit() {
         }),
       });
 
-      // Minimum bekleme süresini bekle
-      await minWaitTime;
-
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Kayıt response:', data);
       
       if (response.ok) {
-        // Kayıt başarılı - admin onayı bekleyecek
         alert('Kayıt başarılı! Hesabınız yönetici onayı bekliyor. Onaylandıktan sonra giriş yapabilirsiniz.');
         router.push('/');
       } else {
-        console.error('Kayıt başarısız:', data);
         const errorMessage = data.message || 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.';
         alert(errorMessage);
       }
     } catch (error) {
-      console.error('Kayıt hatası:', error);
       if (error.message.includes('Failed to fetch')) {
         alert('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
       } else if (error.message.includes('NetworkError')) {
@@ -130,7 +113,6 @@ export default function Kayit() {
             <h2 className="text-xl sm:text-2xl font-bold text-my-beyaz mb-6 text-center">Firma Kayıt Formu</h2>
             
             <div className="space-y-3 sm:space-y-4">
-              {/* Firma Bilgileri */}
               <div className="form-section border-b border-my-açıkgri pb-3">
                 <h3 className="text-lg font-bold text-my-beyaz mb-3">Firma Bilgileri</h3>
                 
@@ -162,7 +144,6 @@ export default function Kayit() {
                 </div>
               </div>
 
-              {/* İletişim Bilgileri */}
               <div className="form-section border-b border-my-açıkgri pb-3">
                 <h3 className="text-lg font-bold text-my-beyaz mb-3">İletişim Bilgileri</h3>
                 
@@ -217,7 +198,6 @@ export default function Kayit() {
                 </div>
               </div>
 
-              {/* Giriş Bilgileri */}
               <div className="form-section pb-3">
                 <h3 className="text-lg font-bold text-my-beyaz mb-3">Giriş Bilgileri</h3>
                 

@@ -50,10 +50,18 @@ export class AuthEntity {
     @Column({ default: false })
     isActive: boolean;
 
+    @Column({ type: 'timestamp', nullable: true })
+    membership_start_date: Date;
+
+    @Column({ type: 'timestamp', nullable: true })
+    membership_end_date: Date;
+
+    @Column({ type: 'varchar', length: 20, default: 'inactive' })
+    membership_status: string;
+
     @BeforeInsert()
     generateTenantId() {
         if (!this.tenant_id) {
-            // 8 haneli rastgele numeric ID: 10000000 - 99999999
             this.tenant_id = Math.floor(10000000 + Math.random() * 90000000);
         }
     }

@@ -16,13 +16,13 @@ export class AuthController {
     return this.authService.findAll();
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 kayıt / 1 dakika (spam kayıt koruması)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   setOne(@Body() authDto: AuthDto) {
     return this.authService.addOne(authDto);
   }
 
-  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 deneme / 5 dakika (brute force koruması)
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
   @Post('control')
   async setController(@Body() authDto: AuthDto) {
     return this.authService.findUserPass(authDto);
@@ -40,6 +40,13 @@ export class AuthController {
   async getProfile(@Request() req) {
     const username = req.user.username;
     return this.authService.getProfile(username);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('membership')
+  async getMembership(@Request() req) {
+    const username = req.user.username;
+    return this.authService.getMembership(username);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -80,7 +87,7 @@ export class AuthController {
     return this.authService.resendVerificationEmail(username);
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 istek / 1 dakika (spam koruması)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('forgot-password')
   async forgotPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     if (!resetPasswordDto.email) {
@@ -89,7 +96,7 @@ export class AuthController {
     return this.authService.requestPasswordReset(resetPasswordDto.email);
   }
 
-  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 istek / 1 dakika
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     if (!resetPasswordDto.token || !resetPasswordDto.newPassword) {
@@ -98,7 +105,7 @@ export class AuthController {
     return this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.newPassword);
   }
 
-  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 deneme / 5 dakika (brute force koruması)
+  @Throttle({ default: { limit: 10, ttl: 300000 } })
   @Post('admin/control')
   async adminControl(@Body() authDto: AuthDto) {
     return this.authService.findAdmin(authDto);
@@ -106,7 +113,11 @@ export class AuthController {
 
   @Get('admin/users')
   async getAdminUsers(@Headers('authorization') authorization: string) {
-    return this.authService.getAllUsersForAdmin(authorization);
+    try {
+      return await this.authService.getAllUsersForAdmin(authorization);
+    } catch (error) {
+      throw error;
+    }
   }
 
   @Put('admin/users/:id/toggle-active')
@@ -117,5 +128,16 @@ export class AuthController {
   ) {
     const userId = parseInt(id);
     return this.authService.toggleUserActive(authorization, userId, body.isActive);
+  }
+
+  @Post('admin/users/:id/add-membership')
+  async addMembership(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() body: { months: number; customDate?: string }
+  ) {
+    const userId = parseInt(id);
+    const customDate = body.customDate ? new Date(body.customDate) : undefined;
+    return this.authService.addMembership(authorization, userId, body.months, customDate);
   }
 }

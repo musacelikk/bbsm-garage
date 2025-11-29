@@ -40,41 +40,31 @@ export default function AdminLogin() {
         }),
       });
 
-      console.log('Response status:', response.status);
       const data = await response.json();
-      console.log('Admin login response:', data);
       
       if (response.ok && data.result) {
-        // Başarılı giriş - admin token'ı kaydet
         localStorage.setItem('adminToken', data.token);
         localStorage.setItem('adminUser', JSON.stringify(data.user || { username: username.trim() }));
         
-        // Başarı mesajını göster
         setIsSuccess(true);
         setSuccessMessage('Giriş başarılı! Yönetici paneline yönlendiriliyorsunuz...');
         
-        // Minimum 2 saniye bekle
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Form'u fade-out yap
         const formElement = document.querySelector('.admin-login-form');
         if (formElement) {
           formElement.style.opacity = '0';
           formElement.style.transform = 'translateY(-20px)';
         }
         
-        // Ekstra 500ms bekle (animasyon için)
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Panele yönlendir
         router.push('/admin/panel');
       } else {
-        console.error('Admin login failed:', data);
         alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
         setLoading(false);
       }
     } catch (error) {
-      console.error('Admin giriş hatası:', error);
       setIsSuccess(false);
       if (error.message.includes('Failed to fetch')) {
         alert('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');

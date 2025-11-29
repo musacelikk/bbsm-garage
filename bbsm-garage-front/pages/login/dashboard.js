@@ -7,6 +7,9 @@ import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
+import MembershipModal from '../../components/MembershipModal';
+import Sidebar from '../../components/Sidebar';
+import Navbar from '../../components/Navbar';
 import { useSwipe } from '../../hooks/useTouchGestures';
 
 function Dashboard() {
@@ -14,17 +17,25 @@ function Dashboard() {
   const { loading, setLoading } = useLoading();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [profileData, setProfileData] = useState(null);
   const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
+  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   
   const [kartlar, setKartlar] = useState([]);
   const [teklifler, setTeklifler] = useState([]);
   const [hareketler, setHareketler] = useState([]);
+  const [tarihBaslangic, setTarihBaslangic] = useState(() => {
+    const yil = new Date().getFullYear();
+    return `${yil}-01-01`;
+  });
+  const [tarihBitis, setTarihBitis] = useState(() => {
+    const bugun = new Date();
+    return bugun.toISOString().split('T')[0];
+  });
 
   // Sayfa yüklendiğinde fade-in animasyonu
   useEffect(() => {
@@ -167,30 +178,80 @@ function Dashboard() {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
-    // Son 7 günlük günlük gelir verileri (grafik için)
-    const gunlukGelirVerileri = [];
-    for (let i = 6; i >= 0; i--) {
-      const tarih = new Date();
-      tarih.setDate(tarih.getDate() - i);
-      tarih.setHours(0, 0, 0, 0);
-      const tarihStr = tarih.toISOString().split('T')[0];
+    // Tarih aralığına göre gelir verileri (aylık veya günlük)
+    const baslangicTarihi = new Date(tarihBaslangic);
+    const bitisTarihi = new Date(tarihBitis);
+    bitisTarihi.setHours(23, 59, 59, 999);
+    
+    const gunFarki = Math.ceil((bitisTarihi - baslangicTarihi) / (1000 * 60 * 60 * 24));
+    const aylikGosterim = gunFarki > 90;
+    
+    const gelirVerileri = [];
+    
+    if (aylikGosterim) {
+      const baslangicAy = baslangicTarihi.getMonth();
+      const baslangicYil = baslangicTarihi.getFullYear();
+      const bitisAy = bitisTarihi.getMonth();
+      const bitisYil = bitisTarihi.getFullYear();
       
-      const oGunKartlar = kartlar.filter(kart => {
-        if (!kart.girisTarihi) return false;
-        const kartTarihi = new Date(kart.girisTarihi);
-        kartTarihi.setHours(0, 0, 0, 0);
-        return kartTarihi.getTime() === tarih.getTime();
-      });
+      let mevcutAy = baslangicAy;
+      let mevcutYil = baslangicYil;
+      
+      while (mevcutYil < bitisYil || (mevcutYil === bitisYil && mevcutAy <= bitisAy)) {
+        const ayBaslangic = new Date(mevcutYil, mevcutAy, 1);
+        const ayBitis = new Date(mevcutYil, mevcutAy + 1, 0, 23, 59, 59, 999);
+        
+        const ayBaslangicKontrol = ayBaslangic < baslangicTarihi ? baslangicTarihi : ayBaslangic;
+        const ayBitisKontrol = ayBitis > bitisTarihi ? bitisTarihi : ayBitis;
+        
+        const oAyKartlar = kartlar.filter(kart => {
+          if (!kart.girisTarihi) return false;
+          const kartTarihi = new Date(kart.girisTarihi);
+          return kartTarihi >= ayBaslangicKontrol && kartTarihi <= ayBitisKontrol;
+        });
 
-      const oGunGelir = oGunKartlar.reduce((toplam, kart) => {
-        return toplam + hesaplaToplamFiyat(kart.yapilanlar);
-      }, 0);
+        const oAyGelir = oAyKartlar.reduce((toplam, kart) => {
+          return toplam + hesaplaToplamFiyat(kart.yapilanlar);
+        }, 0);
 
-      gunlukGelirVerileri.push({
-        tarih: tarihStr,
-        gelir: oGunGelir,
-        islemSayisi: oGunKartlar.length
-      });
+        gelirVerileri.push({
+          tarih: `${mevcutYil}-${String(mevcutAy + 1).padStart(2, '0')}-01`,
+          gelir: oAyGelir,
+          islemSayisi: oAyKartlar.length,
+          tip: 'ay'
+        });
+        
+        mevcutAy++;
+        if (mevcutAy > 11) {
+          mevcutAy = 0;
+          mevcutYil++;
+        }
+      }
+    } else {
+      for (let i = 0; i <= gunFarki; i++) {
+        const tarih = new Date(baslangicTarihi);
+        tarih.setDate(tarih.getDate() + i);
+        tarih.setHours(0, 0, 0, 0);
+        const tarihStr = tarih.toISOString().split('T')[0];
+        
+        const oGunKartlar = kartlar.filter(kart => {
+          if (!kart.girisTarihi) return false;
+          const kartTarihi = new Date(kart.girisTarihi);
+          kartTarihi.setHours(0, 0, 0, 0);
+          return kartTarihi.getTime() === tarih.getTime();
+        });
+
+        const oGunGelir = oGunKartlar.reduce((toplam, kart) => {
+          return toplam + hesaplaToplamFiyat(kart.yapilanlar);
+        }, 0);
+
+        gelirVerileri.push({
+          tarih: tarihStr,
+          gelir: oGunGelir,
+          islemSayisi: oGunKartlar.length,
+          tip: 'gun'
+        });
+      }
     }
 
     // En çok işlem yapılan kartlar (yapılanlar sayısına göre)
@@ -230,7 +291,7 @@ function Dashboard() {
       bugunEklenenKart: bugunEklenenKartlar.length,
       buAykiGelir,
       son7GunlukCiro,
-      gunlukGelirVerileri,
+      gelirVerileri,
       enCokIslemYapilanKartlar,
       enAktifKullanicilar,
       gelirTrend: parseFloat(gelirTrend),
@@ -304,142 +365,25 @@ function Dashboard() {
         <link rel="icon" href="/BBSM.ico" />
       </Head>
 
-      <aside className={`fixed top-0 left-0 z-40 w-64 h-screen pt-20 transition-all duration-500 ease-out ${isSidebarOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} bg-white border-r border-gray-200 lg:translate-x-0`} aria-label="Sidebar">
-        {isSidebarOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
-        <div className="h-full px-4 pt-6 pb-4 text-center overflow-y-auto bg-my-beyaz relative z-40">
-          <ul className="space-y-4">
-            <li>
-              <Link href="/login/dashboard" className="block p-3 text-md border-2 border-my-açıkgri font-bold text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Dashboard</Link>
-            </li>
-            <li>
-              <Link href="/login/kartlar" className="block p-3 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Kartlar</Link>
-            </li>
-            <li>
-              <Link href="/login/teklif" className="block p-3 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Teklif</Link>
-            </li>
-            <li>
-              <Link href="/login/stok" className="block p-3 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Stok Takibi</Link>
-            </li>
-            <li>
-              <Link href="/login/gelir" className="block p-3 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Gelir Raporu</Link>
-            </li>
-            <li>
-              <Link href="/login/son-hareketler" className="block p-3 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Son Hareketler</Link>
-            </li>
-            <li>
-              <Link href="/login/bizeulasin" className="block p-3 font-medium text-md text-my-açıkgri focus:border-2 focus:border-my-açıkgri focus:font-bold focus:text-my-4b4b4bgri bg-my-ebbeyaz rounded-xl hover:text-my-beyaz hover:bg-my-siyah group active:scale-95 transition-transform">Bize Ulaşın</Link>
-            </li>
-          </ul>
-        </div>
-      </aside>
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)}
+        activePage="dashboard"
+      />
 
       <div className="flex-1 flex flex-col">
-        <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200">
-          <div className="px-3 py-3 lg:px-5 lg:pl-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <button 
-                  onClick={toggleSidebar} 
-                  className={`lg:hidden p-3 font-bold text-lg leading-tight antialiased ${isSidebarOpen ? 'hidden' : ''} active:scale-95 transition-transform touch-manipulation min-w-[44px] min-h-[44px]`}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
-                  </svg>
-                </button>
-                <a href="#" className="flex ml-2 md:mr-8 lg:mr-24">
-                  <img src="/images/BBSMlogo.png" className="h-16 mr-3" alt="logo" />
-                  <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-my-siyah"></span>
-                </a>
-              </div>
-              <div className="flex items-center relative">
-                <button 
-                  type="button" 
-                  onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                  className="flex items-center text-sm hidden md:flex hover:opacity-80 transition-opacity cursor-pointer"
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <p className="text-center text-my-siyah font-semibold items-center pr-8">{firmaAdi}</p>
-                  <img 
-                    src="/images/yasin.webp" 
-                    className="h-16 w-16 rounded-full object-cover" 
-                    alt="Kullanıcı"
-                  />
-                </button>
-                
-                {isSettingsOpen && (
-                  <>
-                    <div 
-                      className="fixed inset-0 z-40" 
-                      onClick={() => setIsSettingsOpen(false)}
-                    ></div>
-                    <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-50 dropdown-enter">
-                      <div className="py-2">
-                        <div className="px-4 py-3 border-b border-gray-200">
-                          <p className="text-sm font-semibold text-my-siyah">{firmaAdi}</p>
-                          <p className="text-xs text-gray-500 mt-1">Firma Hesabı</p>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            setIsSettingsOpen(false);
-                            try {
-                              const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-                              if (response.ok) {
-                                const data = await response.json();
-                                setProfileData(data);
-                                setIsProfileModalOpen(true);
-                              } else {
-                                alert('Profil bilgileri yüklenemedi');
-                              }
-                            } catch (error) {
-                              console.error('Profil yükleme hatası:', error);
-                              alert('Profil bilgileri yüklenirken bir hata oluştu');
-                            }
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                          Profil Bilgileri
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsSettingsOpen(false);
-                            setIsChangePasswordModalOpen(true);
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                          </svg>
-                          Şifre Değiştir
-                        </button>
-                        <div className="border-t border-gray-200 my-1"></div>
-                        <button
-                          onClick={() => {
-                            setIsSettingsOpen(false);
-                            logout();
-                          }}
-                          className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                          </svg>
-                          Çıkış Yap
-                        </button>
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </nav>
+        <Navbar
+          firmaAdi={firmaAdi}
+          profileData={profileData}
+          fetchWithAuth={fetchWithAuth}
+          setIsProfileModalOpen={setIsProfileModalOpen}
+          setProfileData={setProfileData}
+          setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+          setIsMembershipModalOpen={setIsMembershipModalOpen}
+          logout={logout}
+          onToggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
 
         <div className="p-6 pt-8 mt-20 lg:ml-64">
           <div className="p-4 md:p-6 mt-5 bg-my-beyaz rounded-3xl">
@@ -512,68 +456,246 @@ function Dashboard() {
             {/* Grafik ve Liste Bölümü */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
               {/* Gelir Grafiği */}
-              <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-5 md:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg md:text-xl font-bold text-my-siyah">Gelir Özeti</h2>
-                  <div className="flex items-center gap-4 text-xs">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                      <span className="text-gray-600">Gelir</span>
+              <div className="lg:col-span-2 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6 md:p-8">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                  <div>
+                    <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-1">Gelir Özeti</h2>
+                    <p className="text-sm text-gray-500">
+                      {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 && istatistikler.gelirVerileri[0].tip === 'ay' 
+                        ? 'Aylık gelir analizi' 
+                        : 'Günlük gelir analizi'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 mt-4 md:mt-0">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 shadow-sm"></div>
+                      <span className="text-sm font-semibold text-gray-700">Gelir</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full bg-green-300"></div>
-                      <span className="text-gray-600">İşlem Sayısı</span>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+                      <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400 shadow-sm"></div>
+                      <span className="text-sm font-semibold text-gray-700">İşlem</span>
                     </div>
                   </div>
                 </div>
-                <div className="h-64 relative">
-                  {istatistikler.gunlukGelirVerileri && istatistikler.gunlukGelirVerileri.length > 0 ? (
-                    <svg viewBox="0 0 400 200" className="w-full h-full" preserveAspectRatio="none">
+
+                {/* Tarih Filtreleme */}
+                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm mb-6">
+                  <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Başlangıç Tarihi</label>
+                      <input
+                        type="date"
+                        value={tarihBaslangic}
+                        onChange={(e) => setTarihBaslangic(e.target.value)}
+                        max={tarihBitis}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Bitiş Tarihi</label>
+                      <input
+                        type="date"
+                        value={tarihBitis}
+                        onChange={(e) => setTarihBitis(e.target.value)}
+                        min={tarihBaslangic}
+                        max={new Date().toISOString().split('T')[0]}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                    <button
+                      onClick={() => {
+                        const yil = new Date().getFullYear();
+                        setTarihBaslangic(`${yil}-01-01`);
+                        setTarihBitis(new Date().toISOString().split('T')[0]);
+                      }}
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold whitespace-nowrap"
+                    >
+                      Bu Yıl
+                    </button>
+                  </div>
+                </div>
+
+                <div className="h-96 relative bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                  {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 ? (
+                    <svg viewBox="0 0 600 320" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                      <defs>
+                        <linearGradient id="gelirGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
+                          <stop offset="50%" stopColor="#10b981" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#10b981" stopOpacity="0.05" />
+                        </linearGradient>
+                        <linearGradient id="islemGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.3" />
+                          <stop offset="50%" stopColor="#3b82f6" stopOpacity="0.12" />
+                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.05" />
+                        </linearGradient>
+                        <filter id="glow">
+                          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                          <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                          </feMerge>
+                        </filter>
+                      </defs>
                       {(() => {
-                        const maxGelir = Math.max(...istatistikler.gunlukGelirVerileri.map(d => d.gelir), 1);
-                        const maxIslem = Math.max(...istatistikler.gunlukGelirVerileri.map(d => d.islemSayisi), 1);
-                        const width = 400;
-                        const height = 200;
-                        const padding = 40;
-                        const chartWidth = width - (padding * 2);
-                        const chartHeight = height - (padding * 2);
-                        const points = istatistikler.gunlukGelirVerileri.map((d, i) => {
-                          const x = padding + (i / (istatistikler.gunlukGelirVerileri.length - 1 || 1)) * chartWidth;
-                          const y = padding + chartHeight - (d.gelir / maxGelir) * chartHeight;
-                          return { x, y, gelir: d.gelir, islem: d.islemSayisi };
+                        const veriler = istatistikler.gelirVerileri;
+                        const aylikGosterim = veriler.length > 0 && veriler[0]?.tip === 'ay';
+                        const maxGelir = Math.max(...veriler.map(d => d.gelir), 1);
+                        const maxIslem = Math.max(...veriler.map(d => d.islemSayisi), 1);
+                        const width = 600;
+                        const height = 320;
+                        const padding = { top: 30, right: 40, bottom: 60, left: 70 };
+                        const chartWidth = width - padding.left - padding.right;
+                        const chartHeight = height - padding.top - padding.bottom;
+                        
+                        const gelirPoints = veriler.map((d, i) => {
+                          const x = padding.left + (i / (veriler.length - 1 || 1)) * chartWidth;
+                          const y = padding.top + chartHeight - (d.gelir / maxGelir) * chartHeight;
+                          return { x, y, gelir: d.gelir, islem: d.islemSayisi, tarih: d.tarih, index: i, tip: d.tip };
                         });
-                        const islemPoints = istatistikler.gunlukGelirVerileri.map((d, i) => {
-                          const x = padding + (i / (istatistikler.gunlukGelirVerileri.length - 1 || 1)) * chartWidth;
-                          const y = padding + chartHeight - (d.islemSayisi / maxIslem) * chartHeight;
-                          return { x, y };
+                        
+                        const islemPoints = veriler.map((d, i) => {
+                          const x = padding.left + (i / (veriler.length - 1 || 1)) * chartWidth;
+                          const y = padding.top + chartHeight - (d.islemSayisi / maxIslem) * chartHeight;
+                          return { x, y, islem: d.islemSayisi };
                         });
-                        const gelirPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-                        const islemPath = islemPoints.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
+                        
+                        const gelirAreaPath = gelirPoints.map((p, i) => {
+                          if (i === 0) return `M ${p.x} ${height - padding.bottom} L ${p.x} ${p.y}`;
+                          return `L ${p.x} ${p.y}`;
+                        }).join(' ') + ` L ${gelirPoints[gelirPoints.length - 1].x} ${height - padding.bottom} Z`;
+                        
+                        const islemAreaPath = islemPoints.map((p, i) => {
+                          if (i === 0) return `M ${p.x} ${height - padding.bottom} L ${p.x} ${p.y}`;
+                          return `L ${p.x} ${p.y}`;
+                        }).join(' ') + ` L ${islemPoints[islemPoints.length - 1].x} ${height - padding.bottom} Z`;
+                        
+                        const gelirLinePath = gelirPoints.map((p, i) => {
+                          if (i === 0) return `M ${p.x} ${p.y}`;
+                          return `L ${p.x} ${p.y}`;
+                        }).join(' ');
+                        
+                        const islemLinePath = islemPoints.map((p, i) => {
+                          if (i === 0) return `M ${p.x} ${p.y}`;
+                          return `L ${p.x} ${p.y}`;
+                        }).join(' ');
+                        
                         return (
                           <>
-                            <path d={gelirPath} fill="none" stroke="#10b981" strokeWidth="2.5" />
-                            <path d={islemPath} fill="none" stroke="#86efac" strokeWidth="2" strokeDasharray="5,5" />
-                            {points.map((p, i) => (
+                            {/* Grid çizgileri */}
+                            {[0.25, 0.5, 0.75].map((ratio, i) => (
+                              <line
+                                key={`grid-${i}`}
+                                x1={padding.left}
+                                y1={padding.top + chartHeight - (ratio * chartHeight)}
+                                x2={width - padding.right}
+                                y2={padding.top + chartHeight - (ratio * chartHeight)}
+                                stroke="#f3f4f6"
+                                strokeWidth="1"
+                                strokeDasharray="3,3"
+                              />
+                            ))}
+                            
+                            {/* Area gradyanları */}
+                            <path d={gelirAreaPath} fill="url(#gelirGradient)" />
+                            <path d={islemAreaPath} fill="url(#islemGradient)" />
+                            
+                            {/* Çizgiler */}
+                            <path d={gelirLinePath} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d={islemLinePath} fill="none" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="6,4" opacity="0.7" />
+                            
+                            {/* Noktalar */}
+                            {gelirPoints.map((p, i) => (
                               <g key={i}>
-                                <circle cx={p.x} cy={p.y} r="4" fill="#10b981" />
-                                <text x={p.x} y={height - 5} textAnchor="middle" fill="#6b7280" fontSize="11">
-                                  {new Date(istatistikler.gunlukGelirVerileri[i].tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}
-                                </text>
+                                <circle 
+                                  cx={p.x} 
+                                  cy={p.y} 
+                                  r="5" 
+                                  fill="#10b981" 
+                                  stroke="white" 
+                                  strokeWidth="2" 
+                                  className="hover:r-7 transition-all cursor-pointer" 
+                                />
+                                <circle 
+                                  cx={islemPoints[i].x} 
+                                  cy={islemPoints[i].y} 
+                                  r="4" 
+                                  fill="#3b82f6" 
+                                  stroke="white" 
+                                  strokeWidth="2" 
+                                  className="hover:r-6 transition-all cursor-pointer" 
+                                />
                               </g>
                             ))}
+                            
+                            {/* Tarih etiketleri */}
+                            {gelirPoints.map((p, i) => {
+                              if (aylikGosterim && i % Math.ceil(gelirPoints.length / 12) !== 0 && i !== gelirPoints.length - 1) {
+                                return null;
+                              }
+                              return (
+                                <text 
+                                  key={`date-${i}`}
+                                  x={p.x} 
+                                  y={height - 15} 
+                                  textAnchor="middle" 
+                                  fill="#6b7280" 
+                                  fontSize="11" 
+                                  fontWeight="500"
+                                >
+                                  {aylikGosterim 
+                                    ? new Date(p.tarih).toLocaleDateString('tr-TR', { month: 'short' })
+                                    : new Date(p.tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}
+                                </text>
+                              );
+                            })}
+                            
                             {/* Y ekseni etiketleri */}
-                            {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => (
-                              <text key={i} x={5} y={padding + chartHeight - (ratio * chartHeight)} textAnchor="start" fill="#9ca3af" fontSize="10">
-                                {Math.round(maxGelir * ratio).toLocaleString('tr-TR')}
-                              </text>
-                            ))}
+                            {[0, 0.25, 0.5, 0.75, 1].map((ratio, i) => {
+                              const value = Math.round(maxGelir * ratio);
+                              return (
+                                <text 
+                                  key={`y-label-${i}`}
+                                  x={padding.left - 10} 
+                                  y={padding.top + chartHeight - (ratio * chartHeight) + 4} 
+                                  textAnchor="end" 
+                                  fill="#9ca3af" 
+                                  fontSize="10"
+                                  fontWeight="500"
+                                >
+                                  {value > 0 ? formatPara(value).replace('₺', '').trim() : '0'}
+                                </text>
+                              );
+                            })}
+                            
+                            {/* Eksen çizgileri */}
+                            <line
+                              x1={padding.left}
+                              y1={padding.top}
+                              x2={padding.left}
+                              y2={height - padding.bottom}
+                              stroke="#e5e7eb"
+                              strokeWidth="1.5"
+                            />
+                            <line
+                              x1={padding.left}
+                              y1={height - padding.bottom}
+                              x2={width - padding.right}
+                              y2={height - padding.bottom}
+                              stroke="#e5e7eb"
+                              strokeWidth="1.5"
+                            />
                           </>
                         );
                       })()}
                     </svg>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-gray-500">
-                      <p className="text-sm">Grafik verisi bulunmamaktadır.</p>
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                      <svg className="w-20 h-20 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                      <p className="text-base font-semibold mb-1">Grafik verisi bulunmamaktadır</p>
+                      <p className="text-xs text-gray-400">Veri geldiğinde detaylı grafik otomatik olarak görüntülenecektir</p>
                     </div>
                   )}
                 </div>
@@ -733,6 +855,17 @@ function Dashboard() {
           fetchWithAuth={fetchWithAuth}
           API_URL={API_URL}
           setLoading={setLoading}
+        />
+      )}
+
+      {/* Üyelik Modal */}
+      {isMembershipModalOpen && (
+        <MembershipModal
+          isOpen={isMembershipModalOpen}
+          onClose={() => setIsMembershipModalOpen(false)}
+          profileData={profileData}
+          fetchWithAuth={fetchWithAuth}
+          API_URL={API_URL}
         />
       )}
 
