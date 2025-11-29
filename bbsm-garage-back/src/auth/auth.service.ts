@@ -105,15 +105,6 @@ export class AuthService {
     if (result.length > 0) {
       const user = result[0];
       
-      // Email doğrulama kontrolü - Email varsa ve doğrulanmamışsa giriş engellenir
-      if (user.email && !user.emailVerified) {
-        return { 
-          result: false, 
-          message: 'Hesabınızı aktifleştirmek için email adresinize gönderilen doğrulama linkine tıklayın.',
-          emailVerified: false 
-        };
-      }
-      
       const payload = { 
         username: user.username, 
         sub: user.id,
@@ -293,5 +284,65 @@ export class AuthService {
     );
 
     return { success: true, message: 'Doğrulama email\'i tekrar gönderildi' };
+  }
+
+  async requestPasswordReset(email: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { email }
+    });
+
+    if (!user) {
+      // Güvenlik için: Email yoksa da başarılı mesajı döndür (email enumeration saldırısını önler)
+      return { success: true, message: 'Eğer bu email adresi kayıtlıysa, şifre sıfırlama linki gönderildi.' };
+    }
+
+    // Şifre sıfırlama token'ı oluştur
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date();
+    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 saat geçerli
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await this.databaseRepository.save(user);
+
+    // Email gönder
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        user.email,
+        resetToken,
+        user.username
+      );
+    } catch (error) {
+      console.error('Şifre sıfırlama email gönderme hatası:', error);
+      throw new Error('Email gönderilemedi. Lütfen tekrar deneyin.');
+    }
+
+    return { success: true, message: 'Eğer bu email adresi kayıtlıysa, şifre sıfırlama linki gönderildi.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    if (!newPassword || newPassword.length < 3) {
+      throw new Error('Yeni şifre en az 3 karakter olmalıdır');
+    }
+
+    const user = await this.databaseRepository.findOne({
+      where: { resetToken: token }
+    });
+
+    if (!user) {
+      throw new Error('Geçersiz veya süresi dolmuş şifre sıfırlama token\'ı');
+    }
+
+    if (user.resetTokenExpiry && new Date() > user.resetTokenExpiry) {
+      throw new Error('Şifre sıfırlama token\'ı süresi dolmuş. Lütfen yeni bir istek yapın.');
+    }
+
+    // Şifreyi güncelle
+    user.password = newPassword;
+    user.resetToken = null;
+    user.resetTokenExpiry = null;
+    await this.databaseRepository.save(user);
+
+    return { success: true, message: 'Şifre başarıyla sıfırlandı' };
   }
 }

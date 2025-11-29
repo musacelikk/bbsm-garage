@@ -99,12 +99,7 @@ export default function Home() {
         router.push('/login/dashboard');
       } else {
         console.error('Login failed:', data);
-        // Email doğrulanmamış hatası kontrolü
-        if (data.message && data.message.includes('email')) {
-          alert(data.message + '\n\nEmail\'inizi kontrol edin ve doğrulama linkine tıklayın.');
-        } else {
-          alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
-        }
+        alert('Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.');
         setLoading(false);
       }
     } catch (error) {
@@ -169,7 +164,12 @@ export default function Home() {
               </div>
               
               <div>
-                <p className="font-semibold text-my-beyaz">Şifre</p>
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-semibold text-my-beyaz">Şifre</p>
+                  <Link href="/forgot-password" className="text-sm text-blue-300 hover:text-blue-200 font-medium">
+                    Şifremi Unuttum
+                  </Link>
+                </div>
                 <input 
                   className="w-full p-2 mt-1 rounded-xl border border-my-açıkgri bg-white/90 text-black focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300" 
                   type="password" 

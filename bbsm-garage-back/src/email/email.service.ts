@@ -93,5 +93,66 @@ export class EmailService {
       throw new Error('Email gönderilemedi');
     }
   }
+
+  async sendPasswordResetEmail(email: string, token: string, username: string): Promise<void> {
+    const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${token}`;
+    
+    const mailOptions = {
+      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
+      to: email,
+      subject: 'BBSM Garage - Şifre Sıfırlama',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #dc2626; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 5px 5px; }
+            .button { display: inline-block; padding: 12px 30px; background-color: #dc2626; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .warning { background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>BBSM Garage</h1>
+            </div>
+            <div class="content">
+              <h2>Şifre Sıfırlama</h2>
+              <p>Merhaba <strong>${username}</strong>,</p>
+              <p>Şifrenizi sıfırlamak için aşağıdaki butona tıklayın:</p>
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Şifremi Sıfırla</a>
+              </div>
+              <p>Veya aşağıdaki linki tarayıcınıza yapıştırabilirsiniz:</p>
+              <p style="word-break: break-all; color: #dc2626;">${resetUrl}</p>
+              <div class="warning">
+                <p><strong>⚠️ Güvenlik Uyarısı:</strong></p>
+                <p>Eğer bu isteği siz yapmadıysanız, bu email'i görmezden gelin. Şifreniz değişmeyecektir.</p>
+              </div>
+              <p><strong>Not:</strong> Bu link 1 saat geçerlidir.</p>
+            </div>
+            <div class="footer">
+              <p>Bu email otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    try {
+      const transporter = this.getTransporter();
+      await transporter.sendMail(mailOptions);
+      this.logger.log(`Password reset email sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send password reset email to ${email}:`, error);
+      throw new Error('Email gönderilemedi');
+    }
+  }
 }
 

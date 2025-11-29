@@ -125,12 +125,7 @@ export default function Kayit() {
                 router.push('/login/dashboard');
               }, 2000);
             } else {
-              // Email doğrulanmamış hatası kontrolü
-              if (loginData.message && loginData.message.includes('email')) {
-                alert(loginData.message + '\n\nEmail\'inizi kontrol edin ve doğrulama linkine tıklayın.');
-              } else {
-                alert('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen manuel olarak giriş yapın.');
-              }
+              alert('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen manuel olarak giriş yapın.');
               router.push('/');
             }
           } catch (loginError) {

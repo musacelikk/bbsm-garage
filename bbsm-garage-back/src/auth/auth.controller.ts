@@ -3,6 +3,7 @@ import { AuthService } from './auth.service';
 import { AuthDto } from './auth.dto';
 import { ChangePasswordDto } from './change-password.dto';
 import { UpdateProfileDto } from './update-profile.dto';
+import { ResetPasswordDto } from './reset-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 
@@ -77,5 +78,23 @@ export class AuthController {
   async resendVerification(@Request() req) {
     const username = req.user.username;
     return this.authService.resendVerificationEmail(username);
+  }
+
+  @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 istek / 1 dakika (spam koruması)
+  @Post('forgot-password')
+  async forgotPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    if (!resetPasswordDto.email) {
+      throw new Error('Email adresi gereklidir');
+    }
+    return this.authService.requestPasswordReset(resetPasswordDto.email);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 istek / 1 dakika
+  @Post('reset-password')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    if (!resetPasswordDto.token || !resetPasswordDto.newPassword) {
+      throw new Error('Token ve yeni şifre gereklidir');
+    }
+    return this.authService.resetPassword(resetPasswordDto.token, resetPasswordDto.newPassword);
   }
 }
