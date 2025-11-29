@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import Head from "next/head";
 import Link from "next/link";
+import { useRouter } from 'next/router';
 import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
+import { useToast } from '../../contexts/ToastContext';
 
 function Teklif() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const { success, error: showError, warning } = useToast();
+  const router = useRouter();
   const username = getUsername() || 'Kullanıcı';
   const [isOpen, setIsOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -126,8 +130,91 @@ function Teklif() {
       const guncellenmisTeklifler = teklifler.filter(teklif => !secilenTeklifler.includes(teklif.teklif_id));
       setTeklifler(guncellenmisTeklifler);
       setSecilenTeklifler([]);
+      success(`${secilenTeklifler.length} teklif başarıyla silindi.`);
     } catch (error) {
       console.error('Silme işlemi sırasında hata oluştu', error);
+      showError('Silme işlemi sırasında bir hata oluştu.');
+    }
+    setLoading(false);
+  };
+
+  const secilenTeklifleriKartlaraAktar = async () => {
+    if (secilenTeklifler.length === 0) {
+      warning('Kartlara aktarmak için en az bir teklif seçmelisiniz.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const secilenTeklifObjesi = teklifler.filter(teklif => 
+        secilenTeklifler.includes(teklif.teklif_id)
+      );
+
+      let basariliSayisi = 0;
+      let hataSayisi = 0;
+
+      for (const teklif of secilenTeklifObjesi) {
+        try {
+          const updatedTeklif = {
+            ...teklif,
+            km: teklif.km ? parseInt(teklif.km, 10) : null,
+            modelYili: teklif.modelYili ? parseInt(teklif.modelYili, 10) : null,
+            adSoyad: teklif.adSoyad || "Tanımsız",
+            markaModel: teklif.markaModel || "Tanımsız",
+            plaka: teklif.plaka || "Tanımsız",
+            sasi: teklif.sasi || "Tanımsız",
+            girisTarihi: teklif.girisTarihi || "Tanımsız",
+            notlar: teklif.notlar || "",
+            adres: teklif.adres || "",
+            duzenleyen: teklif.duzenleyen || username,
+            yapilanlar: teklif.yapilanlar || [],
+          };
+
+          // Önce kartı oluştur
+          const postResponse = await fetchWithAuth(`${API_URL}/card`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(updatedTeklif),
+          });
+
+          if (postResponse.ok) {
+            // Kart başarıyla oluşturuldu, teklifi sil
+            await fetchWithAuth(`${API_URL}/teklif/${teklif.teklif_id}`, {
+              method: 'DELETE',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            });
+            basariliSayisi++;
+          } else {
+            hataSayisi++;
+          }
+        } catch (error) {
+          console.error(`Teklif ${teklif.teklif_id} aktarılırken hata:`, error);
+          hataSayisi++;
+        }
+      }
+
+      // Listeyi güncelle
+      await fetchTeklifListesi();
+      setSecilenTeklifler([]);
+
+      if (basariliSayisi > 0) {
+        success(`${basariliSayisi} teklif başarıyla kartlara aktarıldı!`);
+        // Kartlar sayfasına yönlendir
+        setTimeout(() => {
+          router.push('/login/kartlar');
+        }, 1500);
+      }
+      
+      if (hataSayisi > 0) {
+        showError(`${hataSayisi} teklif aktarılırken hata oluştu.`);
+      }
+    } catch (error) {
+      console.error('Aktarım işlemi sırasında hata oluştu', error);
+      showError('Teklifler kartlara aktarılırken bir hata oluştu.');
     }
     setLoading(false);
   };
@@ -147,49 +234,47 @@ function Teklif() {
       plaka: teklif.plaka || "Tanımsız",
       sasi: teklif.sasi || "Tanımsız",
       girisTarihi: teklif.girisTarihi || "Tanımsız",
+      notlar: teklif.notlar || "",
+      adres: teklif.adres || "",
+      duzenleyen: teklif.duzenleyen || username,
       yapilanlar: teklif.yapilanlar || [],
     };
 
-    console.log("teklif ekle teklif");
     try {
-      const [deleteResponse] = await Promise.all([
-        fetchWithAuth(`${API_URL}/teklif/${teklif.teklif_id}`, {
+      // Önce kartı oluştur
+      const postResponse = await fetchWithAuth(`${API_URL}/card`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTeklif),
+      });
+
+      if (postResponse.ok) {
+        // Kart başarıyla oluşturuldu, teklifi sil
+        const deleteResponse = await fetchWithAuth(`${API_URL}/teklif/${teklif.teklif_id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
           },
-        })
-      ]);
+        });
 
-      // POST işlemi başarılı olup olmadığını kontrol et
-      if (deleteResponse.ok)
-      {
-          console.log("delete teklif");
-          const [postResponse] = await Promise.all([
-            fetchWithAuth(`${API_URL}/card`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(updatedTeklif),
-            }),
-          ]);
-
-          if (postResponse.ok)
-          {
-            setTeklifler(teklifler.filter(t => t.teklif_id !== teklif.teklif_id));
-          } 
-          else 
-          {
-            console.error('Kart eklenirken bir hata oluştu');
-          }
-      } 
-      else 
-      {
-        console.error('Teklif silinirken bir hata oluştu');
+        if (deleteResponse.ok) {
+          setTeklifler(teklifler.filter(t => t.teklif_id !== teklif.teklif_id));
+          success('Teklif başarıyla kartlara aktarıldı!');
+          // Kartlar sayfasına yönlendir
+          setTimeout(() => {
+            router.push('/login/kartlar');
+          }, 1500);
+        } else {
+          showError('Teklif silinirken bir hata oluştu.');
+        }
+      } else {
+        showError('Kart eklenirken bir hata oluştu.');
       }
     } catch (error) {
       console.error('İşlem sırasında bir hata oluştu:', error);
+      showError('Teklif kartlara aktarılırken bir hata oluştu.');
     }
 
     setLoading(false);
@@ -511,6 +596,12 @@ const secilenTeklifleriIndir = async (type) => {
           {/* Action buttons stacked - Mobil için daha büyük touch target */}
           <div className="flex flex-col gap-3 w-full mb-4">
             <button 
+              onClick={secilenTeklifleriKartlaraAktar} 
+              className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+            >
+              Seçilenleri Kartlara Aktar
+            </button>
+            <button 
               onClick={silSecilenleri} 
               className="w-full bg-red-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
             >
@@ -601,13 +692,16 @@ const secilenTeklifleriIndir = async (type) => {
               </div>
 
               <div className="flex items-center">
+                <div className="items-center bg-blue-600 p-2 pl-4 pr-4 rounded-full ml-4">
+                  <button onClick={secilenTeklifleriKartlaraAktar} className="font-semibold text-my-beyaz text-md">Seçilenleri Kartlara Aktar</button>
+                </div>
                 <div className="items-center bg-red-600 p-2 pl-4 pr-4 rounded-full ml-4">
                   <button onClick={silSecilenleri} className="font-semibold text-my-beyaz text-md">Seçilenleri Sil</button>
                 </div>
                 <div className="items-center bg-green-500 p-2 pl-4 pr-4 rounded-full ml-4">
                   <button onClick={() => secilenTeklifleriIndir('excel')} className="font-semibold text-my-beyaz text-md">Seçilenleri Excel İndir</button>
                 </div>
-                <div className="items-center bg-blue-500 p-2 pl-4 pr-4 rounded-full ml-4">
+                <div className="items-center bg-orange-600 p-2 pl-4 pr-4 rounded-full ml-4">
                   <button onClick={() => secilenTeklifleriIndir('pdf')} className="font-semibold text-my-beyaz text-md">Seçilenleri PDF İndir</button>
                 </div>
 

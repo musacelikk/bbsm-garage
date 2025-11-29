@@ -8,10 +8,12 @@ import { useAuth } from '../../../auth-context';
 import { API_URL } from '../../../config';
 import ProfileModal from '../../../components/ProfileModal';
 import { aracMarkalari, aracModelleri, yillar, renkler } from '../../../data/aracVerileri';
+import { useToast } from '../../../contexts/ToastContext';
 
 export default function Detay() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const { success, error: showError, warning, info } = useToast();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -255,7 +257,7 @@ export default function Detay() {
   const handleConfirmSave = async () => {
     // Düzenleyen alanı zorunlu kontrolü
     if (!tempDuzenleyen || tempDuzenleyen.trim() === '') {
-      alert('Lütfen Düzenleyen alanını doldurun.');
+      warning('Lütfen Düzenleyen alanını doldurun.');
       return;
     }
 
@@ -269,19 +271,19 @@ export default function Detay() {
       // 1. Önce kart bilgilerini kaydet
       const finalMarkaModel = markaModel.trim() || (marka && model ? `${marka} ${model}` : (marka || model || ''));
       const cardDataToSend = {
-        adSoyad,
-        telNo,
+      adSoyad,
+      telNo,
         markaModel: finalMarkaModel,
-        plaka,
-        km: parseInt(km, 10) || null,
-        modelYili: parseInt(modelYili, 10) || null,
-        sasi,
-        renk,
-        girisTarihi,
-        notlar,
-        adres,
+      plaka,
+      km: parseInt(km, 10) || null,
+      modelYili: parseInt(modelYili, 10) || null,
+      sasi,
+      renk,
+      girisTarihi,
+      notlar,
+      adres,
         duzenleyen: tempDuzenleyen.trim(),
-      };
+    };
 
       const cardResponse = await fetchWithAuth(`${API_URL}/card/${detay_id}`, {
         method: 'PATCH',
@@ -335,7 +337,7 @@ export default function Detay() {
       setYapilanlar(finalUpdatedCard.yapilanlar || []);
       
       // Başarılı kayıt mesajı göster
-      alert('Tüm bilgiler kaydedildi!');
+      success('Düzenleme başarıyla kaydedildi!');
       
       // 1.5 saniye sonra ana sayfaya yönlendir
       setTimeout(() => {
@@ -343,7 +345,7 @@ export default function Detay() {
       }, 1500);
     } catch (error) {
       console.error('Save error:', error);
-      alert('Kayıt sırasında bir hata oluştu: ' + error.message);
+      showError('Kayıt sırasında bir hata oluştu: ' + error.message);
     }
     setLoading(false);
   };
@@ -376,7 +378,7 @@ export default function Detay() {
       setYapilanlar(updatedCard.yapilanlar || []);
       
       // Başarılı kayıt mesajı göster
-      alert('Kaydediliyor...');
+      success('Yapılanlar başarıyla güncellendi!');
       
       // 1.5 saniye sonra ana sayfaya yönlendir
       setTimeout(() => {
@@ -384,7 +386,7 @@ export default function Detay() {
       }, 1500);
     } catch (error) {
       console.error('Save yapilanlar error:', error);
-      alert('Kayıt sırasında bir hata oluştu');
+      showError('Kayıt sırasında bir hata oluştu');
     }
     setLoading(false);
   };
@@ -452,7 +454,7 @@ export default function Detay() {
     } catch (error) {
       console.error('Excel download error:', error);
       // Show error message to user
-      alert('Excel dosyası indirilirken bir hata oluştu. Lütfen tekrar deneyin.');
+      showError('Excel dosyası indirilirken bir hata oluştu. Lütfen tekrar deneyin.');
     }
     setLoading(false);
   };
@@ -598,11 +600,11 @@ export default function Detay() {
                                 setProfileData(data);
                                 setIsProfileModalOpen(true);
                               } else {
-                                alert('Profil bilgileri yüklenemedi');
+                                showError('Profil bilgileri yüklenemedi');
                               }
                             } catch (error) {
                               console.error('Profil yükleme hatası:', error);
-                              alert('Profil bilgileri yüklenirken bir hata oluştu');
+                              showError('Profil bilgileri yüklenirken bir hata oluştu');
                             }
                           }}
                           className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
@@ -615,7 +617,7 @@ export default function Detay() {
                         <button
                           onClick={() => {
                             setIsSettingsOpen(false);
-                            alert('Şifre değiştirme yakında eklenecek');
+                            info('Şifre değiştirme yakında eklenecek');
                           }}
                           className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
                         >

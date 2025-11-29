@@ -7,10 +7,12 @@ import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
+import { useToast } from '../../contexts/ToastContext';
 
 const Kartlar = () => {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const { success, error: showError, warning } = useToast();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isYeniKartEkleModalOpen, setIsYeniKartEkleModalOpen] = useState(false);
@@ -79,7 +81,7 @@ const Kartlar = () => {
 
   const silSecilenleri = () => {
     if (secilenKartlar.length === 0) {
-      alert("Silmek için en az bir kart seçmelisiniz.");
+      warning("Silmek için en az bir kart seçmelisiniz.");
       return;
     }
     // Silme modalını aç
@@ -90,7 +92,7 @@ const Kartlar = () => {
   const handleConfirmDelete = async () => {
     // Düzenleyen alanı zorunlu kontrolü
     if (!silmeDuzenleyen || silmeDuzenleyen.trim() === '') {
-      alert('Lütfen Düzenleyen alanını doldurun.');
+      warning('Lütfen Düzenleyen alanını doldurun.');
       return;
     }
 
@@ -113,9 +115,10 @@ const Kartlar = () => {
       setKartlar(guncellenmisKartlar);
       setSecilenKartlar([]);
       setSilmeDuzenleyen('');
+      success(`${secilenKartlar.length} kart başarıyla silindi.`);
     } catch (error) {
       console.error('Silme işlemi sırasında hata oluştu', error);
-      alert('Silme işlemi sırasında bir hata oluştu.');
+      showError('Silme işlemi sırasında bir hata oluştu.');
     }
     setLoading(false);
   };
@@ -217,14 +220,15 @@ const Kartlar = () => {
         // Kart başarıyla eklendi, listeyi yeniden yükle
         await fetchKartListesi();
         toggleYeniKartEkleModal();
+        success('Yeni kayıt başarıyla eklendi!');
       } else {
         const errorData = await response?.json().catch(() => ({}));
         console.error('Kart eklenirken bir hata oluştu:', errorData);
-        alert('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+        showError('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
       }
     } catch (error) {
       console.error('Kart eklenirken bir hata oluştu:', error);
-      alert('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+      showError('Kart eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
     }
     setLoading(false);
   };
@@ -259,14 +263,15 @@ const Kartlar = () => {
         await fetchTeklifListesi();
         // Modalı kapat
         toggleYeniKartEkleModal();
+        success('Yeni teklif başarıyla eklendi!');
       } else {
         const errorData = await response?.json().catch(() => ({}));
         console.error('Teklif eklenirken bir hata oluştu:', errorData);
-        alert('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+        showError('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
       }
     } catch (error) {
       console.error('İşlem sırasında bir hata oluştu:', error);
-      alert('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+      showError('Teklif eklenirken bir hata oluştu. Lütfen tekrar deneyin.');
     }
     setLoading(false);
   };
@@ -478,13 +483,14 @@ const Kartlar = () => {
         setKartlar(kartlar.map(k => 
           k.card_id === kartId ? { ...k, odemeAlindi: yeniOdemeDurumu } : k
         ));
+        success('Ödeme durumu başarıyla güncellendi.');
       } else {
         console.error('Ödeme durumu güncellenemedi');
-        alert('Ödeme durumu güncellenirken bir hata oluştu.');
+        showError('Ödeme durumu güncellenirken bir hata oluştu.');
       }
     } catch (error) {
       console.error('Ödeme durumu güncelleme hatası:', error);
-      alert('Ödeme durumu güncellenirken bir hata oluştu.');
+      showError('Ödeme durumu güncellenirken bir hata oluştu.');
     }
   };
 

@@ -3,11 +3,24 @@ import { AuthProvider } from '../auth-context'; // auth-context dosyanızın yol
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { useRouter } from 'next/router';
 import Loading from '../components/Loading';
+import { ToastProvider, useToast } from '../contexts/ToastContext';
+import ToastContainer from '../components/ToastContainer';
 
 const LoadingContext = createContext();
 
 export function useLoading() {
   return useContext(LoadingContext);
+}
+
+function AppContent({ Component, pageProps }) {
+  const { toasts, removeToast } = useToast();
+  
+  return (
+    <>
+      <Component {...pageProps} />
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+    </>
+  );
 }
 
 function MyApp({ Component, pageProps }) {
@@ -45,8 +58,10 @@ function MyApp({ Component, pageProps }) {
   return (
     <LoadingContext.Provider value={{ loading, setLoading }}>
       <AuthProvider>
-        {loading && <Loading />}
-        <Component {...pageProps} />
+        <ToastProvider>
+          {loading && <Loading />}
+          <AppContent Component={Component} pageProps={pageProps} />
+        </ToastProvider>
       </AuthProvider>
     </LoadingContext.Provider>
   );

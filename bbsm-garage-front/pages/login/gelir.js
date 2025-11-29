@@ -48,7 +48,6 @@ function Gelir() {
   const [teklifler, setTeklifler] = useState([]);
   const [baslangicTarihi, setBaslangicTarihi] = useState('');
   const [bitisTarihi, setBitisTarihi] = useState('');
-  const [filtreTipi, setFiltreTipi] = useState('gunluk'); // 'gunluk', 'aylik', 'ozel'
 
   // Varsayılan tarihleri ayarla (bugün ve 30 gün öncesi)
   useEffect(() => {
@@ -161,7 +160,31 @@ function Gelir() {
 
     const toplamGelir = kartlarToplam + tekliflerToplam;
     const toplamIslemSayisi = filtrelenmisKartlar.length + filtrelenmisTeklifler.length;
-    const ortalamaIslemTutari = toplamIslemSayisi > 0 ? toplamGelir / toplamIslemSayisi : 0;
+    
+    // Son 7 günlük ciro hesapla
+    let son7GunlukCiro = 0;
+    const bugun = new Date();
+    const yediGunOnce = new Date();
+    yediGunOnce.setDate(yediGunOnce.getDate() - 7);
+    const yediGunOnceStr = yediGunOnce.toISOString().split('T')[0];
+    const bugunStr = bugun.toISOString().split('T')[0];
+    
+    const son7GunKartlar = kartlar.filter(kart => 
+      tarihAraligindaMi(kart.girisTarihi, yediGunOnceStr, bugunStr)
+    );
+    const son7GunTeklifler = teklifler.filter(teklif => 
+      tarihAraligindaMi(teklif.girisTarihi, yediGunOnceStr, bugunStr)
+    );
+    
+    const son7GunKartlarToplam = son7GunKartlar.reduce((toplam, kart) => {
+      return toplam + hesaplaToplamFiyat(kart.yapilanlar);
+    }, 0);
+    
+    const son7GunTekliflerToplam = son7GunTeklifler.reduce((toplam, teklif) => {
+      return toplam + hesaplaToplamFiyat(teklif.yapilanlar);
+    }, 0);
+    
+    son7GunlukCiro = son7GunKartlarToplam + son7GunTekliflerToplam;
 
     // Günlük gelir hesapla
     const gunlukGelir = {};
@@ -196,7 +219,7 @@ function Gelir() {
     return {
       toplamGelir,
       toplamIslemSayisi,
-      ortalamaIslemTutari,
+      son7GunlukCiro,
       gunlukGelir,
       aylikGelir,
       enCokGelirGunler,
@@ -254,20 +277,11 @@ function Gelir() {
     100
   );
 
-  const handleFiltreTipiDegistir = (tip) => {
-    setFiltreTipi(tip);
+  const handleGunlukCiro = () => {
     const bugun = new Date();
-    
-    if (tip === 'gunluk') {
-      setBitisTarihi(bugun.toISOString().split('T')[0]);
-      setBaslangicTarihi(bugun.toISOString().split('T')[0]);
-    } else if (tip === 'aylik') {
-      const ayBaslangic = new Date(bugun.getFullYear(), bugun.getMonth(), 1);
-      setBaslangicTarihi(ayBaslangic.toISOString().split('T')[0]);
-      setBitisTarihi(bugun.toISOString().split('T')[0]);
-    } else if (tip === 'ozel') {
-      // Özel aralık için kullanıcı seçecek
-    }
+    const bugunStr = bugun.toISOString().split('T')[0];
+    setBaslangicTarihi(bugunStr);
+    setBitisTarihi(bugunStr);
   };
 
   return (
@@ -428,39 +442,6 @@ function Gelir() {
             {/* Filtreler */}
             <div className="mb-6 p-3 md:p-4 bg-gray-50 rounded-xl">
               <div className="flex flex-col md:flex-row md:flex-wrap gap-4 items-end">
-                <div className="flex gap-2 w-full md:w-auto">
-                  <button
-                    onClick={() => handleFiltreTipiDegistir('gunluk')}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-full font-medium transition-all touch-manipulation min-h-[44px] active:scale-95 ${
-                      filtreTipi === 'gunluk' 
-                        ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Günlük
-                  </button>
-                  <button
-                    onClick={() => handleFiltreTipiDegistir('aylik')}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-full font-medium transition-all touch-manipulation min-h-[44px] active:scale-95 ${
-                      filtreTipi === 'aylik' 
-                        ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Aylık
-                  </button>
-                  <button
-                    onClick={() => handleFiltreTipiDegistir('ozel')}
-                    className={`flex-1 md:flex-none px-4 py-3 rounded-full font-medium transition-all touch-manipulation min-h-[44px] active:scale-95 ${
-                      filtreTipi === 'ozel' 
-                        ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Özel Aralık
-                  </button>
-                </div>
-                
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                   <div className="flex-1 md:flex-none">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Başlangıç Tarihi</label>
@@ -481,6 +462,15 @@ function Gelir() {
                     />
                   </div>
                 </div>
+                
+                <div className="w-full md:w-auto">
+                  <button
+                    onClick={handleGunlukCiro}
+                    className="w-full md:w-auto px-6 py-3 rounded-full font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95"
+                  >
+                    Günlük Ciro
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -495,8 +485,8 @@ function Gelir() {
                 <p className="text-2xl md:text-3xl font-bold">{gelirVerileri.toplamIslemSayisi}</p>
               </div>
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
-                <h3 className="text-base md:text-lg font-medium mb-2">Ortalama İşlem Tutarı</h3>
-                <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.ortalamaIslemTutari)}</p>
+                <h3 className="text-base md:text-lg font-medium mb-2">Son 7 Günlük Ciro</h3>
+                <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.son7GunlukCiro)}</p>
               </div>
             </div>
 
