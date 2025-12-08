@@ -23,7 +23,7 @@ public class PDFService {
              Document document = new Document(pdfDoc)) {
             
             // Araç bilgileri
-            document.add(new Paragraph("ARAÇ BİLGİLERİ").setBold().setTextAlignment(TextAlignment.CENTER));
+            document.add(new Paragraph("ARAÇ BILGILERI").setBold().setTextAlignment(TextAlignment.CENTER));
             document.add(new Paragraph("Plaka: " + toString(vehicleInfo.get("plaka"))));
             document.add(new Paragraph("Ad Soyad: " + toString(vehicleInfo.get("adSoyad"))));
             document.add(new Paragraph("Marka/Model: " + toString(vehicleInfo.get("markaModel"))));
@@ -38,10 +38,10 @@ public class PDFService {
             
             // Tablo başlıkları
             Table table = new Table(UnitValue.createPercentArray(4)).useAllAvailableWidth();
-            table.addHeaderCell(new Cell().add(new Paragraph("BİRİM ADEDİ")));
+            table.addHeaderCell(new Cell().add(new Paragraph("BIRIM ADEDI")));
             table.addHeaderCell(new Cell().add(new Paragraph("PARÇA ADI")));
-            table.addHeaderCell(new Cell().add(new Paragraph("BİRİM FİYATI")));
-            table.addHeaderCell(new Cell().add(new Paragraph("TOPLAM FİYAT")));
+            table.addHeaderCell(new Cell().add(new Paragraph("BIRIM FIYATI")));
+            table.addHeaderCell(new Cell().add(new Paragraph("TOPLAM FIYAT")));
             
             // Verileri tabloya ekle
             for (Map<String, Object> row : data) {

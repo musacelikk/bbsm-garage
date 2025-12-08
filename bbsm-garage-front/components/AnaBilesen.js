@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import IlkModal from './IlkModal';
 import IkinciModal from './IkinciModal';
 
-const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle }) => {
+const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle, isPeriyodikBakimMode = false }) => {
   const [ilkModalGorunur, setIlkModalGorunur] = useState(true);
   const [ikinciModalGorunur, setIkinciModalGorunur] = useState(false);
   const [girilenBilgi, setGirilenBilgi] = useState('');
@@ -32,9 +32,11 @@ const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle }) => {
     const kart = {
       ...yeniKart,
       km,
-      modelYili
+      modelYili,
+      periyodikBakim: yeniKart.periyodikBakim || false // Periyodik bakım değerini koru
     };
 
+    console.log('AnaBilesen handleKartEkle - kart:', kart);
     await onKartEkle(kart);
   };
 
@@ -58,7 +60,8 @@ const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle }) => {
           onIlkModalSubmit={handleIlkModalSubmit}
           onIlkModalClose={() => setIlkModalGorunur(false)}
           onClose={handleClose}
-          ilkModalBilgi={girilenBilgi} 
+          ilkModalBilgi={girilenBilgi}
+          isPeriyodikBakimMode={isPeriyodikBakimMode}
         />
       )}
 

@@ -7,9 +7,9 @@ import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
-import MembershipModal from '../../components/MembershipModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
+import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 
 function Dashboard() {
@@ -22,7 +22,6 @@ function Dashboard() {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   
   const [kartlar, setKartlar] = useState([]);
@@ -254,16 +253,6 @@ function Dashboard() {
       }
     }
 
-    // En çok işlem yapılan kartlar (yapılanlar sayısına göre)
-    const enCokIslemYapilanKartlar = [...kartlar]
-      .map(kart => ({
-        ...kart,
-        islemSayisi: kart.yapilanlar ? kart.yapilanlar.length : 0,
-        toplamGelir: hesaplaToplamFiyat(kart.yapilanlar)
-      }))
-      .sort((a, b) => b.islemSayisi - a.islemSayisi)
-      .slice(0, 5);
-
     // En aktif kullanıcılar (hareketlerden)
     const kullaniciHareketSayilari = {};
     hareketler.forEach(hareket => {
@@ -292,7 +281,6 @@ function Dashboard() {
       buAykiGelir,
       son7GunlukCiro,
       gelirVerileri,
-      enCokIslemYapilanKartlar,
       enAktifKullanicilar,
       gelirTrend: parseFloat(gelirTrend),
       kartTrend: parseFloat(kartTrend),
@@ -369,6 +357,7 @@ function Dashboard() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="dashboard"
+        profileData={profileData}
       />
 
       <div className="flex-1 flex flex-col">
@@ -379,14 +368,14 @@ function Dashboard() {
           setIsProfileModalOpen={setIsProfileModalOpen}
           setProfileData={setProfileData}
           setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
-          setIsMembershipModalOpen={setIsMembershipModalOpen}
           logout={logout}
           onToggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
 
-        <div className="p-6 pt-8 mt-20 lg:ml-64">
-          <div className="p-4 md:p-6 mt-5 bg-my-beyaz rounded-3xl">
+        <ProtectedPage>
+          <div className="p-6 pt-8 mt-20 lg:ml-64">
+            <div className="p-4 md:p-6 mt-5 bg-my-beyaz rounded-3xl">
             {/* Başlık */}
             <div className="mb-4 md:mb-6">
               <h1 className="text-2xl md:text-3xl font-bold text-my-siyah">Hoş Geldiniz, {firmaAdi}!</h1>
@@ -701,39 +690,6 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* En Çok İşlem Yapılan Kartlar */}
-              <div className="bg-white rounded-xl shadow-md p-5 md:p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg md:text-xl font-bold text-my-siyah">En Çok İşlem Yapılan Kartlar</h2>
-                </div>
-                <div className="space-y-3">
-                  {loading ? (
-                    <div className="flex justify-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-                    </div>
-                  ) : istatistikler.enCokIslemYapilanKartlar && istatistikler.enCokIslemYapilanKartlar.length > 0 ? (
-                    istatistikler.enCokIslemYapilanKartlar.map((kart, index) => (
-                      <div key={kart.id || index} className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                          {kart.markaModel ? kart.markaModel.substring(0, 2).toUpperCase() : 'KT'}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-my-siyah truncate">{kart.markaModel || 'İsimsiz Kart'}</p>
-                          <p className="text-xs text-gray-500">ID: {kart.id || '-'}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-my-siyah">{kart.islemSayisi || 0}</p>
-                          <p className="text-xs text-gray-500">İşlem</p>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-gray-500">Henüz işlem yapılan kart bulunmamaktadır.</p>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Alt Bölüm - Son İşlemler ve En Aktif Kullanıcılar */}
@@ -815,8 +771,9 @@ function Dashboard() {
               </div>
             </div>
           </div>
+          </div>
+        </ProtectedPage>
         </div>
-      </div>
 
       {/* Profil Bilgileri Modal */}
       {isProfileModalOpen && (
@@ -858,16 +815,6 @@ function Dashboard() {
         />
       )}
 
-      {/* Üyelik Modal */}
-      {isMembershipModalOpen && (
-        <MembershipModal
-          isOpen={isMembershipModalOpen}
-          onClose={() => setIsMembershipModalOpen(false)}
-          profileData={profileData}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-        />
-      )}
 
       {/* WhatsApp Destek Butonu */}
       <a

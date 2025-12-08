@@ -55,10 +55,10 @@ public class ExcelUtil {
         if (headerRow == null) {
             headerRow = sheet.createRow(9);
         }
-        fillCell(headerRow, 0, "BİRİM ADEDİ");
+        fillCell(headerRow, 0, "BIRIM ADEDI");
         fillCell(headerRow, 1, "PARÇA ADI");
-        fillCell(headerRow, 2, "BİRİM FİYATI");
-        fillCell(headerRow, 3, "TOPLAM FİYAT");
+        fillCell(headerRow, 2, "BIRIM FIYATI");
+        fillCell(headerRow, 3, "TOPLAM FIYAT");
     }
 
     private static void fillCell(Sheet sheet, int rowIndex, int cellIndex, String value) {

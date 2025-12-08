@@ -46,6 +46,9 @@ export class CardEntity {
   @Column({ type: 'boolean', default: false })
   odemeAlindi: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  periyodikBakim: boolean;
+
   @Column({ type: 'text', nullable: false })
   duzenleyen: string;
 

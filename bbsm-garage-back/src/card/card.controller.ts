@@ -28,6 +28,10 @@ export class CardController {
       girisTarihi: createCardDto.girisTarihi || "Tanımsız",
       notlar: createCardDto.notlar || "",
       adres: createCardDto.adres || "",
+      odemeAlindi: createCardDto.odemeAlindi !== undefined ? createCardDto.odemeAlindi : false,
+      periyodikBakim: createCardDto.periyodikBakim !== undefined 
+        ? (createCardDto.periyodikBakim === true || String(createCardDto.periyodikBakim) === 'true' || Number(createCardDto.periyodikBakim) === 1)
+        : false,
       duzenleyen: createCardDto.duzenleyen.trim(),
       yapilanlar: createCardDto.yapilanlar || [],
     };

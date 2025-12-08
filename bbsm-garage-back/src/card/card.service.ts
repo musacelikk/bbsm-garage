@@ -21,9 +21,27 @@ export class CardService {
     try {
       // card_id ve yapilanlar'ı çıkar çünkü auto-increment ve ayrı kaydedilecek
       const { card_id, yapilanlar, ...cardDataWithoutId } = createCardDto;
+      
+      // Periyodik bakım değerini açıkça ekle ve string'den boolean'a dönüştür
+      const periyodikBakimValue = createCardDto.periyodikBakim !== undefined 
+        ? (createCardDto.periyodikBakim === true || String(createCardDto.periyodikBakim) === 'true' || Number(createCardDto.periyodikBakim) === 1)
+        : false;
+      
+      const cardDataToSave = {
+        ...cardDataWithoutId,
+        periyodikBakim: periyodikBakimValue,
+        tenant_id,
+      };
+      
+      console.log('CardService.create - cardDataToSave:', cardDataToSave);
+      console.log('CardService.create - periyodikBakim:', cardDataToSave.periyodikBakim, typeof cardDataToSave.periyodikBakim);
+      
       // CardEntity oluşturuluyor ve veritabanına kaydediliyor (yapilanlar olmadan)
-      const card = await this.databaseRepository.create({ ...cardDataWithoutId, tenant_id });
+      const card = await this.databaseRepository.create(cardDataToSave);
       const savedCard = await this.databaseRepository.save(card);
+      
+      console.log('CardService.create - savedCard:', savedCard);
+      console.log('CardService.create - savedCard.periyodikBakim:', savedCard.periyodikBakim, typeof savedCard.periyodikBakim);
 
       // Yapilanlar ekleniyor (card kaydedildikten sonra)
       if (yapilanlar && yapilanlar.length > 0) {

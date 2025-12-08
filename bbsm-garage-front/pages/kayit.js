@@ -80,7 +80,7 @@ export default function Kayit() {
       const data = await response.json();
       
       if (response.ok) {
-        alert('Kayıt başarılı! Hesabınız yönetici onayı bekliyor. Onaylandıktan sonra giriş yapabilirsiniz.');
+        alert('Kayıt başarılı! Giriş yapabilirsiniz.');
         router.push('/');
       } else {
         const errorMessage = data.message || 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.';

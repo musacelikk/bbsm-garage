@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../config';
+import CurrencyBar from './CurrencyBar';
 
 function Navbar({ 
   firmaAdi, 
@@ -8,7 +9,6 @@ function Navbar({
   setIsProfileModalOpen, 
   setProfileData, 
   setIsChangePasswordModalOpen,
-  setIsMembershipModalOpen,
   logout,
   onToggleSidebar,
   isSidebarOpen
@@ -35,8 +35,9 @@ function Navbar({
   return (
     <nav className="fixed top-0 z-50 w-full bg-white border-b border-gray-200">
       <div className="px-3 py-3 lg:px-5 lg:pl-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
+        <div className="flex items-center justify-between w-full">
+          {/* Sol taraf: Logo + BBSM Tech + ServisPanel */}
+          <div className="flex items-center flex-shrink-0">
             <button 
               onClick={onToggleSidebar} 
               className={`lg:hidden p-3 font-bold text-lg leading-tight antialiased ${isSidebarOpen ? 'hidden' : ''} active:scale-95 transition-transform touch-manipulation min-w-[44px] min-h-[44px]`}
@@ -45,11 +46,19 @@ function Navbar({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
             </button>
-            <a href="#" className="flex ml-2 md:mr-8 lg:mr-24">
-              <img src="/images/BBSMlogo.png" className="h-16 mr-3" alt="logo" />
-              <span className="self-center text-xl font-semibold sm:text-2xl whitespace-nowrap text-my-siyah"></span>
+            <a href="#" className="flex items-center ml-2">
+              <img src="/BBSM.ico" className="h-8 w-8 mr-2" alt="logo" />
+              <span className="text-base sm:text-lg font-semibold text-my-siyah whitespace-nowrap">BBSM Tech</span>
+              <span className="text-base sm:text-lg font-medium text-gray-600 ml-2 whitespace-nowrap hidden sm:inline">ServisPanel</span>
             </a>
           </div>
+
+          {/* Orta: Döviz Kurları */}
+          <div className="flex-1 flex items-center justify-center px-2 hidden lg:flex">
+            <CurrencyBar />
+          </div>
+
+          {/* Sağ taraf: Firma Adı + Profil (eski tasarıma yakın) */}
           <div className="flex items-center relative">
             <button 
               type="button" 
@@ -57,7 +66,9 @@ function Navbar({
               className="flex items-center text-sm hidden md:flex hover:opacity-80 transition-opacity cursor-pointer"
             >
               <span className="sr-only">Open user menu</span>
-              <p className="text-center text-my-siyah font-semibold items-center pr-8">{firmaAdi}</p>
+              <p className="text-center text-my-siyah font-semibold items-center pr-8 whitespace-nowrap truncate max-w-[220px]">
+                {firmaAdi}
+              </p>
               <img 
                 src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
                 className="h-16 w-16 rounded-full object-cover" 
@@ -89,20 +100,6 @@ function Navbar({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
                       Profil Bilgileri
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsSettingsOpen(false);
-                        if (setIsMembershipModalOpen) {
-                          setIsMembershipModalOpen(true);
-                        }
-                      }}
-                      className="w-full text-left px-4 py-3 text-sm text-my-siyah hover:bg-gray-50 transition-colors flex items-center gap-3"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                      </svg>
-                      Üyelik
                     </button>
                     <button
                       onClick={() => {

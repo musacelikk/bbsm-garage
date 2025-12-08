@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthEntity } from './auth.entity';
+import { MembershipRequestEntity } from './membership-request.entity';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './jwt.strategy';
@@ -15,7 +16,7 @@ import { EmailModule } from '../email/email.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forFeature([AuthEntity]),
+    TypeOrmModule.forFeature([AuthEntity, MembershipRequestEntity]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

@@ -1,6 +1,7 @@
 import { DataSource } from 'typeorm';
 import * as dotenv from 'dotenv';
 import { AuthEntity } from './auth/auth.entity';
+import { MembershipRequestEntity } from './auth/membership-request.entity';
 import { CardEntity } from './card/entities/card.entity';
 import { StokEntity } from './stok/entities/stok.entity';
 import { TeklifEntity } from './teklif/entities/teklif.entity';
@@ -15,9 +16,9 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  entities: [AuthEntity, CardEntity, StokEntity, TeklifEntity, YapilanlarEntity],
+  entities: [AuthEntity, MembershipRequestEntity, CardEntity, StokEntity, TeklifEntity, YapilanlarEntity],
   migrations: ['migrations/*.ts'],
-  synchronize: false, // Migration kullanırken synchronize false olmalı
+  synchronize: true, // Local development için true (ilk tablo oluşturma için)
   logging: true,
   ssl: process.env.DB_SSL === 'true' ? {
     rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',

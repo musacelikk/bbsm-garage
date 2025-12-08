@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { aracMarkalari, aracModelleri, yillar, renkler } from '../data/aracVerileri';
 
-const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
+const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi, isPeriyodikBakimMode = false }) => {
   // Bugünün tarihini YYYY-MM-DD formatında al
   const getTodayDate = () => {
     const today = new Date();
@@ -23,6 +23,8 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
   const [renk, setRenk] = useState('');
   const [adres, setAdres] = useState('');
   const [notlar, setNot] = useState('');
+  const [odemeAlindi, setOdemeAlindi] = useState(false);
+  const [periyodikBakim, setPeriyodikBakim] = useState(false);
   const [duzenleyen, setDuzenleyen] = useState('');
   const [mevcutModeller, setMevcutModeller] = useState([]);
 
@@ -37,6 +39,15 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
       setModel('');
     }
   }, [marka]);
+
+  useEffect(() => {
+    if (isPeriyodikBakimMode) {
+      setPeriyodikBakim(true);
+    } else if (!ilkModalBilgi) {
+      // Modal yeni açıldığında ve periyodik bakım modu değilse false yap
+      setPeriyodikBakim(false);
+    }
+  }, [isPeriyodikBakimMode, ilkModalBilgi]);
 
   useEffect(() => {
     if (ilkModalBilgi) {
@@ -65,12 +76,18 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
       setRenk(ilkModalBilgi.renk || '');
       setAdres(ilkModalBilgi.adres || '');
       setNot(ilkModalBilgi.notlar || '');
+      setOdemeAlindi(ilkModalBilgi.odemeAlindi || false);
+      setPeriyodikBakim(ilkModalBilgi.periyodikBakim || false);
       setDuzenleyen(ilkModalBilgi.duzenleyen || '');
     } else {
       // Modal yeni açıldığında girisTarihi'ni bugünün tarihiyle ayarla
       setGirisTarihi(getTodayDate());
+      // Eğer periyodik bakım modundaysa checkbox'ı işaretle
+      if (isPeriyodikBakimMode) {
+        setPeriyodikBakim(true);
+      }
     }
-  }, [ilkModalBilgi]);
+  }, [ilkModalBilgi, isPeriyodikBakimMode]);
 
   const handleIlkModalSubmit = () => {
     // Düzenleyen alanı zorunlu kontrolü
@@ -93,10 +110,13 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
       sasi,
       renk,
       adres,
+      odemeAlindi,
+      periyodikBakim: isPeriyodikBakimMode ? true : periyodikBakim, // Periyodik bakım modundaysa kesinlikle true
       notlar,
       duzenleyen: duzenleyen.trim(),
     };
 
+    console.log('IlkModal Submit - periyodikBakim:', ilkModalBilgiler.periyodikBakim, 'isPeriyodikBakimMode:', isPeriyodikBakimMode);
     onIlkModalSubmit(ilkModalBilgiler);
   };
 
@@ -113,6 +133,8 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
     setRenk('');
     setAdres('');
     setNot('');
+    setOdemeAlindi(false);
+    setPeriyodikBakim(isPeriyodikBakimMode); // Periyodik bakım modundaysa true kalmalı
     setDuzenleyen('');
   };
 
@@ -120,7 +142,9 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
     <div className="fixed inset-0 bg-gray-500 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center backdrop-blur-sm backdrop-brightness-30">
       <div className="bg-white rounded-3xl max-w-2xl w-full mx-4 md:mx-0 max-h-[90vh] overflow-y-auto p-4">
         <div className="flex justify-between items-center p-5 border-b border-gray-200 rounded-t-lg">
-          <h3 className="text-xl font-medium text-gray-900">Kart Ekle</h3>
+          <h3 className="text-xl font-medium text-gray-900">
+            {isPeriyodikBakimMode ? 'Periyodik Bakım Kartı Ekle' : 'Kart Ekle'}
+          </h3>
           <button onClick={onClose}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -192,6 +216,33 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi }) => {
             
             <textarea placeholder="Adres" id="adres" value={adres} onChange={e => setAdres(e.target.value)} className="bg-my-beyaz border p-2 text-gray-600 font-medium rounded-md md:col-span-2" rows="3"></textarea>
             <textarea placeholder="Notlar" id="notlar" value={notlar} onChange={e => setNot(e.target.value)} className="bg-my-beyaz border p-2 text-gray-600 font-medium rounded-md md:col-span-2" rows="3"></textarea>
+            <div className="flex items-center gap-6 md:col-span-2">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="odemeAlindi" 
+                  checked={odemeAlindi} 
+                  onChange={e => setOdemeAlindi(e.target.checked)} 
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" 
+                />
+                <label htmlFor="odemeAlindi" className="text-gray-600 font-medium cursor-pointer">
+                  Ödeme Alındı
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input 
+                  type="checkbox" 
+                  id="periyodikBakim" 
+                  checked={periyodikBakim} 
+                  onChange={e => setPeriyodikBakim(e.target.checked)} 
+                  disabled={isPeriyodikBakimMode}
+                  className={`w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 ${isPeriyodikBakimMode ? 'opacity-50 cursor-not-allowed' : ''}`}
+                />
+                <label htmlFor="periyodikBakim" className={`text-gray-600 font-medium ${isPeriyodikBakimMode ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                  Periyodik Bakım {isPeriyodikBakimMode && '(Zorunlu)'}
+                </label>
+              </div>
+            </div>
             <input type="text" id="duzenleyen" placeholder="Düzenleyen *" value={duzenleyen} onChange={e => setDuzenleyen(e.target.value)} className="bg-my-beyaz border p-2 text-gray-600 font-medium rounded-md md:col-span-2" required />
           </div>
           <div className="flex flex-col md:flex-row justify-between mt-8 gap-4">

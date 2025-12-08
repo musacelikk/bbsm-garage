@@ -140,4 +140,35 @@ export class AuthController {
     const customDate = body.customDate ? new Date(body.customDate) : undefined;
     return this.authService.addMembership(authorization, userId, body.months, customDate);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('select-membership-plan')
+  async selectMembershipPlan(@Request() req, @Body() body: { months: number }) {
+    const username = req.user.username;
+    return this.authService.selectMembershipPlan(username, body.months);
+  }
+
+  @Get('admin/membership-requests')
+  async getAllMembershipRequests(@Headers('authorization') authorization: string) {
+    return this.authService.getAllMembershipRequests(authorization);
+  }
+
+  @Post('admin/membership-requests/:id/approve')
+  async approveMembershipRequest(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string
+  ) {
+    const requestId = parseInt(id);
+    return this.authService.approveMembershipRequest(authorization, requestId);
+  }
+
+  @Post('admin/membership-requests/:id/reject')
+  async rejectMembershipRequest(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() body: { reason?: string }
+  ) {
+    const requestId = parseInt(id);
+    return this.authService.rejectMembershipRequest(authorization, requestId, body.reason);
+  }
 }

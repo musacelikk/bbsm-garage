@@ -14,6 +14,8 @@ function AdminPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
+  const [membershipRequests, setMembershipRequests] = useState([]);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   // Admin kontrolü - sayfa yüklenmeden önce kontrol et
   useEffect(() => {
@@ -57,10 +59,16 @@ function AdminPanel() {
     }
   }, [isAuthenticated]);
 
-  // Kullanıcıları yükle
+  // Kullanıcıları ve teklifleri yükle
   useEffect(() => {
     if (isAuthenticated) {
       fetchUsers();
+      fetchMembershipRequests();
+      // Her 30 saniyede bir teklifleri yenile
+      const interval = setInterval(() => {
+        fetchMembershipRequests();
+      }, 30000);
+      return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
 
@@ -126,6 +134,69 @@ function AdminPanel() {
     }
   };
 
+  const fetchMembershipRequests = async () => {
+    try {
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/membership-requests`);
+      if (response.ok) {
+        const data = await response.json();
+        setMembershipRequests(data);
+      } else {
+        console.error('Teklifler yüklenemedi');
+      }
+    } catch (error) {
+      console.error('Teklifler yükleme hatası:', error);
+    }
+  };
+
+  const approveRequest = async (requestId) => {
+    try {
+      setLoading(true);
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/membership-requests/${requestId}/approve`, {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message || 'Teklif onaylandı');
+        await fetchMembershipRequests();
+        await fetchUsers();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Teklif onaylanamadı');
+      }
+    } catch (error) {
+      console.error('Teklif onaylama hatası:', error);
+      alert('Teklif onaylanırken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectRequest = async (requestId) => {
+    const reason = prompt('Red nedeni (isteğe bağlı):');
+    try {
+      setLoading(true);
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/membership-requests/${requestId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason: reason || undefined }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message || 'Teklif reddedildi');
+        await fetchMembershipRequests();
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || 'Teklif reddedilemedi');
+      }
+    } catch (error) {
+      console.error('Teklif reddetme hatası:', error);
+      alert('Teklif reddedilirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const addMembership = async (months, customDate) => {
     if (!selectedUser) return;
     
@@ -157,6 +228,8 @@ function AdminPanel() {
       setLoading(false);
     }
   };
+
+  const pendingRequestsCount = membershipRequests.filter(r => r.status === 'pending').length;
 
   // Eğer authenticate değilse hiçbir şey render etme
   if (!isAuthenticated) {
@@ -205,6 +278,119 @@ function AdminPanel() {
                   {adminUser.username || 'Yönetici'}
                 </p>
               )}
+              {/* Bildirim Kutusu */}
+              <div className="relative">
+                <button
+                  onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                  className="relative flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {pendingRequestsCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                </button>
+                {isNotificationOpen && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                    <div className="p-4 border-b border-gray-200">
+                      <h3 className="font-semibold text-gray-900">Üyelik Teklifleri</h3>
+                      <p className="text-xs text-gray-500 mt-1">{pendingRequestsCount} bekleyen teklif</p>
+                    </div>
+                    <div className="divide-y divide-gray-200">
+                      {membershipRequests.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 text-sm">
+                          Henüz teklif bulunmamaktadır
+                        </div>
+                      ) : (
+                        membershipRequests.map((request) => (
+                          <div key={request.id} className={`p-4 hover:bg-gray-50 ${request.status === 'pending' ? 'bg-yellow-50' : ''}`}>
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <p className="font-semibold text-gray-900">{request.username}</p>
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                                    request.user_isActive
+                                      ? 'bg-green-100 text-green-800'
+                                      : 'bg-gray-100 text-gray-800'
+                                  }`}>
+                                    {request.user_isActive ? 'Aktif' : 'Pasif'}
+                                  </span>
+                                </div>
+                                {request.user_firmaAdi && (
+                                  <p className="text-xs text-gray-500 mb-1">{request.user_firmaAdi}</p>
+                                )}
+                                <p className="text-sm text-gray-600">
+                                  {request.months < 1 
+                                    ? `${Math.round(Number(request.months) * 30)} gün`
+                                    : `${request.months} ay`} üyelik talep ediyor
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {new Date(request.created_at).toLocaleString('tr-TR')}
+                                </p>
+                              </div>
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                request.status === 'pending' 
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : request.status === 'approved'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {request.status === 'pending' ? 'Bekliyor' : request.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
+                              </span>
+                            </div>
+                            {request.status === 'pending' && (
+                              <div className="space-y-2 mt-3">
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => {
+                                      approveRequest(request.id);
+                                      setIsNotificationOpen(false);
+                                    }}
+                                    className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors"
+                                  >
+                                    Onayla
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      rejectRequest(request.id);
+                                      setIsNotificationOpen(false);
+                                    }}
+                                    className="flex-1 px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors"
+                                  >
+                                    Reddet
+                                  </button>
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    const user = users.find(u => u.id === request.user_id);
+                                    if (user) {
+                                      toggleUserActive(request.user_id, request.user_isActive);
+                                    }
+                                    setIsNotificationOpen(false);
+                                  }}
+                                  className={`w-full px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                                    request.user_isActive
+                                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                      : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                  }`}
+                                >
+                                  {request.user_isActive ? 'Kullanıcıyı Pasif Et' : 'Kullanıcıyı Aktif Et'}
+                                </button>
+                              </div>
+                            )}
+                            {request.admin_response && (
+                              <p className="text-xs text-gray-600 mt-2 italic">{request.admin_response}</p>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -225,6 +411,133 @@ function AdminPanel() {
           <div className="mb-4 md:mb-6">
             <h1 className="text-2xl md:text-3xl font-bold text-my-siyah">Yönetici Paneli</h1>
             <p className="text-gray-600 mt-1 text-sm md:text-base">Sistem yönetim paneli</p>
+          </div>
+
+          {/* Üyelik Teklifleri Listesi */}
+          <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Üyelik Teklifleri</h2>
+              <button
+                onClick={fetchMembershipRequests}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Yenile
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Kullanıcı</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Kullanıcı Durumu</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Süre</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Durum</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Tarih</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {membershipRequests.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="text-center py-12 text-gray-500">
+                          Henüz teklif bulunmamaktadır
+                        </td>
+                      </tr>
+                    ) : (
+                      membershipRequests.map((request) => (
+                        <tr key={request.id} className={`border-b border-gray-100 hover:bg-gray-50 ${request.status === 'pending' ? 'bg-yellow-50' : ''}`}>
+                          <td className="py-3 px-4 text-gray-700">{request.id}</td>
+                          <td className="py-3 px-4 text-gray-700 font-medium">
+                            {request.username}
+                            {request.user_firmaAdi && (
+                              <span className="block text-xs text-gray-500 mt-1">{request.user_firmaAdi}</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex flex-col gap-2">
+                              <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold w-fit ${
+                                request.user_isActive
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {request.user_isActive ? '✓ Aktif' : '⏸ Pasif'}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const user = users.find(u => u.id === request.user_id);
+                                  if (user) {
+                                    toggleUserActive(request.user_id, request.user_isActive);
+                                  }
+                                }}
+                                disabled={loading}
+                                className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
+                                  request.user_isActive
+                                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                              >
+                                {request.user_isActive ? 'Pasif Et' : 'Aktif Et'}
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-gray-700">
+                            {request.months < 1 
+                              ? `${Math.round(Number(request.months) * 30)} gün`
+                              : `${request.months} ay`}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              request.status === 'pending' 
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : request.status === 'approved'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {request.status === 'pending' ? 'Bekliyor' : request.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-700 text-sm">
+                            {new Date(request.created_at).toLocaleString('tr-TR')}
+                          </td>
+                          <td className="py-3 px-4">
+                            {request.status === 'pending' ? (
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => approveRequest(request.id)}
+                                  disabled={loading}
+                                  className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Onayla
+                                </button>
+                                <button
+                                  onClick={() => rejectRequest(request.id)}
+                                  disabled={loading}
+                                  className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Reddet
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-500">{request.admin_response || '-'}</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           {/* Kullanıcılar Listesi */}
@@ -405,6 +718,14 @@ function AdminPanel() {
           onAdd={addMembership}
           loading={loading}
         />
+      )}
+
+      {/* Bildirim kutusu dışına tıklanınca kapat */}
+      {isNotificationOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setIsNotificationOpen(false)}
+        ></div>
       )}
     </div>
   );

@@ -7,9 +7,9 @@ import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
 import ProfileModal from '../../components/ProfileModal';
 import ChangePasswordModal from '../../components/ChangePasswordModal';
-import MembershipModal from '../../components/MembershipModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
+import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 
 function SonHareketler() {
@@ -22,7 +22,6 @@ function SonHareketler() {
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-  const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [hareketler, setHareketler] = useState([]);
   const [activeTab, setActiveTab] = useState('giris-cikis');
@@ -144,6 +143,7 @@ function SonHareketler() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="son-hareketler"
+        profileData={profileData}
       />
 
       <div className="flex-1 flex flex-col">
@@ -154,14 +154,14 @@ function SonHareketler() {
           setIsProfileModalOpen={setIsProfileModalOpen}
           setProfileData={setProfileData}
           setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
-          setIsMembershipModalOpen={setIsMembershipModalOpen}
           logout={logout}
           onToggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
 
-        <div className="pt-20 pb-8 px-4 lg:px-8 lg:ml-64">
-          <div className="max-w-7xl mx-auto w-full">
+        <ProtectedPage>
+          <div className="pt-20 pb-8 px-4 lg:px-8 lg:ml-64">
+            <div className="max-w-7xl mx-auto w-full">
             <h1 className="text-2xl sm:text-3xl font-bold text-my-siyah mb-4 sm:mb-6">Son Hareketler</h1>
             
             {/* Tab Navigation */}
@@ -379,8 +379,9 @@ function SonHareketler() {
                 )}
               </div>
             )}
+            </div>
           </div>
-        </div>
+        </ProtectedPage>
       </div>
 
       {isProfileModalOpen && (
@@ -426,17 +427,6 @@ function SonHareketler() {
           fetchWithAuth={fetchWithAuth}
           API_URL={API_URL}
           setLoading={setLoading}
-        />
-      )}
-
-      {/* Üyelik Modal */}
-      {isMembershipModalOpen && (
-        <MembershipModal
-          isOpen={isMembershipModalOpen}
-          onClose={() => setIsMembershipModalOpen(false)}
-          profileData={profileData}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
         />
       )}
     </div>

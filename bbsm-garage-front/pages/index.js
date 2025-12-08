@@ -99,6 +99,7 @@ export default function Home() {
         router.push('/login/dashboard');
       } else {
         console.error('Login failed:', data);
+        // Hata mesajını göster (backend'den gelen mesaj varsa onu kullan)
         const errorMessage = data.message || 'Kullanıcı adı veya şifre hatalı! Lütfen tekrar deneyin.';
         alert(errorMessage);
         setLoading(false);

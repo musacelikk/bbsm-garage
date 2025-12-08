@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthEntity } from './auth.entity';
+import { MembershipRequestEntity } from './membership-request.entity';
 import { AuthDto } from './auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LogService } from '../log/log.service';
@@ -12,6 +13,7 @@ import * as crypto from 'crypto';
 export class AuthService {
   constructor(
     @InjectRepository(AuthEntity) private databaseRepository: Repository<AuthEntity>,
+    @InjectRepository(MembershipRequestEntity) private membershipRequestRepository: Repository<MembershipRequestEntity>,
     private readonly jwtService: JwtService,
     private readonly logService: LogService,
     private readonly emailService: EmailService
@@ -68,7 +70,7 @@ export class AuthService {
     newUser.verificationToken = verificationToken;
     newUser.verificationTokenExpiry = verificationTokenExpiry;
     newUser.emailVerified = false;
-    newUser.isActive = false; // Yeni kayıt olan kullanıcılar pasif olarak başlar
+    newUser.isActive = true; // Yeni kayıt olan kullanıcılar otomatik aktif olur
 
     const savedUser = await this.databaseRepository.save(newUser);
 
@@ -107,26 +109,7 @@ export class AuthService {
       if (!user.isActive) {
         return { 
           result: false, 
-          message: 'Hesabınız henüz aktif edilmemiş. Lütfen yönetici ile iletişime geçin.' 
-        };
-      }
-
-      // Üyelik kontrolü
-      const now = new Date();
-      if (user.membership_end_date) {
-        const endDate = new Date(user.membership_end_date);
-        if (endDate < now) {
-          user.membership_status = 'expired';
-          await this.databaseRepository.save(user);
-          return { 
-            result: false, 
-            message: 'Üyelik süreniz dolmuş. Lütfen yönetici ile iletişime geçin.' 
-          };
-        }
-      } else if (user.membership_status === 'inactive' || !user.membership_status) {
-        return { 
-          result: false, 
-          message: 'Üyelik süreniz tanımlanmamış. Lütfen yönetici ile iletişime geçin.' 
+          message: 'Hesabınız pasif durumda. Lütfen yönetici ile iletişime geçin.' 
         };
       }
       
@@ -207,6 +190,14 @@ export class AuthService {
       throw new Error('Kullanıcı bulunamadı');
     }
 
+    // Bekleyen teklif kontrolü
+    const pendingRequest = await this.membershipRequestRepository.findOne({
+      where: { 
+        user_id: user.id,
+        status: 'pending'
+      }
+    });
+
     return {
       id: user.id,
       username: user.username,
@@ -216,7 +207,13 @@ export class AuthService {
       telefon: user.telefon,
       email: user.email,
       adres: user.adres,
-      vergiNo: user.vergiNo
+      vergiNo: user.vergiNo,
+      emailVerified: user.emailVerified,
+      isActive: user.isActive,
+      membership_start_date: user.membership_start_date,
+      membership_end_date: user.membership_end_date,
+      membership_status: user.membership_status,
+      hasPendingRequest: !!pendingRequest
     };
   }
 
@@ -576,6 +573,223 @@ export class AuthService {
         throw error;
       }
       throw new Error(error.message || 'Üyelik eklenemedi');
+    }
+  }
+
+  async selectMembershipPlan(username: string, months: number) {
+    try {
+      const user = await this.databaseRepository.findOne({
+        where: { username }
+      });
+
+      if (!user) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      // Bekleyen bir teklif var mı kontrol et
+      const existingRequest = await this.membershipRequestRepository.findOne({
+        where: { 
+          user_id: user.id,
+          status: 'pending'
+        }
+      });
+
+      if (existingRequest) {
+        throw new Error('Zaten bekleyen bir teklifiniz bulunmaktadır.');
+      }
+
+      // Yeni teklif oluştur
+      const membershipRequest = this.membershipRequestRepository.create({
+        user_id: user.id,
+        username: user.username,
+        months: months,
+        status: 'pending'
+      });
+
+      await this.membershipRequestRepository.save(membershipRequest);
+
+      return { 
+        success: true, 
+        message: 'Teklifi gönderildi',
+        request_id: membershipRequest.id
+      };
+    } catch (error) {
+      throw new Error(error.message || 'Üyelik planı seçilemedi');
+    }
+  }
+
+  async getAllMembershipRequests(authorization: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      const requests = await this.membershipRequestRepository.find({
+        order: {
+          created_at: 'DESC'
+        }
+      });
+
+      // Her teklif için kullanıcı bilgilerini ekle
+      const requestsWithUserInfo = await Promise.all(
+        requests.map(async (request) => {
+          const user = await this.databaseRepository.findOne({
+            where: { id: request.user_id },
+            select: ['id', 'username', 'isActive', 'firmaAdi']
+          });
+          return {
+            ...request,
+            user_id: request.user_id,
+            user_isActive: user?.isActive ?? false,
+            user_firmaAdi: user?.firmaAdi ?? null
+          };
+        })
+      );
+
+      return requestsWithUserInfo;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      console.error('getAllMembershipRequests error:', error);
+      throw new Error(error.message || 'Teklifler yüklenirken bir hata oluştu');
+    }
+  }
+
+  async approveMembershipRequest(authorization: string, requestId: number) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      const request = await this.membershipRequestRepository.findOne({
+        where: { id: requestId }
+      });
+
+      if (!request) {
+        throw new Error('Teklif bulunamadı');
+      }
+
+      if (request.status !== 'pending') {
+        throw new Error('Bu teklif zaten işleme alınmış');
+      }
+
+      const user = await this.databaseRepository.findOne({
+        where: { id: request.user_id }
+      });
+
+      if (!user) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      const now = new Date();
+      let newStartDate: Date;
+      let newEndDate: Date;
+
+      // Eğer aktif bir üyelik varsa, mevcut bitiş tarihinden devam et
+      if (user.membership_end_date && new Date(user.membership_end_date) > now) {
+        newStartDate = user.membership_start_date ? new Date(user.membership_start_date) : now;
+        newEndDate = new Date(user.membership_end_date);
+        
+        // Deneme sürümü için gün bazlı hesaplama (0.25 ay = 7 gün)
+        if (request.months < 1) {
+          newEndDate.setDate(newEndDate.getDate() + Math.round(Number(request.months) * 30));
+        } else {
+          newEndDate.setMonth(newEndDate.getMonth() + Number(request.months));
+        }
+      } else {
+        // Yeni üyelik başlat
+        newStartDate = now;
+        newEndDate = new Date(now);
+        
+        // Deneme sürümü için gün bazlı hesaplama (0.25 ay = 7 gün)
+        if (request.months < 1) {
+          newEndDate.setDate(newEndDate.getDate() + Math.round(Number(request.months) * 30));
+        } else {
+          newEndDate.setMonth(newEndDate.getMonth() + Number(request.months));
+        }
+      }
+
+      user.membership_start_date = newStartDate;
+      user.membership_end_date = newEndDate;
+      user.membership_status = 'active';
+      user.isActive = true;
+
+      await this.databaseRepository.save(user);
+
+      request.status = 'approved';
+      request.admin_response = 'Teklif onaylandı';
+      await this.membershipRequestRepository.save(request);
+
+      return { 
+        success: true, 
+        message: 'Teklif onaylandı ve üyelik aktifleştirildi',
+        membership_start_date: newStartDate,
+        membership_end_date: newEndDate
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Teklif onaylanamadı');
+    }
+  }
+
+  async rejectMembershipRequest(authorization: string, requestId: number, reason?: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      const request = await this.membershipRequestRepository.findOne({
+        where: { id: requestId }
+      });
+
+      if (!request) {
+        throw new Error('Teklif bulunamadı');
+      }
+
+      if (request.status !== 'pending') {
+        throw new Error('Bu teklif zaten işleme alınmış');
+      }
+
+      request.status = 'rejected';
+      request.admin_response = reason || 'Teklif reddedildi';
+      await this.membershipRequestRepository.save(request);
+
+      return { 
+        success: true, 
+        message: 'Teklif reddedildi'
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Teklif reddedilemedi');
     }
   }
 }
