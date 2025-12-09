@@ -11,15 +11,14 @@ import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
+import { useProfile } from '../../contexts/ProfileContext';
 
 function Dashboard() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const { profileData, firmaAdi, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-  const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
-  const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -36,29 +35,6 @@ function Dashboard() {
     return bugun.toISOString().split('T')[0];
   });
 
-  // Sayfa yüklendiğinde fade-in animasyonu
-  useEffect(() => {
-    setIsPageLoaded(false);
-    const timer = setTimeout(() => {
-      setIsPageLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-        if (response.ok) {
-          const data = await response.json();
-          setProfileData(data);
-        }
-      } catch (error) {
-        console.error('Profil yükleme hatası:', error);
-      }
-    };
-    loadProfile();
-  }, []);
 
   const fetchKartlar = async () => {
     try {
@@ -345,7 +321,7 @@ function Dashboard() {
 
   return (
     <div 
-      className={`min-h-screen transition-all duration-1000 ease-out ${isPageLoaded ? 'opacity-100' : 'opacity-0'}`}
+      className="min-h-screen dark-bg-primary"
       {...sidebarSwipe}
     >
       <Head>
@@ -357,35 +333,30 @@ function Dashboard() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="dashboard"
-        profileData={profileData}
+        setIsProfileModalOpen={setIsProfileModalOpen}
+        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        logout={logout}
       />
 
       <div className="flex-1 flex flex-col">
         <Navbar
-          firmaAdi={firmaAdi}
-          profileData={profileData}
-          fetchWithAuth={fetchWithAuth}
-          setIsProfileModalOpen={setIsProfileModalOpen}
-          setProfileData={setProfileData}
-          setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
-          logout={logout}
           onToggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
 
         <ProtectedPage>
-          <div className="p-6 pt-8 mt-20 lg:ml-64">
-            <div className="p-4 md:p-6 mt-5 bg-my-beyaz rounded-3xl">
+          <div className="p-6 pt-8 mt-16 lg:ml-64">
+            <div className="p-4 md:p-6 mt-5 dark-card-bg neumorphic-card rounded-3xl">
             {/* Başlık */}
             <div className="mb-4 md:mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-my-siyah">Hoş Geldiniz, {firmaAdi}!</h1>
-              <p className="text-gray-600 mt-1 text-sm md:text-base">Bugün mağazanızda neler oluyor?</p>
+              <h1 className="text-2xl md:text-3xl font-bold dark-text-primary">Hoş Geldiniz, {firmaAdi}!</h1>
+              <p className="dark-text-secondary mt-1 text-sm md:text-base">Bugün mağazanızda neler oluyor?</p>
             </div>
 
             {/* KPI Kartları */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-6">
               {/* Toplam Gelir */}
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 md:p-6 rounded-xl neumorphic-outset">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base md:text-lg font-medium">Toplam Gelir</h3>
                   <div className={`flex items-center ${istatistikler.gelirTrend >= 0 ? 'text-green-200' : 'text-red-200'}`}>
@@ -400,7 +371,7 @@ function Dashboard() {
               </div>
 
               {/* Toplam Kart */}
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 md:p-6 rounded-xl neumorphic-outset">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base md:text-lg font-medium">Toplam Kart</h3>
                   <div className={`flex items-center ${istatistikler.kartTrend >= 0 ? 'text-green-200' : 'text-red-200'}`}>
@@ -415,7 +386,7 @@ function Dashboard() {
               </div>
 
               {/* Toplam Teklif */}
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 md:p-6 rounded-xl neumorphic-outset">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base md:text-lg font-medium">Toplam Teklif</h3>
                 </div>
@@ -424,7 +395,7 @@ function Dashboard() {
               </div>
 
               {/* Bugün Eklenen */}
-              <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-4 md:p-6 rounded-xl neumorphic-outset">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base md:text-lg font-medium">Bugün Eklenen</h3>
                 </div>
@@ -433,7 +404,7 @@ function Dashboard() {
               </div>
 
               {/* Son 7 Günlük Ciro */}
-              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-4 md:p-6 rounded-xl neumorphic-outset">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-base md:text-lg font-medium">Son 7 Günlük Ciro</h3>
                 </div>
@@ -445,50 +416,50 @@ function Dashboard() {
             {/* Grafik ve Liste Bölümü */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6">
               {/* Gelir Grafiği */}
-              <div className="lg:col-span-2 bg-gradient-to-br from-white to-gray-50 rounded-2xl shadow-lg border border-gray-100 p-6 md:p-8">
+              <div className="lg:col-span-2 dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
                   <div>
-                    <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-1">Gelir Özeti</h2>
-                    <p className="text-sm text-gray-500">
+                    <h2 className="text-xl md:text-2xl font-bold dark-text-primary mb-1">Gelir Özeti</h2>
+                    <p className="text-sm dark-text-secondary">
                       {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 && istatistikler.gelirVerileri[0].tip === 'ay' 
                         ? 'Aylık gelir analizi' 
                         : 'Günlük gelir analizi'}
                     </p>
                   </div>
                   <div className="flex items-center gap-4 mt-4 md:mt-0">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 dark-bg-tertiary rounded-lg neumorphic-inset">
                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 shadow-sm"></div>
-                      <span className="text-sm font-semibold text-gray-700">Gelir</span>
+                      <span className="text-sm font-semibold dark-text-primary">Gelir</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+                    <div className="flex items-center gap-2 px-3 py-1.5 dark-bg-tertiary rounded-lg neumorphic-inset">
                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400 shadow-sm"></div>
-                      <span className="text-sm font-semibold text-gray-700">İşlem</span>
+                      <span className="text-sm font-semibold dark-text-primary">İşlem</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Tarih Filtreleme */}
-                <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm mb-6">
+                <div className="dark-card-bg neumorphic-card rounded-xl p-4 mb-6">
                   <div className="flex flex-col md:flex-row gap-4 items-end">
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Başlangıç Tarihi</label>
+                      <label className="block text-sm font-semibold dark-text-primary mb-2">Başlangıç Tarihi</label>
                       <input
                         type="date"
                         value={tarihBaslangic}
                         onChange={(e) => setTarihBaslangic(e.target.value)}
                         max={tarihBitis}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-4 py-2 neumorphic-input rounded-lg dark-text-primary"
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">Bitiş Tarihi</label>
+                      <label className="block text-sm font-semibold dark-text-primary mb-2">Bitiş Tarihi</label>
                       <input
                         type="date"
                         value={tarihBitis}
                         onChange={(e) => setTarihBitis(e.target.value)}
                         min={tarihBaslangic}
                         max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full px-4 py-2 neumorphic-input rounded-lg dark-text-primary"
                       />
                     </div>
                     <button
@@ -497,14 +468,14 @@ function Dashboard() {
                         setTarihBaslangic(`${yil}-01-01`);
                         setTarihBitis(new Date().toISOString().split('T')[0]);
                       }}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold whitespace-nowrap"
+                      className="px-6 py-2 bg-green-600 text-white rounded-lg neumorphic-inset hover:bg-green-700 transition-colors font-semibold whitespace-nowrap"
                     >
                       Bu Yıl
                     </button>
                   </div>
                 </div>
 
-                <div className="h-96 relative bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+                <div className="h-96 relative dark-card-bg neumorphic-card rounded-xl p-6">
                   {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 ? (
                     <svg viewBox="0 0 600 320" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                       <defs>
@@ -679,12 +650,12 @@ function Dashboard() {
                       })()}
                     </svg>
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                    <div className="flex flex-col items-center justify-center h-full dark-text-muted">
                       <svg className="w-20 h-20 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                       </svg>
-                      <p className="text-base font-semibold mb-1">Grafik verisi bulunmamaktadır</p>
-                      <p className="text-xs text-gray-400">Veri geldiğinde detaylı grafik otomatik olarak görüntülenecektir</p>
+                      <p className="text-base font-semibold mb-1 dark-text-primary">Grafik verisi bulunmamaktadır</p>
+                      <p className="text-xs dark-text-muted">Veri geldiğinde detaylı grafik otomatik olarak görüntülenecektir</p>
                     </div>
                   )}
                 </div>
@@ -695,25 +666,25 @@ function Dashboard() {
             {/* Alt Bölüm - Son İşlemler ve En Aktif Kullanıcılar */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Son İşlemler */}
-              <div className="bg-white rounded-xl shadow-md p-5 md:p-6">
+              <div className="dark-card-bg neumorphic-card rounded-xl p-5 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg md:text-xl font-bold text-my-siyah">Son İşlemler</h2>
-                  <Link href="/login/son-hareketler" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                  <h2 className="text-lg md:text-xl font-bold dark-text-primary">Son İşlemler</h2>
+                  <Link href="/login/son-hareketler" className="text-sm text-blue-400 hover:text-blue-300 font-medium">
                     Tümünü Gör
                   </Link>
                 </div>
                 {loading ? (
                   <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
                   </div>
                 ) : hareketler.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="text-gray-500 text-sm">Henüz hareket kaydı bulunmamaktadır.</p>
+                    <p className="dark-text-secondary text-sm">Henüz hareket kaydı bulunmamaktadır.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {hareketler.slice(0, 5).map((hareket) => (
-                      <div key={hareket.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                      <div key={hareket.id} className="flex items-center justify-between p-3 hover:dark-bg-tertiary rounded-lg transition-colors neumorphic-inset">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getActionColor(hareket.action)}`}>
                             <span className="text-xs font-semibold">
@@ -721,13 +692,13 @@ function Dashboard() {
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-my-siyah truncate">{getActionLabel(hareket.action)}</p>
-                            <p className="text-xs text-gray-500 truncate">{hareket.action_detail || '-'}</p>
+                            <p className="text-sm font-semibold dark-text-primary truncate">{getActionLabel(hareket.action)}</p>
+                            <p className="text-xs dark-text-secondary truncate">{hareket.action_detail || '-'}</p>
                           </div>
                         </div>
                         <div className="text-right ml-4">
-                          <p className="text-xs font-medium text-my-siyah">{hareket.username}</p>
-                          <p className="text-xs text-gray-500">{formatTarih(hareket.timestamp).split(' ')[0]}</p>
+                          <p className="text-xs font-medium dark-text-primary">{hareket.username}</p>
+                          <p className="text-xs dark-text-secondary">{formatTarih(hareket.timestamp).split(' ')[0]}</p>
                         </div>
                       </div>
                     ))}
@@ -736,28 +707,28 @@ function Dashboard() {
               </div>
 
               {/* En Aktif Kullanıcılar */}
-              <div className="bg-white rounded-xl shadow-md p-5 md:p-6">
+              <div className="dark-card-bg neumorphic-card rounded-xl p-5 md:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg md:text-xl font-bold text-my-siyah">En Aktif Kullanıcılar</h2>
+                  <h2 className="text-lg md:text-xl font-bold dark-text-primary">En Aktif Kullanıcılar</h2>
                 </div>
                 {loading ? (
                   <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   </div>
                 ) : istatistikler.enAktifKullanicilar && istatistikler.enAktifKullanicilar.length > 0 ? (
                   <div className="space-y-3">
                     {istatistikler.enAktifKullanicilar.map((kullanici, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                      <div key={index} className="flex items-center justify-between p-3 hover:dark-bg-tertiary rounded-lg transition-colors neumorphic-inset">
                         <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
                             {kullanici.username.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-my-siyah truncate">{kullanici.username}</p>
-                            <p className="text-xs text-gray-500">{kullanici.sayi} işlem</p>
+                            <p className="text-sm font-semibold dark-text-primary truncate">{kullanici.username}</p>
+                            <p className="text-xs dark-text-secondary">{kullanici.sayi} işlem</p>
                           </div>
                         </div>
-                        <Link href="/login/son-hareketler" className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                        <Link href="/login/son-hareketler" className="text-sm text-blue-400 hover:text-blue-300 font-medium">
                           Görüntüle
                         </Link>
                       </div>
@@ -765,7 +736,7 @@ function Dashboard() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-sm text-gray-500">Henüz aktif kullanıcı bulunmamaktadır.</p>
+                    <p className="text-sm dark-text-secondary">Henüz aktif kullanıcı bulunmamaktadır.</p>
                   </div>
                 )}
               </div>
@@ -782,20 +753,10 @@ function Dashboard() {
           onClose={async () => {
             setIsProfileModalOpen(false);
             setIsEditingProfile(false);
-            try {
-              const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-              if (response.ok) {
-                const data = await response.json();
-                setProfileData(data);
-              }
-            } catch (error) {
-              console.error('Profil yükleme hatası:', error);
-            }
+            await refreshProfile();
           }}
           profileData={profileData}
-          setProfileData={(data) => {
-            setProfileData(data);
-          }}
+          setProfileData={refreshProfile}
           isEditing={isEditingProfile}
           setIsEditing={setIsEditingProfile}
           fetchWithAuth={fetchWithAuth}

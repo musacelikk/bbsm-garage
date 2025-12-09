@@ -5,6 +5,29 @@
 :root{
     background: #ebebeb
     ;
+    
+    /* Dark Neumorphic Theme Colors */
+    --dark-bg-primary: #1a1a1a;
+    --dark-bg-secondary: #2d2d2d;
+    --dark-bg-tertiary: #3a3a3a;
+    --dark-card-bg: #2a2a2a;
+    --dark-text-primary: #e5e5e5;
+    --dark-text-secondary: #b0b0b0;
+    --dark-text-muted: #808080;
+    --dark-shadow-dark: rgba(0, 0, 0, 0.4);
+    --dark-shadow-light: rgba(255, 255, 255, 0.05);
+    --dark-border: rgba(255, 255, 255, 0.1);
+    --dark-glass-bg: rgba(255, 255, 255, 0.05);
+}
+
+/* Dark Theme Background */
+body {
+  background-color: var(--dark-bg-primary);
+  color: var(--dark-text-primary);
+}
+
+html {
+  background-color: var(--dark-bg-primary);
 }
 
 .toast {
@@ -281,6 +304,14 @@ html {
   }
 }
 
+/* Desktop'ta sidebar animasyonlarını devre dışı bırak - sabit kalmalı */
+@media (min-width: 1024px) {
+  .sidebar-enter,
+  .sidebar-exit {
+    animation: none !important;
+  }
+}
+
 /* Dropdown Animations - Ultra Smooth */
 .dropdown-enter {
   animation: dropdownFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -335,6 +366,141 @@ tr {
 tr:hover {
   transform: scale(1.005);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ============================================
+   DARK NEUMORPHIC SAAS DASHBOARD STYLES
+   ============================================ */
+
+/* Neumorphic Inset (İçe Gömülü) - Butonlar için */
+.neumorphic-inset {
+  background: var(--dark-bg-secondary);
+  box-shadow: 
+    inset 4px 4px 8px var(--dark-shadow-dark),
+    inset -4px -4px 8px var(--dark-shadow-light);
+  border: 1px solid var(--dark-border);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.neumorphic-inset:hover {
+  box-shadow: 
+    inset 6px 6px 12px var(--dark-shadow-dark),
+    inset -6px -6px 12px var(--dark-shadow-light);
+}
+
+.neumorphic-inset:active {
+  box-shadow: 
+    inset 2px 2px 4px var(--dark-shadow-dark),
+    inset -2px -2px 4px var(--dark-shadow-light);
+}
+
+/* Neumorphic Outset (Dışa Çıkık) - Kartlar için */
+.neumorphic-outset {
+  background: var(--dark-card-bg);
+  box-shadow: 
+    8px 8px 16px var(--dark-shadow-dark),
+    -8px -8px 16px var(--dark-shadow-light);
+  border: 1px solid var(--dark-border);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.neumorphic-outset:hover {
+  box-shadow: 
+    12px 12px 24px var(--dark-shadow-dark),
+    -12px -12px 24px var(--dark-shadow-light);
+  transform: translateY(-2px);
+}
+
+/* Glassmorphic (Cam Efektli) - Premium kartlar için */
+.glassmorphic {
+  background: var(--dark-glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--dark-border);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.glassmorphic:hover {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 12px 40px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Neumorphic Input (İçe Gömülü Input Alanları) */
+.neumorphic-input {
+  background: var(--dark-bg-secondary);
+  box-shadow: 
+    inset 3px 3px 6px var(--dark-shadow-dark),
+    inset -3px -3px 6px var(--dark-shadow-light);
+  border: 1px solid var(--dark-border);
+  color: var(--dark-text-primary);
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.neumorphic-input:focus {
+  box-shadow: 
+    inset 4px 4px 8px var(--dark-shadow-dark),
+    inset -4px -4px 8px var(--dark-shadow-light),
+    0 0 0 2px rgba(59, 130, 246, 0.3);
+  outline: none;
+}
+
+/* Neumorphic Card (Kartlar için) */
+.neumorphic-card {
+  background: var(--dark-card-bg);
+  box-shadow: 
+    6px 6px 12px var(--dark-shadow-dark),
+    -6px -6px 12px var(--dark-shadow-light);
+  border: 1px solid var(--dark-border);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.neumorphic-card:hover {
+  box-shadow: 
+    8px 8px 16px var(--dark-shadow-dark),
+    -8px -8px 16px var(--dark-shadow-light);
+  transform: translateY(-2px);
+}
+
+/* Dark Background */
+.dark-bg-primary {
+  background-color: var(--dark-bg-primary);
+}
+
+.dark-bg-secondary {
+  background-color: var(--dark-bg-secondary);
+}
+
+.dark-bg-tertiary {
+  background-color: var(--dark-bg-tertiary);
+}
+
+.dark-card-bg {
+  background-color: var(--dark-card-bg);
+}
+
+/* Dark Text Colors */
+.dark-text-primary {
+  color: var(--dark-text-primary);
+}
+
+.dark-text-secondary {
+  color: var(--dark-text-secondary);
+}
+
+.dark-text-muted {
+  color: var(--dark-text-muted);
+}
+
+/* Dark Border */
+.dark-border {
+  border-color: var(--dark-border);
 }
 
   

@@ -9,45 +9,20 @@ import ChangePasswordModal from '../../components/ChangePasswordModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import { useSwipe } from '../../hooks/useTouchGestures';
+import { useProfile } from '../../contexts/ProfileContext';
 
 function Uyelik() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
+  const { profileData, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-  const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
-  const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [membershipData, setMembershipData] = useState(null);
   const [membershipLoading, setMembershipLoading] = useState(true);
   const [selectingPlan, setSelectingPlan] = useState(false);
-
-  // Sayfa yüklendiğinde fade-in animasyonu
-  useEffect(() => {
-    setIsPageLoaded(false);
-    const timer = setTimeout(() => {
-      setIsPageLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-        if (response.ok) {
-          const data = await response.json();
-          setProfileData(data);
-        }
-      } catch (error) {
-        console.error('Profil yükleme hatası:', error);
-      }
-    };
-    loadProfile();
-  }, []);
 
   useEffect(() => {
     loadMembershipData();
@@ -98,11 +73,11 @@ function Uyelik() {
   };
 
   const getStatusColor = (status) => {
-    if (status === 'Aktif') return 'bg-green-100 text-green-800';
-    if (status === 'Beklemede') return 'bg-yellow-100 text-yellow-800';
-    if (status === 'Süresi Dolmuş') return 'bg-red-100 text-red-800';
-    if (status === 'Tanımsız') return 'bg-gray-100 text-gray-800';
-    return 'bg-gray-100 text-gray-800';
+    if (status === 'Aktif') return 'bg-green-500/20 text-green-400';
+    if (status === 'Beklemede') return 'bg-yellow-500/20 text-yellow-400';
+    if (status === 'Süresi Dolmuş') return 'bg-red-500/20 text-red-400';
+    if (status === 'Tanımsız') return 'dark-bg-tertiary dark-text-muted';
+    return 'dark-bg-tertiary dark-text-muted';
   };
 
   const toggleSidebar = () => {
@@ -130,11 +105,7 @@ function Uyelik() {
         // Üyelik bilgilerini yeniden yükle
         await loadMembershipData();
         // Profil verilerini de yeniden yükle (membership_end_date güncellenmiş olabilir)
-        const profileResponse = await fetchWithAuth(`${API_URL}/auth/profile`);
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          setProfileData(profileData);
-        }
+        await refreshProfile();
       } else {
         const errorData = await response.json().catch(() => ({}));
         alert(errorData.message || 'Teklif gönderilirken bir hata oluştu.');
@@ -214,7 +185,7 @@ function Uyelik() {
 
   return (
     <div 
-      className={`min-h-screen transition-all duration-1000 ease-out ${isPageLoaded ? 'opacity-100' : 'opacity-0'}`}
+      className="min-h-screen dark-bg-primary"
       {...sidebarSwipe}
     >
       <Head>
@@ -226,69 +197,64 @@ function Uyelik() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="uyelik"
-        profileData={profileData}
+        setIsProfileModalOpen={setIsProfileModalOpen}
+        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        logout={logout}
       />
 
       <div className="flex-1 flex flex-col">
         <Navbar
-          firmaAdi={firmaAdi}
-          profileData={profileData}
-          fetchWithAuth={fetchWithAuth}
-          setIsProfileModalOpen={setIsProfileModalOpen}
-          setProfileData={setProfileData}
-          setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
-          logout={logout}
           onToggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
 
-        <div className="p-4 sm:p-6 pt-8 mt-20 lg:ml-64">
+        <div className="p-4 sm:p-6 pt-8 mt-16 lg:ml-64">
           <div className="max-w-7xl mx-auto">
             {/* Üyelik Bilgileri Bölümü */}
             <div className="mb-8">
-              <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
-                <h1 className="text-2xl sm:text-3xl font-bold text-my-siyah mb-6 sm:mb-8">Üyelik Bilgileri</h1>
+              <div className="dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
+                <h1 className="text-2xl sm:text-3xl font-bold dark-text-primary mb-6 sm:mb-8">Üyelik Bilgileri</h1>
 
                 {membershipLoading ? (
                   <div className="flex justify-center items-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-my-siyah"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
                   </div>
                 ) : membershipData ? (
                   <div className="space-y-6">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+                    <div className="dark-bg-secondary neumorphic-card rounded-xl p-6 border dark-border">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
-                          <h3 className="text-base sm:text-lg font-semibold text-gray-700 mb-1">Üyelik Planı</h3>
-                          <p className="text-2xl sm:text-3xl font-bold text-blue-600">{membershipData.plan || 'Standart'}</p>
+                          <h3 className="text-base sm:text-lg font-semibold dark-text-secondary mb-1">Üyelik Planı</h3>
+                          <p className="text-2xl sm:text-3xl font-bold text-blue-400">{membershipData.plan || 'Standart'}</p>
                         </div>
-                        <span className={`px-4 py-2 rounded-full text-sm font-semibold w-fit ${getStatusColor(membershipData.status || 'Aktif')}`}>
+                        <span className={`px-4 py-2 rounded-full text-sm font-semibold w-fit neumorphic-inset ${getStatusColor(membershipData.status || 'Aktif')}`}>
                           {membershipData.status || 'Aktif'}
                         </span>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-5">
-                        <label className="block text-sm font-semibold text-gray-500 mb-2">Başlangıç Tarihi</label>
-                        <p className="text-lg font-bold text-my-siyah">{formatDate(membershipData.startDate)}</p>
+                      <div className="dark-card-bg neumorphic-card rounded-xl border dark-border p-5">
+                        <label className="block text-sm font-semibold dark-text-muted mb-2">Başlangıç Tarihi</label>
+                        <p className="text-lg font-bold dark-text-primary">{formatDate(membershipData.startDate)}</p>
                       </div>
-                      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border border-gray-200 p-5">
-                        <label className="block text-sm font-semibold text-gray-500 mb-2">Bitiş Tarihi</label>
-                        <p className="text-lg font-bold text-my-siyah">
+                      <div className="dark-card-bg neumorphic-card rounded-xl border dark-border p-5">
+                        <label className="block text-sm font-semibold dark-text-muted mb-2">Bitiş Tarihi</label>
+                        <p className="text-lg font-bold dark-text-primary">
                           {membershipData.endDate ? formatDate(membershipData.endDate) : 'Sınırsız'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 p-5">
-                      <h4 className="text-lg font-semibold text-gray-700 mb-4">Plan Özellikleri</h4>
+                    <div className="dark-card-bg neumorphic-card rounded-xl border dark-border p-5">
+                      <h4 className="text-lg font-semibold dark-text-primary mb-4">Plan Özellikleri</h4>
                       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {(membershipData.features || []).map((feature, index) => (
                           <li key={index} className="flex items-center gap-3">
-                            <svg className="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            <span className="text-gray-700">{feature}</span>
+                            <span className="dark-text-secondary">{feature}</span>
                           </li>
                         ))}
                       </ul>
@@ -296,25 +262,25 @@ function Uyelik() {
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <p className="text-gray-500">Üyelik bilgileri yüklenemedi</p>
+                    <p className="dark-text-muted">Üyelik bilgileri yüklenemedi</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Üyelik Paketleri Bölümü */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
               <div className="text-center mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold text-my-siyah mb-2">Üyelik Paketleri</h2>
-                <p className="text-gray-600 text-sm sm:text-base">İhtiyacınıza uygun paketi seçin ve hemen başlayın</p>
+                <h2 className="text-2xl sm:text-3xl font-bold dark-text-primary mb-2">Üyelik Paketleri</h2>
+                <p className="dark-text-secondary text-sm sm:text-base">İhtiyacınıza uygun paketi seçin ve hemen başlayın</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
                 {membershipPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative bg-white rounded-2xl shadow-lg border-2 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
-                      plan.popular ? 'border-blue-500 md:scale-105 md:-mt-2' : 'border-gray-200 hover:border-gray-300'
+                    className={`relative dark-card-bg neumorphic-card rounded-2xl border-2 dark-border overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+                      plan.popular ? 'border-blue-400 md:scale-105 md:-mt-2' : 'hover:border-dark-border'
                     }`}
                   >
                     {plan.popular && (
@@ -334,21 +300,21 @@ function Uyelik() {
                       </div>
                     </div>
                     <div className="p-5 sm:p-6">
-                      <p className="text-gray-600 text-sm mb-5 text-center font-medium">{plan.description}</p>
+                      <p className="dark-text-secondary text-sm mb-5 text-center font-medium">{plan.description}</p>
                       <ul className="space-y-3 mb-6 min-h-[180px]">
                         {plan.features.map((feature, index) => (
                           <li key={index} className="flex items-start gap-2">
-                            <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            <span className="text-gray-700 text-sm leading-relaxed">{feature}</span>
+                            <span className="dark-text-secondary text-sm leading-relaxed">{feature}</span>
                           </li>
                         ))}
                       </ul>
                       <button
                         onClick={() => selectMembershipPlan(plan.months)}
                         disabled={selectingPlan}
-                        className={`w-full ${plan.buttonColor} text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 shadow-md hover:shadow-lg`}
+                        className={`w-full ${plan.buttonColor} text-white font-semibold py-3 px-6 rounded-lg neumorphic-inset transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95`}
                       >
                         {selectingPlan ? (
                           <span className="flex items-center justify-center gap-2">
@@ -368,14 +334,14 @@ function Uyelik() {
               </div>
 
               {/* Bilgilendirme */}
-              <div className="mt-8 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+              <div className="mt-8 dark-bg-secondary neumorphic-card border dark-border rounded-xl p-5">
                 <div className="flex items-start gap-3">
-                  <svg className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-blue-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div>
-                    <p className="text-sm font-semibold text-blue-900 mb-1">Üyelik Yönetimi</p>
-                    <p className="text-sm text-blue-800">
+                    <p className="text-sm font-semibold dark-text-primary mb-1">Üyelik Yönetimi</p>
+                    <p className="text-sm dark-text-secondary">
                       Üyelik planınızı yükseltmek veya değiştirmek için yukarıdaki paketlerden birini seçebilirsiniz. 
                       Mevcut üyeliğiniz varsa, yeni paket mevcut bitiş tarihinize eklenecektir.
                     </p>
@@ -394,20 +360,10 @@ function Uyelik() {
           onClose={async () => {
             setIsProfileModalOpen(false);
             setIsEditingProfile(false);
-            try {
-              const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-              if (response.ok) {
-                const data = await response.json();
-                setProfileData(data);
-              }
-            } catch (error) {
-              console.error('Profil yükleme hatası:', error);
-            }
+            await refreshProfile();
           }}
           profileData={profileData}
-          setProfileData={(data) => {
-            setProfileData(data);
-          }}
+          setProfileData={refreshProfile}
           isEditing={isEditingProfile}
           setIsEditing={setIsEditingProfile}
           fetchWithAuth={fetchWithAuth}

@@ -13,46 +13,20 @@ import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
 import { useToast } from '../../contexts/ToastContext';
+import { useProfile } from '../../contexts/ProfileContext';
 
 const Kartlar = () => {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { success, error: showError, warning } = useToast();
+  const { profileData, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isYeniKartEkleModalOpen, setIsYeniKartEkleModalOpen] = useState(false);
   const [isPeriyodikBakimMode, setIsPeriyodikBakimMode] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-  const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [isPageLoaded, setIsPageLoaded] = useState(false);
-
-  // Sayfa yüklendiğinde fade-in animasyonu
-  useEffect(() => {
-    setIsPageLoaded(false);
-    const timer = setTimeout(() => {
-      setIsPageLoaded(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Profil verilerini yükle
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-        if (response.ok) {
-          const data = await response.json();
-          setProfileData(data);
-        }
-      } catch (error) {
-        console.error('Profil yükleme hatası:', error);
-      }
-    };
-    loadProfile();
-  }, []);
   const [kartlar, setKartlar] = useState([]);
   const [secilenKartlar, setSecilenKartlar] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
@@ -553,7 +527,7 @@ const secilenKartlariIndir = async (type) => {
 
   return (
     <div 
-      className={`min-h-screen transition-all duration-1000 ease-out ${isPageLoaded ? 'opacity-100' : 'opacity-0'}`}
+      className="min-h-screen dark-bg-primary"
       {...sidebarSwipe}
     >
       <Head>
@@ -565,30 +539,25 @@ const secilenKartlariIndir = async (type) => {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="kartlar"
-        profileData={profileData}
+        setIsProfileModalOpen={setIsProfileModalOpen}
+        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        logout={logout}
       />
 
       <div className="flex-1 flex flex-col">
         <Navbar
-          firmaAdi={firmaAdi}
-          profileData={profileData}
-          fetchWithAuth={fetchWithAuth}
-          setIsProfileModalOpen={setIsProfileModalOpen}
-          setProfileData={setProfileData}
-          setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
-          logout={logout}
           onToggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
 
         <ProtectedPage>
-          <div className="p-6 pt-8 lg:ml-64 ">
-            <div className="p-6 mt-20 bg-my-beyaz rounded-3xl">
+          <div className="p-6 pt-8 lg:ml-64 dark-bg-primary">
+            <div className="p-6 mt-16 dark-card-bg neumorphic-card rounded-3xl">
               <div className="flex items-center pb-4 justify-between">
               <div className="flex items-center">
                 <div className="pr-4 items-center ">
                   <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between ">
-                    <p className="font-bold text-xl text-my-siyah">Kartlarım</p>
+                    <p className="font-bold text-xl dark-text-primary">Kartlarım</p>
                   </div>
                 </div>
               </div>
@@ -617,12 +586,12 @@ const secilenKartlariIndir = async (type) => {
                     <label htmlFor="table-search" className="sr-only">Search</label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
-                        <svg className="w-5 h-5 text-gray-500 " aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <svg className="w-5 h-5 dark-text-muted" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                           <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path>
                         </svg>
                       </div>
                       <input type="text" id="table-search"
-                        className="block p-2 ps-10 text-md text-gray-900 border border-gray-300 rounded-full w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
+                        className="block p-2 ps-10 text-md dark-text-primary neumorphic-input rounded-full w-80"
                         placeholder="Kartları ara"
                         value={aramaTerimi}
                         onChange={(e) => setAramaTerimi(e.target.value)} />
@@ -635,8 +604,8 @@ const secilenKartlariIndir = async (type) => {
             <div className="overflow-auto">
               {/* Desktop Table */}
               <div className="hidden md:block">
-                <table className="w-full text-sm text-left text-gray-500 font-medium">
-                  <thead className="text-xs text-gray-600 uppercase bg-my-edbeyaz">
+                <table className="w-full text-sm text-left dark-text-secondary font-medium">
+                  <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
                     <tr>
                       <th scope="col" className="p-4"></th>
                       <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('adSoyad')}>
@@ -671,7 +640,7 @@ const secilenKartlariIndir = async (type) => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="dark-card-bg divide-y dark-border">
                     {sortedKartlar.filter(kart =>
                       kart.adSoyad?.toLowerCase().includes(aramaTerimi.toLowerCase()) ||
                       kart.markaModel?.toLowerCase().includes(aramaTerimi.toLowerCase()) ||
@@ -685,23 +654,23 @@ const secilenKartlariIndir = async (type) => {
                           <div className="flex items-center">
                             <input
                               type="checkbox"
-                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                              className="w-4 h-4 text-blue-500 dark-bg-tertiary dark-border rounded focus:ring-blue-500"
                               checked={secilenKartlar.includes(kart.card_id)}
                               onChange={(e) => handleCheckboxChange(e, kart.card_id)}
                             />
                             <label htmlFor={`checkbox-table-${kart.card_id}`} className="sr-only">checkbox</label>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                        <td className="px-6 py-4 font-medium dark-text-primary whitespace-nowrap">
                           {capitalizeWords(kart.adSoyad || "Tanımsız")}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 dark-text-secondary">
                           {capitalizeWords(kart.markaModel || "Tanımsız")}
                         </td>
-                        <td className="px-6 py-4 text-green-500">
+                        <td className="px-6 py-4 text-green-400">
                           {toUpperCase(kart.plaka || "Tanımsız")}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 dark-text-secondary">
                           {kart.km !== undefined && kart.km !== null ? formatKm(kart.km) : "Tanımsız"}
                         </td>
                         <td className="px-6 py-4">
@@ -710,23 +679,23 @@ const secilenKartlariIndir = async (type) => {
                               href={formatWhatsAppLink(kart.telNo)} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
                               title="WhatsApp ile aç"
                             >
                               {kart.telNo}
                             </a>
                           ) : (
-                            "Tanımsız"
+                            <span className="dark-text-secondary">Tanımsız</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-blue-500">
+                        <td className="px-6 py-4 text-blue-400">
                           {kart.girisTarihi || "Tanımsız"}
                         </td>
                         <td className="px-6 py-4">
                           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
                             kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1'
-                              ? 'bg-purple-100 text-purple-800' 
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-purple-500/20 text-purple-300' 
+                              : 'dark-bg-tertiary dark-text-secondary'
                           }`}>
                             {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? 'Periyodik Bakım' : 'Normal'}
                           </span>
@@ -734,10 +703,10 @@ const secilenKartlariIndir = async (type) => {
                         <td className="px-6 py-4">
                           <button
                             onClick={() => toggleOdemeDurumu(kart.card_id)}
-                            className={`p-2 pl-4 pr-4 rounded-full font-medium transition-all ${
+                            className={`p-2 pl-4 pr-4 rounded-full font-medium transition-all neumorphic-inset ${
                               kart.odemeAlindi 
                                 ? 'bg-green-500 text-white hover:bg-green-600' 
-                                : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                                : 'dark-bg-tertiary dark-text-secondary hover:dark-bg-secondary'
                             }`}
                             title={kart.odemeAlindi ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
                           >
@@ -753,7 +722,7 @@ const secilenKartlariIndir = async (type) => {
                           </button>
                         </td>
                         <td className="px-6 py-4">
-                          <Link href={DetailPage(kart.card_id)} className="bg-yellow-500 p-2 pl-4 pr-4 rounded-full font-medium text-my-siyah hover:underline">Detay</Link>
+                          <Link href={DetailPage(kart.card_id)} className="bg-yellow-500 p-2 pl-4 pr-4 rounded-full font-medium dark-text-primary hover:underline neumorphic-outset">Detay</Link>
                         </td>
                         <td className="px-6 py-4 flex gap-2">
                           <button onClick={() => handleExcelDownload(kart.card_id)} className="bg-green-500 p-2 pl-4 pr-4 rounded-full font-medium text-my-beyaz hover:underline">
@@ -783,7 +752,7 @@ const secilenKartlariIndir = async (type) => {
                   <input
                     type="text"
                     id="table-search-mobile"
-                    className="block w-full p-3 text-md text-gray-900 border border-gray-300 rounded-full bg-gray-50 focus:ring-blue-500 focus:border-blue-500 touch-manipulation"
+                    className="block w-full p-3 text-md dark-text-primary neumorphic-input rounded-full touch-manipulation"
                     placeholder="Kartları ara"
                     value={aramaTerimi}
                     onChange={(e) => setAramaTerimi(e.target.value)}
@@ -823,7 +792,7 @@ const secilenKartlariIndir = async (type) => {
                   </button>
                 </div>
                 {/* Card list, full width, white bg, compact - Mobil için optimize edilmiş */}
-                <div className="w-full bg-white">
+                <div className="w-full dark-card-bg neumorphic-card rounded-xl overflow-hidden">
                   {sortedKartlar.filter(kart =>
                     kart.adSoyad?.toLowerCase().includes(aramaTerimi.toLowerCase()) ||
                     kart.markaModel?.toLowerCase().includes(aramaTerimi.toLowerCase()) ||
@@ -832,39 +801,39 @@ const secilenKartlariIndir = async (type) => {
                     kart.km?.toString().includes(aramaTerimi) ||
                     kart.girisTarihi?.toString().includes(aramaTerimi)
                   ).map((kart) => (
-                    <div key={kart.card_id} className="w-full border-b last:border-b-0 px-3 py-3 flex items-center active:bg-gray-50 transition-colors">
+                    <div key={kart.card_id} className="w-full border-b last:border-b-0 dark-border px-3 py-3 flex items-center active:dark-bg-tertiary transition-colors">
                       <input
                         type="checkbox"
-                        className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 mr-3 touch-manipulation"
+                        className="w-5 h-5 text-blue-500 dark-bg-tertiary dark-border rounded focus:ring-blue-500 mr-3 touch-manipulation"
                         checked={secilenKartlar.includes(kart.card_id)}
                         onChange={(e) => handleCheckboxChange(e, kart.card_id)}
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="font-semibold text-gray-900 text-base truncate mb-1">{capitalizeWords(kart.adSoyad || "Tanımsız")}</div>
-                        <div className="text-sm text-gray-600 truncate mb-1">{capitalizeWords(kart.markaModel || "Tanımsız")}</div>
-                        <div className="text-sm text-green-600 font-semibold mb-1">{toUpperCase(kart.plaka || "Tanımsız")}</div>
-                        <div className="text-xs text-gray-600 mb-1">
+                        <div className="font-semibold dark-text-primary text-base truncate mb-1">{capitalizeWords(kart.adSoyad || "Tanımsız")}</div>
+                        <div className="text-sm dark-text-secondary truncate mb-1">{capitalizeWords(kart.markaModel || "Tanımsız")}</div>
+                        <div className="text-sm text-green-400 font-semibold mb-1">{toUpperCase(kart.plaka || "Tanımsız")}</div>
+                        <div className="text-xs dark-text-secondary mb-1">
                           {kart.telNo && kart.telNo !== "Tanımsız" ? (
                             <a 
                               href={formatWhatsAppLink(kart.telNo)} 
                               target="_blank" 
                               rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
                               title="WhatsApp ile aç"
                             >
                               {kart.telNo}
                             </a>
                           ) : (
-                            "Tanımsız"
+                            <span className="dark-text-secondary">Tanımsız</span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-600 mb-1">{kart.km !== undefined && kart.km !== null ? formatKm(kart.km) : "Tanımsız"} km</div>
-                        <div className="text-xs text-blue-500 mb-1">{kart.girisTarihi || "Tanımsız"}</div>
+                        <div className="text-xs dark-text-secondary mb-1">{kart.km !== undefined && kart.km !== null ? formatKm(kart.km) : "Tanımsız"} km</div>
+                        <div className="text-xs text-blue-400 mb-1">{kart.girisTarihi || "Tanımsız"}</div>
                         <div className="mt-1">
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                             kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1'
-                              ? 'bg-purple-100 text-purple-800' 
-                              : 'bg-gray-100 text-gray-800'
+                              ? 'bg-purple-500/20 text-purple-300' 
+                              : 'dark-bg-tertiary dark-text-secondary'
                           }`}>
                             {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? 'Periyodik Bakım' : 'Normal'}
                           </span>
@@ -873,10 +842,10 @@ const secilenKartlariIndir = async (type) => {
                       <div className="flex flex-col items-center ml-3 gap-3">
                         <button
                           onClick={() => toggleOdemeDurumu(kart.card_id)}
-                          className={`p-2 rounded-full transition-all touch-manipulation active:scale-90 ${
+                          className={`p-2 rounded-full transition-all touch-manipulation active:scale-90 neumorphic-inset ${
                             kart.odemeAlindi 
                               ? 'bg-green-500 text-white' 
-                              : 'bg-gray-300 text-gray-700'
+                              : 'dark-bg-tertiary dark-text-secondary'
                           }`}
                           title={kart.odemeAlindi ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
                         >
@@ -949,21 +918,10 @@ const secilenKartlariIndir = async (type) => {
           onClose={async () => {
             setIsProfileModalOpen(false);
             setIsEditingProfile(false);
-              // Modal kapandığında profil verilerini yeniden yükle
-              try {
-                const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-                if (response.ok) {
-                  const data = await response.json();
-                  setProfileData(data);
-                }
-              } catch (error) {
-                console.error('Profil yükleme hatası:', error);
-              }
+            await refreshProfile();
           }}
           profileData={profileData}
-          setProfileData={(data) => {
-            setProfileData(data);
-          }}
+          setProfileData={refreshProfile}
           isEditing={isEditingProfile}
           setIsEditing={setIsEditingProfile}
           fetchWithAuth={fetchWithAuth}

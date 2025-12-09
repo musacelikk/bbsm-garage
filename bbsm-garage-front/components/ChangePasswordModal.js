@@ -72,13 +72,13 @@ const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoadi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 modal-overlay" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 modal-content" onClick={(e) => e.stopPropagation()}>
+      <div className="dark-card-bg neumorphic-card rounded-2xl max-w-md w-full mx-4 modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-my-siyah">Şifre Değiştir</h2>
+            <h2 className="text-2xl font-bold dark-text-primary">Şifre Değiştir</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="dark-text-muted hover:dark-text-primary transition-colors"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -89,51 +89,51 @@ const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoadi
           {success ? (
             <div className="text-center py-8">
               <div className="mb-4">
-                <svg className="w-16 h-16 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-16 h-16 text-green-400 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
-              <p className="text-lg font-semibold text-green-600">Şifre başarıyla değiştirildi!</p>
+              <p className="text-lg font-semibold text-green-400">Şifre başarıyla değiştirildi!</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <p className="text-sm text-red-600">{error}</p>
+                <div className="p-3 bg-red-500/20 border dark-border rounded-lg neumorphic-inset">
+                  <p className="text-sm text-red-400">{error}</p>
                 </div>
               )}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Eski Şifre</label>
+                <label className="block text-sm font-semibold dark-text-primary mb-1">Eski Şifre</label>
                 <input
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Yeni Şifre</label>
+                <label className="block text-sm font-semibold dark-text-primary mb-1">Yeni Şifre</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                   required
                   minLength={3}
                 />
-                <p className="text-xs text-gray-500 mt-1">En az 3 karakter olmalıdır</p>
+                <p className="text-xs dark-text-muted mt-1">En az 3 karakter olmalıdır</p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Yeni Şifre Tekrar</label>
+                <label className="block text-sm font-semibold dark-text-primary mb-1">Yeni Şifre Tekrar</label>
                 <input
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                   required
                   minLength={3}
                 />
@@ -143,13 +143,13 @@ const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoadi
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 px-4 py-2 border dark-border dark-text-primary rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
                 >
                   İptal
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-my-siyah text-white rounded-lg hover:bg-my-4b4b4bgri transition-colors"
+                  className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors"
                 >
                   Değiştir
                 </button>

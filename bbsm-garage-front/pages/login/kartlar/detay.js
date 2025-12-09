@@ -12,33 +12,18 @@ import Sidebar from '../../../components/Sidebar';
 import Navbar from '../../../components/Navbar';
 import { aracMarkalari, aracModelleri, yillar, renkler } from '../../../data/aracVerileri';
 import { useToast } from '../../../contexts/ToastContext';
+import { useProfile } from '../../../contexts/ProfileContext';
 
 function Detay() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { success, error: showError, warning, info } = useToast();
+  const { profileData, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [profileData, setProfileData] = useState(null);
-  const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-        if (response.ok) {
-          const data = await response.json();
-          setProfileData(data);
-        }
-      } catch (error) {
-        console.error('Profil yükleme hatası:', error);
-      }
-    };
-    loadProfile();
-  }, []);
   const [detay_id, setDetay_id] = useState(0);
   const [veri, setVeri] = useState({});
   const [adSoyad, setadSoyad] = useState('');
@@ -533,50 +518,46 @@ function Detay() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="kartlar"
+        setIsProfileModalOpen={setIsProfileModalOpen}
+        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        logout={logout}
       />
 
       <div className="flex-1 flex flex-col">
         <Navbar
-          firmaAdi={firmaAdi}
-          profileData={profileData}
-          fetchWithAuth={fetchWithAuth}
-          setIsProfileModalOpen={setIsProfileModalOpen}
-          setProfileData={setProfileData}
-          setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
-          logout={logout}
           onToggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
         />
       </div>
 
-      <div className="p-6 pt-8 mt-14 lg:ml-64">
-        <div className="p-6 mt-5 bg-my-beyaz rounded-3xl">
+      <div className="p-6 pt-8 mt-12 lg:ml-64 dark-bg-primary">
+        <div className="p-6 mt-5 dark-card-bg neumorphic-card rounded-3xl">
           <div className="flex p-2 items-center justify-between flex-col sm:flex-row gap-4 sm:gap-0">
-            <h2 className="text-2xl font-bold text-my-siyah mb-4">Kart Bilgileri</h2>
+            <h2 className="text-2xl font-bold dark-text-primary mb-4">Kart Bilgileri</h2>
             <div className="flex items-center flex-wrap gap-2 sm:gap-0">
-              <div className="items-center bg-green-500 p-2 px-4 sm:px-8 rounded-full">
-                <button onClick={handleExcelDownload} className="font-semibold text-my-beyaz text-md">Excel</button>
+              <div className="items-center bg-green-500 p-2 px-4 sm:px-8 rounded-full neumorphic-inset">
+                <button onClick={handleExcelDownload} className="font-semibold text-white text-md">Excel</button>
               </div>
-              <div className="items-center bg-orange-600 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4">
-                <button onClick={handlePDFDownload} className="font-semibold text-my-beyaz text-md">PDF</button>
+              <div className="items-center bg-orange-600 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4 neumorphic-inset">
+                <button onClick={handlePDFDownload} className="font-semibold text-white text-md">PDF</button>
               </div>
-              <div className="items-center bg-yellow-500 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4">
-                <button onClick={handleSaveCardInfo} className="font-semibold text-my-beyaz text-md">Kaydet</button>
+              <div className="items-center bg-yellow-500 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4 neumorphic-inset">
+                <button onClick={handleSaveCardInfo} className="font-semibold text-white text-md">Kaydet</button>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-my-siyah">
-            <input onChange={handleChange} placeholder="Ad Soyad" value={adSoyad} type="text" id="adSoyad" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Telefon No" value={telNo} type="text" id="telNo" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Marka Model" value={markaModel} type="text" id="markaModel" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Plaka" value={plaka} type="text" id="plaka" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Km" value={km} type="text" id="km" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Model Yılı" value={modelYili} type="text" id="modelYili" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Şasi" value={sasi} type="text" id="sasi" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Renk" value={renk} type="text" id="renk" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <input onChange={handleChange} placeholder="Giriş Tarihi" value={girisTarihi} type="text" id="girisTarihi" className="bg-my-beyaz border p-2 rounded-md w-full" />
-            <textarea onChange={handleChange} placeholder="Adres" value={adres} id="adres" className="bg-my-beyaz border p-2 rounded-md w-full" rows="1"></textarea>
-            <textarea onChange={handleChange} placeholder="Notlar" value={notlar} id="notlar" className="bg-my-beyaz border p-2 rounded-md w-full col-span-1 sm:col-span-2" rows="3"></textarea>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 dark-text-primary">
+            <input onChange={handleChange} placeholder="Ad Soyad" value={adSoyad} type="text" id="adSoyad" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Telefon No" value={telNo} type="text" id="telNo" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Marka Model" value={markaModel} type="text" id="markaModel" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Plaka" value={plaka} type="text" id="plaka" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Km" value={km} type="text" id="km" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Model Yılı" value={modelYili} type="text" id="modelYili" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Şasi" value={sasi} type="text" id="sasi" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Renk" value={renk} type="text" id="renk" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <input onChange={handleChange} placeholder="Giriş Tarihi" value={girisTarihi} type="text" id="girisTarihi" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" />
+            <textarea onChange={handleChange} placeholder="Adres" value={adres} id="adres" className="neumorphic-input p-2 rounded-md w-full dark-text-primary" rows="1"></textarea>
+            <textarea onChange={handleChange} placeholder="Notlar" value={notlar} id="notlar" className="neumorphic-input p-2 rounded-md w-full col-span-1 sm:col-span-2 dark-text-primary" rows="3"></textarea>
             <div className="flex items-center gap-6 col-span-1 sm:col-span-2">
               <div className="flex items-center gap-2">
                 <input 
@@ -584,41 +565,41 @@ function Detay() {
                   id="odemeAlindi" 
                   checked={odemeAlindi} 
                   onChange={handleChange} 
-                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500" 
+                  className="w-4 h-4 text-blue-400 dark-bg-tertiary dark-border rounded focus:ring-blue-400" 
                 />
-                <label htmlFor="odemeAlindi" className="text-gray-700 font-medium cursor-pointer">
+                <label htmlFor="odemeAlindi" className="dark-text-primary font-medium cursor-pointer">
                   Ödeme Alındı
                 </label>
               </div>
             </div>
             <div className="col-span-1 sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Düzenleyen: <span className="text-gray-500">{duzenleyen || 'Belirtilmemiş'}</span>
+              <label className="block text-sm font-medium dark-text-primary mb-1">
+                Düzenleyen: <span className="dark-text-muted">{duzenleyen || 'Belirtilmemiş'}</span>
               </label>
-              <p className="text-xs text-gray-500">Kaydet butonuna bastığınızda düzenleyen bilgisi sorulacaktır.</p>
+              <p className="text-xs dark-text-muted">Kaydet butonuna bastığınızda düzenleyen bilgisi sorulacaktır.</p>
             </div>
           </div>
           <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 mt-8'>
-            <h2 className="text-2xl font-bold text-my-siyah">Yapılanlar</h2>
+            <h2 className="text-2xl font-bold dark-text-primary">Yapılanlar</h2>
             <div className="flex flex-wrap gap-2">
-              <button onClick={handleEkleYapilanlar} className="p-2 px-4 sm:px-8 rounded-full font-semibold bg-blue-500 text-my-beyaz text-md">Ekle</button>
+              <button onClick={handleEkleYapilanlar} className="p-2 px-4 sm:px-8 rounded-full font-semibold bg-blue-500 text-white text-md neumorphic-inset">Ekle</button>
             </div>
           </div>
           <div className="overflow-x-auto -mx-6 sm:mx-0">
             <div className="min-w-full inline-block align-middle">
-              <table className="min-w-full text-sm divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="min-w-full text-sm divide-y dark-border">
+                <thead className="dark-bg-tertiary neumorphic-inset">
                   <tr>
-                    <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Birim Adedi</th>
-                    <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-600 uppercase tracking-wider">Parça Adı</th>
-                    <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">Birim Fiyatı</th>
-                    <th className="px-3 sm:px-6 py-3 text-left font-medium text-gray-700 uppercase tracking-wider">Toplam Fiyat</th>
-                    <th className="px-3 sm:px-6 py-3 text-center font-medium text-gray-700 uppercase tracking-wider">Sil</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider">Birim Adedi</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider">Parça Adı</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider">Birim Fiyatı</th>
+                    <th className="px-3 sm:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider">Toplam Fiyat</th>
+                    <th className="px-3 sm:px-6 py-3 text-center font-medium dark-text-primary uppercase tracking-wider">Sil</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className="dark-card-bg divide-y dark-border">
                   {yapilanlar.map((yapilan, index) => (
-                    <tr key={index}>
+                    <tr key={index} className="hover:dark-bg-tertiary transition-colors">
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <input
                           onChange={(event) => handleChange2(event, index)}
@@ -626,7 +607,7 @@ function Detay() {
                           value={yapilan.birimAdedi || ''}
                           type="number"
                           name="birimAdedi"
-                          className="bg-my-beyaz border p-2 rounded-md w-full"
+                          className="neumorphic-input p-2 rounded-md w-full dark-text-primary"
                         />
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
@@ -636,7 +617,7 @@ function Detay() {
                           value={yapilan.parcaAdi || ''}
                           type="text"
                           name="parcaAdi"
-                          className="bg-my-beyaz border p-2 rounded-md w-full truncate"
+                          className="neumorphic-input p-2 rounded-md w-full truncate dark-text-primary"
                           title={yapilan.parcaAdi || ''}
                         />
                       </td>
@@ -647,12 +628,12 @@ function Detay() {
                           value={yapilan.birimFiyati || ''}
                           type="number"
                           name="birimFiyati"
-                          className="bg-my-beyaz border p-2 rounded-md w-full"
+                          className="neumorphic-input p-2 rounded-md w-full dark-text-primary"
                         />
                       </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">{(yapilan.birimFiyati) * (yapilan.birimAdedi)}</td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap dark-text-secondary">{(yapilan.birimFiyati) * (yapilan.birimAdedi)}</td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                        <button onClick={() => handleDelete(yapilan.id)} className="text-red-500 hover:text-red-700">
+                        <button onClick={() => handleDelete(yapilan.id)} className="text-red-400 hover:text-red-300">
                           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
                           </svg>
@@ -664,19 +645,19 @@ function Detay() {
               </table>
             </div>
           </div>
-          <h2 className="text-xl text-end font-bold text-my-siyah p-4 sm:p-8 m-4 mt-8">Toplam Fiyat : {toplamFiyat} </h2>
+          <h2 className="text-xl text-end font-bold dark-text-primary p-4 sm:p-8 m-4 mt-8">Toplam Fiyat : {toplamFiyat} </h2>
         </div>
       </div>
 
       {/* Düzenleyen Modal */}
       {isDuzenleyenModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-[9999] backdrop-blur-sm">
-          <div className="bg-white rounded-3xl max-w-md w-full mx-4 p-6 shadow-xl">
+        <div className="fixed inset-0 bg-black bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-[9999] backdrop-blur-sm">
+          <div className="dark-card-bg neumorphic-card rounded-3xl max-w-md w-full mx-4 p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-my-siyah">Düzenleyen Bilgisi</h3>
+              <h3 className="text-xl font-bold dark-text-primary">Düzenleyen Bilgisi</h3>
               <button 
                 onClick={() => setIsDuzenleyenModalOpen(false)}
-                className="text-gray-500 hover:text-gray-700"
+                className="dark-text-muted hover:dark-text-primary"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
@@ -684,15 +665,15 @@ function Detay() {
               </button>
             </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Düzenleyen * <span className="text-red-500">(Zorunlu)</span>
+              <label className="block text-sm font-medium dark-text-primary mb-2">
+                Düzenleyen * <span className="text-red-400">(Zorunlu)</span>
               </label>
               <input
                 type="text"
                 value={tempDuzenleyen}
                 onChange={(e) => setTempDuzenleyen(e.target.value)}
                 placeholder="Düzenleyen ismini giriniz"
-                className="w-full bg-my-beyaz border border-gray-300 p-3 rounded-md focus:outline-none focus:ring-2 focus:ring-my-mavi"
+                className="w-full neumorphic-input p-3 rounded-md dark-text-primary"
                 autoFocus
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
@@ -704,13 +685,13 @@ function Detay() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setIsDuzenleyenModalOpen(false)}
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-full font-semibold hover:bg-gray-400 transition-colors"
+                className="px-6 py-2 dark-bg-tertiary dark-text-primary rounded-full font-semibold neumorphic-inset hover:dark-bg-secondary transition-colors"
               >
                 İptal
               </button>
               <button
                 onClick={handleConfirmSave}
-                className="px-6 py-2 bg-my-mavi text-white rounded-full font-semibold hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 bg-blue-500 text-white rounded-full font-semibold neumorphic-inset hover:bg-blue-600 transition-colors"
               >
                 Kaydet
               </button>
@@ -726,21 +707,10 @@ function Detay() {
           onClose={async () => {
             setIsProfileModalOpen(false);
             setIsEditingProfile(false);
-            // Modal kapandığında profil verilerini yeniden yükle
-            try {
-              const response = await fetchWithAuth(`${API_URL}/auth/profile`);
-              if (response.ok) {
-                const data = await response.json();
-                setProfileData(data);
-              }
-            } catch (error) {
-              console.error('Profil yükleme hatası:', error);
-            }
+            await refreshProfile();
           }}
           profileData={profileData}
-          setProfileData={(data) => {
-            setProfileData(data);
-          }}
+          setProfileData={refreshProfile}
           isEditing={isEditingProfile}
           setIsEditing={setIsEditingProfile}
           fetchWithAuth={fetchWithAuth}
