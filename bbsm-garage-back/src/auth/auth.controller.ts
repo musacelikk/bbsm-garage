@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, UseGuards, Headers, Request, Query, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Patch, UseGuards, Headers, Request, Query, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './auth.dto';
 import { ChangePasswordDto } from './change-password.dto';
@@ -6,10 +6,14 @@ import { UpdateProfileDto } from './update-profile.dto';
 import { ResetPasswordDto } from './reset-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
+import { OneriService } from '../oneri/oneri.service';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly oneriService: OneriService,
+  ) {}
 
   @Get()
   getAll() {
@@ -170,5 +174,30 @@ export class AuthController {
   ) {
     const requestId = parseInt(id);
     return this.authService.rejectMembershipRequest(authorization, requestId, body.reason);
+  }
+
+  @Get('admin/oneriler')
+  async getAllOneriler(@Headers('authorization') authorization: string) {
+    return this.authService.getAllOneriler(authorization);
+  }
+
+  @Patch('admin/oneriler/:id/approve')
+  async approveOneri(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() body: { adminResponse?: string }
+  ) {
+    const oneriId = parseInt(id);
+    return this.authService.approveOneri(authorization, oneriId, body.adminResponse);
+  }
+
+  @Patch('admin/oneriler/:id/reject')
+  async rejectOneri(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() body: { adminResponse?: string }
+  ) {
+    const oneriId = parseInt(id);
+    return this.authService.rejectOneri(authorization, oneriId, body.adminResponse);
   }
 }

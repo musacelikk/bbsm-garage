@@ -7,6 +7,7 @@ import { AuthDto } from './auth.dto';
 import { JwtService } from '@nestjs/jwt';
 import { LogService } from '../log/log.service';
 import { EmailService } from '../email/email.service';
+import { OneriService } from '../oneri/oneri.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -16,7 +17,8 @@ export class AuthService {
     @InjectRepository(MembershipRequestEntity) private membershipRequestRepository: Repository<MembershipRequestEntity>,
     private readonly jwtService: JwtService,
     private readonly logService: LogService,
-    private readonly emailService: EmailService
+    private readonly emailService: EmailService,
+    private readonly oneriService: OneriService,
   ) {}
 
   findAll(): any {
@@ -790,6 +792,78 @@ export class AuthService {
         throw error;
       }
       throw new Error(error.message || 'Teklif reddedilemedi');
+    }
+  }
+
+  async getAllOneriler(authorization: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      return await this.oneriService.findAll();
+    } catch (error) {
+      console.error('getAllOneriler error:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Öneriler yüklenirken bir hata oluştu');
+    }
+  }
+
+  async approveOneri(authorization: string, oneriId: number, adminResponse?: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      return await this.oneriService.approve(oneriId, adminResponse);
+    } catch (error) {
+      console.error('approveOneri error:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Öneri onaylanırken bir hata oluştu');
+    }
+  }
+
+  async rejectOneri(authorization: string, oneriId: number, adminResponse?: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      return await this.oneriService.reject(oneriId, adminResponse);
+    } catch (error) {
+      console.error('rejectOneri error:', error);
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Öneri reddedilirken bir hata oluştu');
     }
   }
 }

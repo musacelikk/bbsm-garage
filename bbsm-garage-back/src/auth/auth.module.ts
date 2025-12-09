@@ -10,6 +10,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LogModule } from '../log/log.module';
 import { EmailModule } from '../email/email.module';
+import { OneriModule } from '../oneri/oneri.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { EmailModule } from '../email/email.module';
     }),
     LogModule,
     EmailModule,
+    OneriModule,
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],

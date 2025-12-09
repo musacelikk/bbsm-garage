@@ -16,6 +16,9 @@ function AdminPanel() {
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
   const [membershipRequests, setMembershipRequests] = useState([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [oneriler, setOneriler] = useState([]);
+  const [selectedOneri, setSelectedOneri] = useState(null);
+  const [isOneriModalOpen, setIsOneriModalOpen] = useState(false);
 
   // Admin kontrolü - sayfa yüklenmeden önce kontrol et
   useEffect(() => {
@@ -64,9 +67,11 @@ function AdminPanel() {
     if (isAuthenticated) {
       fetchUsers();
       fetchMembershipRequests();
+      fetchOneriler();
       // Her 30 saniyede bir teklifleri yenile
       const interval = setInterval(() => {
         fetchMembershipRequests();
+        fetchOneriler();
       }, 30000);
       return () => clearInterval(interval);
     }
@@ -224,6 +229,66 @@ function AdminPanel() {
     } catch (error) {
       console.error('Üyelik ekleme hatası:', error);
       alert('Üyelik eklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchOneriler = async () => {
+    try {
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/oneriler`);
+      if (response.ok) {
+        const data = await response.json();
+        setOneriler(data || []);
+      }
+    } catch (error) {
+      console.error('Öneriler yüklenirken hata:', error);
+    }
+  };
+
+  const approveOneri = async (oneriId) => {
+    try {
+      setLoading(true);
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/oneriler/${oneriId}/approve`, {
+        method: 'PATCH',
+      });
+
+      if (response.ok) {
+        alert('Öneri onaylandı ve kullanıcıya bildirim gönderildi.');
+        await fetchOneriler();
+        setIsOneriModalOpen(false);
+        setSelectedOneri(null);
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen hata' }));
+        alert(`Öneri onaylanırken hata: ${errorData.message || response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Öneri onaylama hatası:', error);
+      alert('Öneri onaylanırken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const rejectOneri = async (oneriId) => {
+    try {
+      setLoading(true);
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/oneriler/${oneriId}/reject`, {
+        method: 'PATCH',
+      });
+
+      if (response.ok) {
+        alert('Öneri reddedildi ve kullanıcıya bildirim gönderildi.');
+        await fetchOneriler();
+        setIsOneriModalOpen(false);
+        setSelectedOneri(null);
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Bilinmeyen hata' }));
+        alert(`Öneri reddedilirken hata: ${errorData.message || response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Öneri reddetme hatası:', error);
+      alert('Öneri reddedilirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -539,6 +604,202 @@ function AdminPanel() {
               </div>
             )}
           </div>
+
+          {/* Öneriler Listesi */}
+          <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Öneriler</h2>
+              <button
+                onClick={fetchOneriler}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Yenile
+              </button>
+            </div>
+
+            {loading ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Kullanıcı</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Başlık</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Etki Alanı</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Durum</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Tarih</th>
+                      <th className="text-left py-3 px-4 font-semibold text-gray-700">İşlem</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {oneriler.length === 0 ? (
+                      <tr>
+                        <td colSpan="7" className="py-8 text-center text-gray-500">
+                          Henüz öneri bulunmamaktadır
+                        </td>
+                      </tr>
+                    ) : (
+                      oneriler.map((oneri) => (
+                        <tr key={oneri.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4 text-gray-700 text-sm">{oneri.id}</td>
+                          <td className="py-3 px-4 text-gray-700 text-sm">{oneri.username || '-'}</td>
+                          <td className="py-3 px-4">
+                            <button
+                              onClick={() => {
+                                setSelectedOneri(oneri);
+                                setIsOneriModalOpen(true);
+                              }}
+                              className="text-left text-blue-600 hover:text-blue-800 hover:underline font-medium text-sm max-w-xs truncate"
+                            >
+                              {oneri.oneriBaslik || '-'}
+                            </button>
+                          </td>
+                          <td className="py-3 px-4 text-gray-700 text-sm">
+                            {oneri.etkiAlani && Array.isArray(oneri.etkiAlani) 
+                              ? oneri.etkiAlani.join(', ') 
+                              : '-'}
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                              oneri.status === 'pending' 
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : oneri.status === 'approved'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}>
+                              {oneri.status === 'pending' ? 'Bekliyor' : oneri.status === 'approved' ? 'Onaylandı' : 'Reddedildi'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-gray-700 text-sm">
+                            {oneri.tarih ? new Date(oneri.tarih).toLocaleString('tr-TR') : '-'}
+                          </td>
+                          <td className="py-3 px-4">
+                            {oneri.status === 'pending' ? (
+                              <div className="flex flex-col gap-2">
+                                <button
+                                  onClick={() => approveOneri(oneri.id)}
+                                  disabled={loading}
+                                  className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Onayla
+                                </button>
+                                <button
+                                  onClick={() => rejectOneri(oneri.id)}
+                                  disabled={loading}
+                                  className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                  Reddet
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-500">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Öneri Detay Modal */}
+          {isOneriModalOpen && selectedOneri && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-my-siyah">Öneri Detayı</h2>
+                    <button
+                      onClick={() => {
+                        setIsOneriModalOpen(false);
+                        setSelectedOneri(null);
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Kullanıcı</label>
+                      <p className="text-gray-900">{selectedOneri.username || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Başlık</label>
+                      <p className="text-gray-900">{selectedOneri.oneriBaslik || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Sorun Tanımı</label>
+                      <p className="text-gray-900 whitespace-pre-wrap">{selectedOneri.sorunTanimi || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Mevcut Çözüm</label>
+                      <p className="text-gray-900 whitespace-pre-wrap">{selectedOneri.mevcutCozum || '-'}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Etki Alanı</label>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedOneri.etkiAlani && Array.isArray(selectedOneri.etkiAlani) ? (
+                          selectedOneri.etkiAlani.map((etki, index) => (
+                            <span key={index} className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
+                              {etki === 'zaman' ? '⏱ Zaman' : 
+                               etki === 'para' ? '💸 Para' : 
+                               etki === 'hata' ? '✅ Hata azalması' : 
+                               etki === 'memnuniyet' ? '📈 Müşteri memnuniyeti' : etki}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="text-gray-500">-</span>
+                        )}
+                      </div>
+                    </div>
+                    {selectedOneri.ekNot && (
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Ek Not</label>
+                        <p className="text-gray-900 whitespace-pre-wrap">{selectedOneri.ekNot}</p>
+                      </div>
+                    )}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Tarih</label>
+                      <p className="text-gray-900">
+                        {selectedOneri.tarih ? new Date(selectedOneri.tarih).toLocaleString('tr-TR') : '-'}
+                      </p>
+                    </div>
+                    {selectedOneri.status === 'pending' && (
+                      <div className="flex gap-3 pt-4 border-t border-gray-200">
+                        <button
+                          onClick={() => approveOneri(selectedOneri.id)}
+                          disabled={loading}
+                          className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Onayla
+                        </button>
+                        <button
+                          onClick={() => rejectOneri(selectedOneri.id)}
+                          disabled={loading}
+                          className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Reddet
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Kullanıcılar Listesi */}
           <div className="bg-white rounded-xl shadow-md p-5 md:p-6">

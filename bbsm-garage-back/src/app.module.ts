@@ -11,6 +11,8 @@ import { YapilanlarModule } from './yapilanlar/yapilanlar.module';
 import { ExcelModule } from './excel/excel.module';
 import { HttpModule } from '@nestjs/axios';
 import { LogModule } from './log/log.module';
+import { OneriModule } from './oneri/oneri.module';
+import { NotificationModule } from './notification/notification.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -52,6 +54,8 @@ import { APP_GUARD } from '@nestjs/core';
     ExcelModule,
     HttpModule,
     LogModule,
+    OneriModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [

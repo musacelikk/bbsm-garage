@@ -4,6 +4,7 @@ import React, { useState, createContext, useContext } from 'react';
 import { ToastProvider, useToast } from '../contexts/ToastContext';
 import { CurrencyProvider } from '../contexts/CurrencyContext';
 import { ProfileProvider } from '../contexts/ProfileContext';
+import { NotificationProvider } from '../contexts/NotificationContext';
 import ToastContainer from '../components/ToastContainer';
 
 const LoadingContext = createContext();
@@ -31,9 +32,11 @@ function MyApp({ Component, pageProps }) {
       <AuthProvider>
         <ProfileProvider>
           <CurrencyProvider>
-            <ToastProvider>
-              <AppContent Component={Component} pageProps={pageProps} />
-            </ToastProvider>
+            <NotificationProvider>
+              <ToastProvider>
+                <AppContent Component={Component} pageProps={pageProps} />
+              </ToastProvider>
+            </NotificationProvider>
           </CurrencyProvider>
         </ProfileProvider>
       </AuthProvider>

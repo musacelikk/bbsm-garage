@@ -2,23 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-:root{
-    background: #ebebeb
-    ;
-    
-    /* Dark Neumorphic Theme Colors */
-    --dark-bg-primary: #1a1a1a;
-    --dark-bg-secondary: #2d2d2d;
-    --dark-bg-tertiary: #3a3a3a;
-    --dark-card-bg: #2a2a2a;
-    --dark-text-primary: #e5e5e5;
-    --dark-text-secondary: #b0b0b0;
-    --dark-text-muted: #808080;
-    --dark-shadow-dark: rgba(0, 0, 0, 0.4);
-    --dark-shadow-light: rgba(255, 255, 255, 0.05);
-    --dark-border: rgba(255, 255, 255, 0.1);
-    --dark-glass-bg: rgba(255, 255, 255, 0.05);
+:root {
+  background: #ebebeb;
+  /* Dark Neumorphic Theme Colors - refined */
+  --dark-bg-primary: #0f172a;
+  --dark-bg-secondary: #111827;
+  --dark-bg-tertiary: #1f2937;
+  --dark-card-bg: #111827;
+  --dark-surface: #0b1220;
+  --dark-text-primary: #e5e7eb;
+  --dark-text-secondary: #cbd5e1;
+  --dark-text-muted: #94a3b8;
+  --dark-border: rgba(255, 255, 255, 0.07);
+  --dark-shadow-dark: rgba(0, 0, 0, 0.55);
+  --dark-shadow-light: rgba(255, 255, 255, 0.06);
+  --dark-glass-bg: rgba(255, 255, 255, 0.03);
+  --accent-primary: #3b82f6;
+  --accent-teal: #14b8a6;
+  --accent-amber: #f59e0b;
+  --accent-red: #ef4444;
 }
+
+/* Typography scale for consistent hierarchy */
+.heading-1 { font-size: 2.25rem; line-height: 2.75rem; font-weight: 700; }
+.heading-2 { font-size: 1.75rem; line-height: 2.25rem; font-weight: 700; }
+.heading-3 { font-size: 1.25rem; line-height: 1.75rem; font-weight: 600; }
+.body-lg { font-size: 1rem; line-height: 1.5rem; font-weight: 500; }
+.body-md { font-size: 0.9375rem; line-height: 1.5rem; font-weight: 500; }
+.body-sm { font-size: 0.875rem; line-height: 1.375rem; font-weight: 500; }
+.body-xs { font-size: 0.75rem; line-height: 1.125rem; font-weight: 500; }
 
 /* Dark Theme Background */
 body {
@@ -376,38 +388,38 @@ tr:hover {
 .neumorphic-inset {
   background: var(--dark-bg-secondary);
   box-shadow: 
-    inset 4px 4px 8px var(--dark-shadow-dark),
-    inset -4px -4px 8px var(--dark-shadow-light);
+    inset 3px 3px 6px var(--dark-shadow-dark),
+    inset -3px -3px 6px var(--dark-shadow-light);
   border: 1px solid var(--dark-border);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .neumorphic-inset:hover {
   box-shadow: 
-    inset 6px 6px 12px var(--dark-shadow-dark),
-    inset -6px -6px 12px var(--dark-shadow-light);
+    inset 4px 4px 10px var(--dark-shadow-dark),
+    inset -4px -4px 10px var(--dark-shadow-light);
 }
 
 .neumorphic-inset:active {
   box-shadow: 
-    inset 2px 2px 4px var(--dark-shadow-dark),
-    inset -2px -2px 4px var(--dark-shadow-light);
+    inset 2px 2px 3px var(--dark-shadow-dark),
+    inset -2px -2px 3px var(--dark-shadow-light);
 }
 
 /* Neumorphic Outset (Dışa Çıkık) - Kartlar için */
 .neumorphic-outset {
   background: var(--dark-card-bg);
   box-shadow: 
-    8px 8px 16px var(--dark-shadow-dark),
-    -8px -8px 16px var(--dark-shadow-light);
+    6px 6px 14px var(--dark-shadow-dark),
+    -6px -6px 14px var(--dark-shadow-light);
   border: 1px solid var(--dark-border);
   transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .neumorphic-outset:hover {
   box-shadow: 
-    12px 12px 24px var(--dark-shadow-dark),
-    -12px -12px 24px var(--dark-shadow-light);
+    9px 9px 18px var(--dark-shadow-dark),
+    -9px -9px 18px var(--dark-shadow-light);
   transform: translateY(-2px);
 }
 
