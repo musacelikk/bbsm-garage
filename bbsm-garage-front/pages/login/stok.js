@@ -217,7 +217,7 @@ function Stok() {
               <div className="p-6 pt-8 lg:ml-64 dark-bg-primary">
                 <div className="p-6 mt-16 dark-card-bg neumorphic-card rounded-3xl">
                 <div className="flex items-center pb-4">
-                  <p className="font-bold text-xl dark-text-primary">Stok Ekle</p>
+                  <p className="font-semibold text-base md:text-lg dark-text-primary">Stok Ekle</p>
                 </div>
                 <form onSubmit={handleSubmit} className="p-2">
                   <div className="grid gap-6 mb-4 md:grid-cols-3">
@@ -248,7 +248,7 @@ function Stok() {
                   <div className="flex items-center">
                     <div className="pr-4 items-center ">
                       <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between ">
-                        <p className="font-bold text-xl dark-text-primary">Stoklarım</p>
+                        <p className="font-semibold text-base md:text-lg dark-text-primary">Stoklarım</p>
                       </div>
                     </div>
                   </div>

@@ -397,192 +397,175 @@ function Dashboard() {
         <ProtectedPage>
           <div className="p-4 md:p-6 lg:p-8 pt-6 md:pt-8 mt-16 lg:ml-64 max-w-[1920px] mx-auto">
             {/* Başlık Bölümü */}
-            <div className="mb-6 md:mb-8">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div className="mb-4 md:mb-6">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
-                  <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold dark-text-primary mb-2">
-                    Hoş Geldiniz, <span className="text-blue-400">{firmaAdi}</span>!
+                  <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-1">
+                    Hoş Geldiniz, <span className="text-blue-400">{firmaAdi}</span>
                   </h1>
-                  <p className="dark-text-secondary text-sm md:text-base">
+                  <p className="dark-text-muted text-xs">
                     Bugün mağazanızda neler oluyor?
                   </p>
                 </div>
-                <div className="flex items-center gap-2 text-xs md:text-sm dark-text-muted">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 text-xs dark-text-muted">
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span>{new Date().toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                  <span>{new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-6 md:space-y-8">
+            <div className="space-y-4 md:space-y-6">
 
             {/* KPI Kartları */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-4">
               {/* Toplam Gelir */}
-              <div className="dark-card-bg neumorphic-outset rounded-xl p-4 md:p-5 border border-blue-500/30">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-900/40">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-outset rounded-lg p-3 md:p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-6-6h12" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-blue-200/80 font-semibold">Finans</p>
-                      <h3 className="text-base md:text-lg font-semibold dark-text-primary">Toplam Gelir</h3>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Gelir</h3>
+                  </div>
+                  {istatistikler.gelirTrend !== 0 && (
+                    <div className={`text-[10px] font-medium ${istatistikler.gelirTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {istatistikler.gelirTrend >= 0 ? '↑' : '↓'} {Math.abs(istatistikler.gelirTrend).toFixed(1)}%
                     </div>
-                  </div>
-                  <div className={`flex items-center text-xs font-semibold ${istatistikler.gelirTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    <svg className={`w-4 h-4 mr-1 ${istatistikler.gelirTrend < 0 ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    {Math.abs(istatistikler.gelirTrend).toFixed(1)}%
-                  </div>
+                  )}
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mb-1 break-words text-blue-100">{formatPara(istatistikler.buAykiGelir)}</p>
-                <p className="text-xs text-blue-200/80">Bu ay</p>
+                <p className="text-lg md:text-xl font-bold dark-text-primary mb-0.5">{formatPara(istatistikler.buAykiGelir)}</p>
+                <p className="text-[10px] dark-text-muted">Bu ay</p>
               </div>
 
               {/* Toplam Kart */}
-              <div className="dark-card-bg neumorphic-outset rounded-xl p-4 md:p-5 border border-emerald-500/30">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-900/40">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-outset rounded-lg p-3 md:p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0l-3-3m3 3l3-3m-9 7h12" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-emerald-200/80 font-semibold">Kayıt</p>
-                      <h3 className="text-base md:text-lg font-semibold dark-text-primary">Toplam Kart</h3>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Kart</h3>
+                  </div>
+                  {istatistikler.kartTrend !== 0 && (
+                    <div className={`text-[10px] font-medium ${istatistikler.kartTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {istatistikler.kartTrend >= 0 ? '↑' : '↓'} {Math.abs(istatistikler.kartTrend).toFixed(1)}%
                     </div>
-                  </div>
-                  <div className={`flex items-center text-xs font-semibold ${istatistikler.kartTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                    <svg className={`w-4 h-4 mr-1 ${istatistikler.kartTrend < 0 ? 'rotate-180' : ''}`} fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M5.293 7.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 5.414V17a1 1 0 11-2 0V5.414L6.707 7.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                    {Math.abs(istatistikler.kartTrend).toFixed(1)}%
-                  </div>
+                  )}
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mb-1 text-emerald-100">{istatistikler.toplamKart}</p>
-                <p className="text-xs text-emerald-200/80">Toplam kayıt</p>
+                <p className="text-lg md:text-xl font-bold dark-text-primary mb-0.5">{istatistikler.toplamKart}</p>
+                <p className="text-[10px] dark-text-muted">Toplam kayıt</p>
               </div>
 
               {/* Toplam Teklif */}
-              <div className="dark-card-bg neumorphic-outset rounded-xl p-4 md:p-5 border border-purple-500/30">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-purple-900/40">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-outset rounded-lg p-3 md:p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2-3-.895-3-2 .895-2 3-2z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12c0 4 3.582 7 8 7s8-3 8-7-3.582-7-8-7-8 3-8 7z" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-purple-200/80 font-semibold">Teklif</p>
-                      <h3 className="text-base md:text-lg font-semibold dark-text-primary">Toplam Teklif</h3>
-                    </div>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Teklif</h3>
                   </div>
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mb-1 text-purple-100">{istatistikler.toplamTeklif}</p>
-                <p className="text-xs text-purple-200/80">Bekleyen teklifler</p>
+                <p className="text-lg md:text-xl font-bold dark-text-primary mb-0.5">{istatistikler.toplamTeklif}</p>
+                <p className="text-[10px] dark-text-muted">Bekleyen teklifler</p>
               </div>
 
               {/* Bugün Eklenen */}
-              <div className="dark-card-bg neumorphic-outset rounded-xl p-4 md:p-5 border border-amber-500/30">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center text-white shadow-lg shadow-amber-900/40">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-outset rounded-lg p-3 md:p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0l-3-3m3 3l3-3m-9 7h12" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-amber-200/80 font-semibold">Bugün</p>
-                      <h3 className="text-base md:text-lg font-semibold dark-text-primary">Bugün Eklenen</h3>
-                    </div>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Bugün Eklenen</h3>
                   </div>
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mb-1 text-amber-100">{istatistikler.bugunEklenenKart}</p>
-                <p className="text-xs text-amber-200/80">Yeni kayıt</p>
+                <p className="text-lg md:text-xl font-bold dark-text-primary mb-0.5">{istatistikler.bugunEklenenKart}</p>
+                <p className="text-[10px] dark-text-muted">Yeni kayıt</p>
               </div>
 
               {/* Son 7 Günlük Ciro */}
-              <div className="dark-card-bg neumorphic-outset rounded-xl p-4 md:p-5 border border-cyan-500/30">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-cyan-900/40">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-outset rounded-lg p-3 md:p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16M4 12l4 4m-4-4l4-4" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-cyan-200/80 font-semibold">7 Gün</p>
-                      <h3 className="text-base md:text-lg font-semibold dark-text-primary">Son 7 Günlük Ciro</h3>
-                    </div>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">7 Günlük Ciro</h3>
                   </div>
                 </div>
-                <p className="text-2xl md:text-3xl font-bold mb-1 break-words text-cyan-100">{formatPara(istatistikler.son7GunlukCiro)}</p>
-                <p className="text-xs text-cyan-200/80">Haftalık ciro</p>
+                <p className="text-lg md:text-xl font-bold dark-text-primary mb-0.5">{formatPara(istatistikler.son7GunlukCiro)}</p>
+                <p className="text-[10px] dark-text-muted">Haftalık ciro</p>
               </div>
             </div>
 
             {/* Grafik ve Liste Bölümü */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
               {/* Gelir Grafiği */}
-              <div className="lg:col-span-2 dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8 border border-green-500/20">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+              <div className="lg:col-span-2 dark-card-bg neumorphic-card rounded-xl p-4 md:p-5 border border-blue-500/20">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                   <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center border border-green-500/30">
-                        <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
+                        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                         </svg>
                       </div>
-                      <h2 className="text-xl md:text-2xl font-semibold dark-text-primary">Gelir Özeti</h2>
+                      <h2 className="text-base md:text-lg font-semibold dark-text-primary">Gelir Özeti</h2>
                     </div>
-                    <p className="text-sm dark-text-muted ml-13">
+                    <p className="text-xs dark-text-muted ml-10">
                       {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 && istatistikler.gelirVerileri[0].tip === 'ay' 
                         ? 'Aylık gelir analizi' 
                         : 'Günlük gelir analizi'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 mt-4 md:mt-0">
-                    <div className="flex items-center gap-2 px-3 py-1.5 dark-bg-tertiary rounded-lg neumorphic-inset border border-green-500/20">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-green-400 to-emerald-400"></div>
-                      <span className="text-xs font-semibold dark-text-primary">Gelir</span>
+                  <div className="flex items-center gap-2 mt-3 md:mt-0">
+                    <div className="flex items-center gap-1.5 px-2 py-1 dark-bg-tertiary rounded-lg border border-blue-500/20">
+                      <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                      <span className="text-[10px] font-medium dark-text-secondary">Gelir</span>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 dark-bg-tertiary rounded-lg neumorphic-inset border border-blue-500/20">
-                      <div className="w-2.5 h-2.5 rounded-full bg-gradient-to-r from-blue-400 to-cyan-400"></div>
-                      <span className="text-xs font-semibold dark-text-primary">İşlem</span>
+                    <div className="flex items-center gap-1.5 px-2 py-1 dark-bg-tertiary rounded-lg border border-blue-500/20">
+                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                      <span className="text-[10px] font-medium dark-text-secondary">İşlem</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Tarih Filtreleme */}
-                <div className="dark-card-bg neumorphic-card rounded-xl p-4 mb-6">
-                  <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="dark-card-bg neumorphic-card rounded-lg p-3 mb-4">
+                  <div className="flex flex-col md:flex-row gap-3 items-end">
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold dark-text-primary mb-2">Başlangıç Tarihi</label>
+                      <label className="block text-xs font-medium dark-text-secondary mb-1.5">Başlangıç</label>
                       <input
                         type="date"
                         value={tarihBaslangic}
                         onChange={(e) => setTarihBaslangic(e.target.value)}
                         max={tarihBitis}
-                        className="w-full px-4 py-2 neumorphic-input rounded-lg dark-text-primary"
+                        className="w-full px-3 py-1.5 text-sm neumorphic-input rounded-lg dark-text-primary"
                       />
                     </div>
                     <div className="flex-1">
-                      <label className="block text-sm font-semibold dark-text-primary mb-2">Bitiş Tarihi</label>
+                      <label className="block text-xs font-medium dark-text-secondary mb-1.5">Bitiş</label>
                       <input
                         type="date"
                         value={tarihBitis}
                         onChange={(e) => setTarihBitis(e.target.value)}
                         min={tarihBaslangic}
                         max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-4 py-2 neumorphic-input rounded-lg dark-text-primary"
+                        className="w-full px-3 py-1.5 text-sm neumorphic-input rounded-lg dark-text-primary"
                       />
                     </div>
                     <button
@@ -591,14 +574,14 @@ function Dashboard() {
                         setTarihBaslangic(`${yil}-01-01`);
                         setTarihBitis(new Date().toISOString().split('T')[0]);
                       }}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg neumorphic-inset hover:bg-green-700 transition-colors font-semibold whitespace-nowrap"
+                      className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg neumorphic-inset hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
                     >
                       Bu Yıl
                     </button>
                   </div>
                 </div>
 
-                <div className="h-96 relative dark-card-bg neumorphic-card rounded-xl p-6">
+                <div className="h-64 md:h-72 relative dark-card-bg neumorphic-card rounded-lg p-4">
                   {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 ? (
                     <svg viewBox="0 0 600 320" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                       <defs>
@@ -786,49 +769,49 @@ function Dashboard() {
 
               {/* Periyodik Bakım Hatırlatıcısı */}
               {periyodikBakimData.toplam > 0 && (
-                <div className="lg:col-span-1 dark-card-bg neumorphic-card rounded-2xl p-4 md:p-6 border border-cyan-500/25">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-lg flex items-center justify-center shadow-lg shadow-cyan-900/40">
-                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="lg:col-span-1 dark-card-bg neumorphic-card rounded-lg p-4 border border-blue-500/20">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/20">
+                        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
                       <div>
-                        <h2 className="text-lg md:text-xl font-semibold dark-text-primary">Periyodik Bakım</h2>
-                        <p className="text-xs dark-text-muted">Bakım hatırlatıcısı</p>
+                        <h2 className="text-sm md:text-base font-medium dark-text-primary">Periyodik Bakım</h2>
+                        <p className="text-[10px] dark-text-muted">Bakım hatırlatıcısı</p>
                       </div>
                     </div>
-                    <Link href="/login/kartlar" className="text-xs text-cyan-300 hover:text-cyan-200 font-semibold">
+                    <Link href="/login/kartlar" className="text-[10px] text-blue-400 hover:text-blue-300 font-medium">
                       Tümü
                     </Link>
                   </div>
 
                   {/* Durum Özeti */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="dark-bg-tertiary rounded-xl p-2.5 text-center border border-green-500/30">
-                      <p className="text-xl font-bold text-green-300">{periyodikBakimData.yesil}</p>
-                      <p className="text-[11px] text-green-200/80 mt-0.5">0-6 Ay</p>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    <div className="dark-bg-tertiary rounded-lg p-2 text-center border border-green-500/20">
+                      <p className="text-base font-bold text-green-400">{periyodikBakimData.yesil}</p>
+                      <p className="text-[10px] text-green-300/80 mt-0.5">0-6 Ay</p>
                     </div>
-                    <div className="dark-bg-tertiary rounded-xl p-2.5 text-center border border-amber-500/30">
-                      <p className="text-xl font-bold text-amber-300">{periyodikBakimData.sari}</p>
-                      <p className="text-[11px] text-amber-200/80 mt-0.5">7-9 Ay</p>
+                    <div className="dark-bg-tertiary rounded-lg p-2 text-center border border-amber-500/20">
+                      <p className="text-base font-bold text-amber-400">{periyodikBakimData.sari}</p>
+                      <p className="text-[10px] text-amber-300/80 mt-0.5">7-9 Ay</p>
                     </div>
-                    <div className="dark-bg-tertiary rounded-xl p-2.5 text-center border border-red-500/30">
-                      <p className="text-xl font-bold text-red-300">{periyodikBakimData.kirmizi}</p>
-                      <p className="text-[11px] text-red-200/80 mt-0.5">9+ Ay</p>
+                    <div className="dark-bg-tertiary rounded-lg p-2 text-center border border-red-500/20">
+                      <p className="text-base font-bold text-red-400">{periyodikBakimData.kirmizi}</p>
+                      <p className="text-[10px] text-red-300/80 mt-0.5">9+ Ay</p>
                     </div>
                   </div>
 
                   {/* Bakım Listesi */}
                   {periyodikBakimData.liste.length > 0 && (
-                    <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                    <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                       {periyodikBakimData.liste.slice(0, 5).map((kart) => {
                         const durumRenk = kart.durum === 'green' 
-                          ? 'bg-green-500/15 border-green-500/40 text-green-200' 
+                          ? 'bg-green-500/15 border-green-500/30 text-green-300' 
                           : kart.durum === 'yellow'
-                          ? 'bg-amber-500/15 border-amber-500/40 text-amber-200'
-                          : 'bg-red-500/15 border-red-500/40 text-red-200';
+                          ? 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                          : 'bg-red-500/15 border-red-500/30 text-red-300';
                         
                         const durumText = kart.durum === 'green' 
                           ? 'Normal' 
@@ -840,25 +823,25 @@ function Dashboard() {
                           <Link 
                             key={kart.card_id} 
                             href={`/login/kartlar/detay?card_id=${kart.card_id}`}
-                            className="block p-3 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
+                            className="block p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
                           >
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex items-center gap-2 flex-1 min-w-0">
-                                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${kart.durum === 'green' ? 'bg-green-400' : kart.durum === 'yellow' ? 'bg-amber-400' : 'bg-red-400'}`}></div>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${kart.durum === 'green' ? 'bg-green-400' : kart.durum === 'yellow' ? 'bg-amber-400' : 'bg-red-400'}`}></div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold dark-text-primary truncate">
+                                  <p className="text-xs font-medium dark-text-primary truncate">
                                     {kart.plaka || 'Plaka Yok'}
                                   </p>
-                                  <p className="text-xs dark-text-secondary truncate">
+                                  <p className="text-[10px] dark-text-muted truncate">
                                     {kart.markaModel || 'Marka/Model Yok'}
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex flex-col items-end flex-shrink-0 gap-1">
-                                <div className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold ${durumRenk}`}>
+                              <div className="flex flex-col items-end flex-shrink-0 gap-0.5">
+                                <div className={`px-1.5 py-0.5 rounded border text-[10px] font-medium ${durumRenk}`}>
                                   {durumText}
                                 </div>
-                                <p className="text-xs font-medium dark-text-primary">{kart.ayFarki} Ay</p>
+                                <p className="text-[10px] font-medium dark-text-secondary">{kart.ayFarki} Ay</p>
                               </div>
                             </div>
                           </Link>
@@ -872,48 +855,48 @@ function Dashboard() {
             </div>
 
             {/* Alt Bölüm - Son İşlemler ve En Aktif Kullanıcılar */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
               {/* Son İşlemler */}
-              <div className="dark-card-bg neumorphic-card rounded-xl p-5 md:p-6 border border-blue-500/20">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center border border-blue-500/30">
-                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-card rounded-lg p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h2 className="text-lg md:text-xl font-semibold dark-text-primary">Son İşlemler</h2>
+                    <h2 className="text-sm md:text-base font-medium dark-text-primary">Son İşlemler</h2>
                   </div>
-                  <Link href="/login/son-hareketler" className="text-xs md:text-sm text-blue-400 hover:text-blue-300 font-semibold transition-colors">
-                    Tümünü Gör →
+                  <Link href="/login/son-hareketler" className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                    Tümü →
                   </Link>
                 </div>
                 {loading ? (
-                  <div className="flex justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   </div>
                 ) : hareketler.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="dark-text-secondary text-sm">Henüz hareket kaydı bulunmamaktadır.</p>
+                  <div className="text-center py-8">
+                    <p className="dark-text-muted text-xs">Henüz hareket kaydı bulunmamaktadır.</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {hareketler.slice(0, 5).map((hareket) => (
-                      <div key={hareket.id} className="flex items-center justify-between p-3 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all group-hover:scale-110 ${getActionColor(hareket.action)}`}>
-                            <span className="text-base">
+                      <div key={hareket.id} className="flex items-center justify-between p-2 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all group-hover:scale-105 ${getActionColor(hareket.action)}`}>
+                            <span className="text-sm">
                               {hareket.action === 'login' ? '🔓' : hareket.action === 'logout' ? '🔒' : hareket.action === 'card_create' ? '➕' : hareket.action === 'card_edit' ? '✏️' : '🗑️'}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold dark-text-primary truncate">{getActionLabel(hareket.action)}</p>
-                            <p className="text-xs dark-text-muted truncate">{hareket.action_detail || '-'}</p>
+                            <p className="text-xs font-medium dark-text-primary truncate">{getActionLabel(hareket.action)}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{hareket.action_detail || '-'}</p>
                           </div>
                         </div>
-                        <div className="text-right ml-4 flex-shrink-0">
-                          <p className="text-xs font-semibold dark-text-primary">{hareket.username}</p>
-                          <p className="text-xs dark-text-muted">{formatTarih(hareket.timestamp).split(' ')[0]}</p>
+                        <div className="text-right ml-3 flex-shrink-0">
+                          <p className="text-[10px] font-medium dark-text-secondary">{hareket.username}</p>
+                          <p className="text-[10px] dark-text-muted">{formatTarih(hareket.timestamp).split(' ')[0]}</p>
                         </div>
                       </div>
                     ))}
@@ -922,43 +905,43 @@ function Dashboard() {
               </div>
 
               {/* En Aktif Kullanıcılar */}
-              <div className="dark-card-bg neumorphic-card rounded-xl p-5 md:p-6 border border-purple-500/20">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-purple-600/20 flex items-center justify-center border border-purple-500/30">
-                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="dark-card-bg neumorphic-card rounded-lg p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
+                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                       </svg>
                     </div>
-                    <h2 className="text-lg md:text-xl font-semibold dark-text-primary">En Aktif Kullanıcılar</h2>
+                    <h2 className="text-sm md:text-base font-medium dark-text-primary">En Aktif Kullanıcılar</h2>
                   </div>
                 </div>
                 {loading ? (
-                  <div className="flex justify-center py-12">
+                  <div className="flex justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   </div>
                 ) : istatistikler.enAktifKullanicilar && istatistikler.enAktifKullanicilar.length > 0 ? (
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {istatistikler.enAktifKullanicilar.map((kullanici, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-purple-900/40 transition-all group-hover:scale-110">
+                      <div key={index} className="flex items-center justify-between p-2 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className="w-8 h-8 bg-blue-500/30 rounded-lg flex items-center justify-center text-white font-bold text-xs transition-all group-hover:scale-105">
                             {kullanici.username.substring(0, 2).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold dark-text-primary truncate">{kullanici.username}</p>
-                            <p className="text-xs dark-text-muted">{kullanici.sayi} işlem</p>
+                            <p className="text-xs font-medium dark-text-primary truncate">{kullanici.username}</p>
+                            <p className="text-[10px] dark-text-muted">{kullanici.sayi} işlem</p>
                           </div>
                         </div>
-                        <Link href="/login/son-hareketler" className="text-xs md:text-sm text-purple-400 hover:text-purple-300 font-semibold transition-colors flex-shrink-0">
-                          Görüntüle →
+                        <Link href="/login/son-hareketler" className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors flex-shrink-0">
+                          Gör →
                         </Link>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <p className="text-sm dark-text-secondary">Henüz aktif kullanıcı bulunmamaktadır.</p>
+                  <div className="text-center py-8">
+                    <p className="text-xs dark-text-muted">Henüz aktif kullanıcı bulunmamaktadır.</p>
                   </div>
                 )}
               </div>

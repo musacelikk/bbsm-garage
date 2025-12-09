@@ -294,7 +294,7 @@ function Gelir() {
             {...pullToRefresh}
           >
           <div className="p-4 md:p-6 mt-5 dark-card-bg neumorphic-card rounded-3xl">
-            <h1 className="text-2xl md:text-3xl font-bold dark-text-primary mb-4 md:mb-6">Gelir Raporu</h1>
+            <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Gelir Raporu</h1>
 
             {/* Filtreler */}
             <div className="mb-6 p-3 md:p-4 dark-card-bg neumorphic-card rounded-xl">
@@ -349,7 +349,7 @@ function Gelir() {
 
             {/* Günlük Gelir Tablosu */}
             <div className="mb-6">
-              <h2 className="text-xl md:text-2xl font-bold dark-text-primary mb-4">Günlük Gelir Detayları</h2>
+              <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Günlük Gelir Detayları</h2>
               <div className="overflow-x-auto -mx-4 md:mx-0">
                 <table className="min-w-full dark-card-bg neumorphic-card border dark-border rounded-lg">
                   <thead className="dark-bg-tertiary neumorphic-inset">
@@ -394,7 +394,7 @@ function Gelir() {
 
             {/* Aylık Gelir Tablosu */}
             <div className="mb-6">
-              <h2 className="text-xl md:text-2xl font-bold dark-text-primary mb-4">Aylık Gelir Özeti</h2>
+              <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Aylık Gelir Özeti</h2>
               <div className="overflow-x-auto -mx-4 md:mx-0">
                 <table className="min-w-full dark-card-bg neumorphic-card border dark-border rounded-lg">
                   <thead className="dark-bg-tertiary neumorphic-inset">
@@ -445,7 +445,7 @@ function Gelir() {
             {/* En Çok Gelir Getiren Günler */}
             {gelirVerileri.enCokGelirGunler.length > 0 && (
               <div className="mb-6">
-                <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4">En Çok Gelir Getiren Günler (Top 10)</h2>
+                <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">En Çok Gelir Getiren Günler (Top 10)</h2>
                 <div className="overflow-x-auto -mx-4 md:mx-0">
                   <table className="min-w-full bg-white border border-gray-200 rounded-lg">
                     <thead className="bg-gray-50">

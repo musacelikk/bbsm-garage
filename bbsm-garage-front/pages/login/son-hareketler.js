@@ -132,7 +132,7 @@ function SonHareketler() {
         <ProtectedPage>
           <div className="pt-16 pb-8 px-4 lg:px-8 lg:ml-64">
             <div className="max-w-7xl mx-auto w-full">
-            <h1 className="text-2xl sm:text-3xl font-bold dark-text-primary mb-4 sm:mb-6">Son Hareketler</h1>
+            <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Son Hareketler</h1>
             
             {/* Tab Navigation */}
             <div className="dark-card-bg neumorphic-card rounded-lg mb-4 sm:mb-6">

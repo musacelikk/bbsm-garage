@@ -213,7 +213,7 @@ function Uyelik() {
             {/* Üyelik Bilgileri Bölümü */}
             <div className="mb-8">
               <div className="dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
-                <h1 className="text-2xl sm:text-3xl font-bold dark-text-primary mb-6 sm:mb-8">Üyelik Bilgileri</h1>
+                <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-4 md:mb-6">Üyelik Bilgileri</h1>
 
                 {membershipLoading ? (
                   <div className="flex justify-center items-center py-12">
@@ -225,7 +225,7 @@ function Uyelik() {
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                           <h3 className="text-base sm:text-lg font-semibold dark-text-secondary mb-1">Üyelik Planı</h3>
-                          <p className="text-2xl sm:text-3xl font-bold text-blue-400">{membershipData.plan || 'Standart'}</p>
+                          <p className="text-xl md:text-2xl font-semibold text-blue-400">{membershipData.plan || 'Standart'}</p>
                         </div>
                         <span className={`px-4 py-2 rounded-full text-sm font-semibold w-fit neumorphic-inset ${getStatusColor(membershipData.status || 'Aktif')}`}>
                           {membershipData.status || 'Aktif'}
@@ -236,11 +236,11 @@ function Uyelik() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="dark-card-bg neumorphic-card rounded-xl border dark-border p-5">
                         <label className="block text-sm font-semibold dark-text-muted mb-2">Başlangıç Tarihi</label>
-                        <p className="text-lg font-bold dark-text-primary">{formatDate(membershipData.startDate)}</p>
+                        <p className="text-base font-semibold dark-text-primary">{formatDate(membershipData.startDate)}</p>
                       </div>
                       <div className="dark-card-bg neumorphic-card rounded-xl border dark-border p-5">
                         <label className="block text-sm font-semibold dark-text-muted mb-2">Bitiş Tarihi</label>
-                        <p className="text-lg font-bold dark-text-primary">
+                        <p className="text-base font-semibold dark-text-primary">
                           {membershipData.endDate ? formatDate(membershipData.endDate) : 'Sınırsız'}
                         </p>
                       </div>
@@ -271,7 +271,7 @@ function Uyelik() {
             {/* Üyelik Paketleri Bölümü */}
             <div className="dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
               <div className="text-center mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold dark-text-primary mb-2">Üyelik Paketleri</h2>
+                <h2 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3">Üyelik Paketleri</h2>
                 <p className="dark-text-secondary text-sm sm:text-base">İhtiyacınıza uygun paketi seçin ve hemen başlayın</p>
               </div>
               
@@ -294,7 +294,7 @@ function Uyelik() {
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full -ml-12 -mb-12"></div>
                       </div>
                       <div className="relative z-10">
-                        <h3 className="text-xl sm:text-2xl font-bold mb-2">{plan.name}</h3>
+                        <h3 className="text-base md:text-lg font-semibold mb-2">{plan.name}</h3>
                         <div className="text-3xl sm:text-4xl font-bold mb-1">{plan.price}</div>
                         <div className="text-sm sm:text-base opacity-90">{plan.duration}</div>
                       </div>
