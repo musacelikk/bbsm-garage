@@ -290,32 +290,32 @@ function Gelir() {
 
         <ProtectedPage>
           <div 
-            className="p-6 pt-8 mt-16 lg:ml-64 dark-bg-primary"
+            className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary"
             {...pullToRefresh}
           >
-          <div className="p-4 md:p-6 mt-5 dark-card-bg neumorphic-card rounded-3xl">
+          <div className="p-3 md:p-4 lg:p-6 mt-5 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
             <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Gelir Raporu</h1>
 
             {/* Filtreler */}
-            <div className="mb-6 p-3 md:p-4 dark-card-bg neumorphic-card rounded-xl">
-              <div className="flex flex-col md:flex-row md:flex-wrap gap-4 items-end">
+            <div className="mb-4 md:mb-6 p-3 md:p-4 dark-card-bg neumorphic-card rounded-lg md:rounded-xl">
+              <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4 items-end">
                 <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
                   <div className="flex-1 md:flex-none">
-                    <label className="block text-sm font-medium dark-text-primary mb-1">Başlangıç Tarihi</label>
+                    <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Başlangıç Tarihi</label>
                     <input
                       type="date"
                       value={baslangicTarihi}
                       onChange={(e) => setBaslangicTarihi(e.target.value)}
-                      className="w-full px-4 py-3 neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
                     />
                   </div>
                   <div className="flex-1 md:flex-none">
-                    <label className="block text-sm font-medium dark-text-primary mb-1">Bitiş Tarihi</label>
+                    <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Bitiş Tarihi</label>
                     <input
                       type="date"
                       value={bitisTarihi}
                       onChange={(e) => setBitisTarihi(e.target.value)}
-                      className="w-full px-4 py-3 neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                      className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
                     />
                   </div>
                 </div>

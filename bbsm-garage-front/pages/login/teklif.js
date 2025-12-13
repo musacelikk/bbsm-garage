@@ -451,7 +451,7 @@ const secilenTeklifleriIndir = async (type) => {
             <input
               type="text"
               id="table-search-mobile"
-              className="block w-full p-3 text-md dark-text-primary neumorphic-input rounded-full touch-manipulation"
+              className="block w-full p-3 text-sm md:text-md dark-text-primary neumorphic-input rounded-full touch-manipulation min-h-[44px]"
               placeholder="Teklifleri ara"
               value={aramaTerimi}
               onChange={(e) => setAramaTerimi(e.target.value)}
@@ -461,25 +461,29 @@ const secilenTeklifleriIndir = async (type) => {
           <div className="flex flex-col gap-3 w-full mb-4">
             <button 
               onClick={secilenTeklifleriKartlaraAktar} 
-              className="w-full bg-blue-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              style={{ backgroundColor: '#0A0875' }}
             >
               Seçilenleri Kartlara Aktar
             </button>
             <button 
               onClick={silSecilenleri} 
-              className="w-full bg-red-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              style={{ backgroundColor: '#4D1961' }}
             >
               Seçilenleri Sil
             </button>
             <button 
               onClick={() => secilenTeklifleriIndir('excel')} 
-              className="w-full bg-green-500 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              style={{ backgroundColor: '#8F294D' }}
             >
               Seçilenleri Excel İndir
             </button>
             <button 
               onClick={() => secilenTeklifleriIndir('pdf')} 
-              className="w-full bg-orange-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+              style={{ backgroundColor: '#D43A38' }}
             >
               Seçilenleri PDF İndir
             </button>
@@ -544,29 +548,29 @@ const secilenTeklifleriIndir = async (type) => {
         </div>
 
         {/* DESKTOP TABLE (unchanged) */}
-        <div className="hidden md:block p-6 pt-8 lg:ml-64 dark-bg-primary">
-          <div className="p-6 mt-16 dark-card-bg neumorphic-card rounded-3xl">
-              <div className="flex items-center pb-4 justify-between">
+        <div className="hidden md:block p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 lg:ml-64 dark-bg-primary">
+          <div className="p-3 md:p-4 lg:p-6 mt-16 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
+            <div className="flex items-center pb-4 justify-between">
               <div className="flex items-center">
                 <div className="pr-4 items-center ">
                   <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between ">
-                    <p className="font-bold text-xl dark-text-primary">Tekliflerim</p>
+                    <p className="font-semibold text-base md:text-lg dark-text-primary">Tekliflerim</p>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-center">
-                <div className="items-center bg-blue-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                  <button onClick={secilenTeklifleriKartlaraAktar} className="font-semibold text-my-beyaz text-md">Seçilenleri Kartlara Aktar</button>
+                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#0A0875' }}>
+                  <button onClick={secilenTeklifleriKartlaraAktar} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Kartlara Aktar</button>
                 </div>
-                <div className="items-center bg-red-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                  <button onClick={silSecilenleri} className="font-semibold text-my-beyaz text-md">Seçilenleri Sil</button>
+                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#4D1961' }}>
+                  <button onClick={silSecilenleri} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Seçilenleri Sil</button>
                 </div>
-                <div className="items-center bg-green-500 p-2 pl-4 pr-4 rounded-full ml-4">
-                  <button onClick={() => secilenTeklifleriIndir('excel')} className="font-semibold text-my-beyaz text-md">Seçilenleri Excel İndir</button>
+                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#8F294D' }}>
+                  <button onClick={() => secilenTeklifleriIndir('excel')} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Excel İndir</button>
                 </div>
-                <div className="items-center bg-orange-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                  <button onClick={() => secilenTeklifleriIndir('pdf')} className="font-semibold text-my-beyaz text-md">Seçilenleri PDF İndir</button>
+                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#D43A38' }}>
+                  <button onClick={() => secilenTeklifleriIndir('pdf')} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">PDF İndir</button>
                 </div>
 
                 <div className="pr-4 items-center pl-4">

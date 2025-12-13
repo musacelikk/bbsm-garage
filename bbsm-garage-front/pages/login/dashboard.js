@@ -395,7 +395,7 @@ function Dashboard() {
         />
 
         <ProtectedPage>
-          <div className="p-4 md:p-6 lg:p-8 pt-6 md:pt-8 mt-16 lg:ml-64 max-w-[1920px] mx-auto">
+          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary">
             {/* Başlık Bölümü */}
             <div className="mb-4 md:mb-6">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -427,10 +427,10 @@ function Dashboard() {
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                       <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m-6-6h12" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Gelir</h3>
+                    </svg>
                   </div>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Gelir</h3>
+                </div>
                   {istatistikler.gelirTrend !== 0 && (
                     <div className={`text-[10px] font-medium ${istatistikler.gelirTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {istatistikler.gelirTrend >= 0 ? '↑' : '↓'} {Math.abs(istatistikler.gelirTrend).toFixed(1)}%
@@ -448,10 +448,10 @@ function Dashboard() {
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
                       <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0l-3-3m3 3l3-3m-9 7h12" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Kart</h3>
+                    </svg>
                   </div>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Kart</h3>
+                </div>
                   {istatistikler.kartTrend !== 0 && (
                     <div className={`text-[10px] font-medium ${istatistikler.kartTrend >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {istatistikler.kartTrend >= 0 ? '↑' : '↓'} {Math.abs(istatistikler.kartTrend).toFixed(1)}%
@@ -471,7 +471,7 @@ function Dashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c1.657 0 3 .895 3 2s-1.343 2-3 2-3-.895-3-2 .895-2 3-2z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12c0 4 3.582 7 8 7s8-3 8-7-3.582-7-8-7-8 3-8 7z" />
                       </svg>
-                    </div>
+                </div>
                     <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Toplam Teklif</h3>
                   </div>
                 </div>
@@ -487,7 +487,7 @@ function Dashboard() {
                       <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0l-3-3m3 3l3-3m-9 7h12" />
                       </svg>
-                    </div>
+                </div>
                     <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Bugün Eklenen</h3>
                   </div>
                 </div>
@@ -503,7 +503,7 @@ function Dashboard() {
                       <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16M4 12l4 4m-4-4l4-4" />
                       </svg>
-                    </div>
+                </div>
                     <h3 className="text-xs md:text-sm font-medium dark-text-secondary">7 Günlük Ciro</h3>
                   </div>
                 </div>
@@ -513,7 +513,7 @@ function Dashboard() {
             </div>
 
             {/* Grafik ve Liste Bölümü */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
               {/* Gelir Grafiği */}
               <div className="lg:col-span-2 dark-card-bg neumorphic-card rounded-xl p-4 md:p-5 border border-blue-500/20">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
@@ -554,7 +554,7 @@ function Dashboard() {
                         value={tarihBaslangic}
                         onChange={(e) => setTarihBaslangic(e.target.value)}
                         max={tarihBitis}
-                        className="w-full px-3 py-1.5 text-sm neumorphic-input rounded-lg dark-text-primary"
+                        className="w-full px-3 py-2 md:py-1.5 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
                       />
                     </div>
                     <div className="flex-1">
@@ -565,7 +565,7 @@ function Dashboard() {
                         onChange={(e) => setTarihBitis(e.target.value)}
                         min={tarihBaslangic}
                         max={new Date().toISOString().split('T')[0]}
-                        className="w-full px-3 py-1.5 text-sm neumorphic-input rounded-lg dark-text-primary"
+                        className="w-full px-3 py-2 md:py-1.5 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
                       />
                     </div>
                     <button
@@ -574,14 +574,14 @@ function Dashboard() {
                         setTarihBaslangic(`${yil}-01-01`);
                         setTarihBitis(new Date().toISOString().split('T')[0]);
                       }}
-                      className="px-4 py-1.5 text-xs bg-blue-600 text-white rounded-lg neumorphic-inset hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
+                      className="px-4 py-2 md:py-1.5 text-xs bg-blue-600 text-white rounded-lg neumorphic-inset hover:bg-blue-700 transition-colors font-medium whitespace-nowrap touch-manipulation min-h-[44px] active:scale-95"
                     >
                       Bu Yıl
                     </button>
                   </div>
                 </div>
 
-                <div className="h-64 md:h-72 relative dark-card-bg neumorphic-card rounded-lg p-4">
+                <div className="h-56 sm:h-64 md:h-72 relative dark-card-bg neumorphic-card rounded-lg p-3 md:p-4 overflow-x-auto">
                   {istatistikler.gelirVerileri && istatistikler.gelirVerileri.length > 0 ? (
                     <svg viewBox="0 0 600 320" className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                       <defs>
@@ -855,9 +855,9 @@ function Dashboard() {
             </div>
 
             {/* Alt Bölüm - Son İşlemler ve En Aktif Kullanıcılar */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               {/* Son İşlemler */}
-              <div className="dark-card-bg neumorphic-card rounded-lg p-4 border border-blue-500/20">
+              <div className="dark-card-bg neumorphic-card rounded-lg p-3 md:p-4 border border-blue-500/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
@@ -905,7 +905,7 @@ function Dashboard() {
               </div>
 
               {/* En Aktif Kullanıcılar */}
-              <div className="dark-card-bg neumorphic-card rounded-lg p-4 border border-blue-500/20">
+              <div className="dark-card-bg neumorphic-card rounded-lg p-3 md:p-4 border border-blue-500/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
@@ -946,8 +946,8 @@ function Dashboard() {
                 )}
               </div>
             </div>
-            </div>
-            </div>
+          </div>
+          </div>
         </ProtectedPage>
         </div>
 

@@ -33,9 +33,9 @@ function MyApp({ Component, pageProps }) {
         <ProfileProvider>
           <CurrencyProvider>
             <NotificationProvider>
-              <ToastProvider>
-                <AppContent Component={Component} pageProps={pageProps} />
-              </ToastProvider>
+        <ToastProvider>
+          <AppContent Component={Component} pageProps={pageProps} />
+        </ToastProvider>
             </NotificationProvider>
           </CurrencyProvider>
         </ProfileProvider>

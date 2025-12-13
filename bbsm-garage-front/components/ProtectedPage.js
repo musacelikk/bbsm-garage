@@ -12,13 +12,13 @@ const ProtectedPage = ({ children }) => {
       return false;
     }
 
-    // Üyelik süresi tanımlı mı ve gelecekte mi kontrol et
+          // Üyelik süresi tanımlı mı ve gelecekte mi kontrol et
     const hasValidMembership = profileData.membership_end_date && new Date(profileData.membership_end_date) > new Date();
     
     // Bekleyen teklif varsa sayfayı kilitle (varsayılan false - API'den gelmiyorsa false kabul et)
     const hasPendingRequest = profileData.hasPendingRequest === true;
-    
-    // Üyelik geçerliyse ve bekleyen teklif yoksa sayfa açık
+          
+          // Üyelik geçerliyse ve bekleyen teklif yoksa sayfa açık
     return hasValidMembership && !hasPendingRequest;
   };
 

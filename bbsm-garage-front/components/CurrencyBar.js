@@ -73,7 +73,7 @@ function CurrencyBar() {
       isUp: null 
     };
   };
-
+  
   const usdChange = getChangeIndicator(rates.usd, previousRates.usd);
   const eurChange = getChangeIndicator(rates.eur, previousRates.eur);
   const altinChange = getChangeIndicator(rates.altin, previousRates.altin);

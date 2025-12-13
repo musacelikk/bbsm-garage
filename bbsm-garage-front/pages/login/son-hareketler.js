@@ -130,7 +130,7 @@ function SonHareketler() {
         />
 
         <ProtectedPage>
-          <div className="pt-16 pb-8 px-4 lg:px-8 lg:ml-64">
+          <div className="pt-16 pb-6 md:pb-8 px-3 md:px-4 lg:px-8 lg:ml-64">
             <div className="max-w-7xl mx-auto w-full">
             <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Son Hareketler</h1>
             

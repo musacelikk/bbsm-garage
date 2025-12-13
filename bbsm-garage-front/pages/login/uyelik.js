@@ -208,11 +208,11 @@ function Uyelik() {
           isSidebarOpen={isSidebarOpen}
         />
 
-        <div className="p-4 sm:p-6 pt-8 mt-16 lg:ml-64">
+        <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64">
           <div className="max-w-7xl mx-auto">
             {/* Üyelik Bilgileri Bölümü */}
             <div className="mb-8">
-              <div className="dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
+              <div className="dark-card-bg neumorphic-card rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8">
                 <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-4 md:mb-6">Üyelik Bilgileri</h1>
 
                 {membershipLoading ? (

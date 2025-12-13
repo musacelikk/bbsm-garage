@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useProfile } from '../contexts/ProfileContext';
 import { API_URL } from '../config';
@@ -6,6 +6,8 @@ import { API_URL } from '../config';
 const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChangePasswordModalOpen, logout }) => {
   const { profileData, firmaAdi, refreshProfile } = useProfile();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const buttonRef = useRef(null);
 
   const handleProfileClick = async () => {
     setIsSettingsOpen(false);
@@ -140,20 +142,47 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
     return lockedPages.includes(key) && !hasMembership;
   };
 
+  // Click outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        isSettingsOpen &&
+        dropdownRef.current &&
+        buttonRef.current &&
+        !dropdownRef.current.contains(event.target) &&
+        !buttonRef.current.contains(event.target)
+      ) {
+        setIsSettingsOpen(false);
+      }
+    };
+
+    if (isSettingsOpen) {
+      document.addEventListener('pointerdown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('pointerdown', handleClickOutside);
+    };
+  }, [isSettingsOpen]);
+
   return (
     <>
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-70 z-40 lg:hidden backdrop-blur-sm"
+          onClick={() => {
+            setIsSettingsOpen(false);
+            onClose();
+          }}
+        />
+      )}
       <aside className={`fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-500 ease-out lg:transition-none ${isOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} dark-bg-secondary lg:translate-x-0`} aria-label="Sidebar" style={{ boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)' }}>
-        {isOpen && (
-          <div 
-            className="fixed inset-0 bg-black bg-opacity-70 z-30 lg:hidden backdrop-blur-sm"
-            onClick={onClose}
-          />
-        )}
         <div className="h-full px-4 pt-6 pb-4 overflow-y-auto dark-bg-secondary relative z-40 flex flex-col">
           {/* Profil Bölümü */}
           <div className="mb-8 px-2">
             <div className="relative">
               <button 
+                ref={buttonRef}
                 type="button" 
                 onClick={() => setIsSettingsOpen(!isSettingsOpen)}
                 className="w-full flex items-start gap-3 p-3 rounded-xl neumorphic-inset hover:dark-bg-tertiary transition-all cursor-pointer"
@@ -177,12 +206,10 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
               
               {/* Settings Dropdown */}
               {isSettingsOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-[45]" 
-                    onClick={() => setIsSettingsOpen(false)}
-                  ></div>
-                  <div className="absolute left-0 top-full mt-2 w-full dark-card-bg neumorphic-outset rounded-lg dark-border z-[60] animate-fade-in">
+                <div 
+                  ref={dropdownRef}
+                  className="absolute left-0 top-full mt-2 w-full dark-card-bg neumorphic-outset rounded-lg dark-border z-[60] animate-fade-in"
+                >
                     <div className="py-2">
                       <button
                         onClick={handleProfileClick}
@@ -220,7 +247,6 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
                       </button>
                     </div>
                   </div>
-                </>
               )}
             </div>
           </div>

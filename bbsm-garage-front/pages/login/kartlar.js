@@ -551,13 +551,13 @@ const secilenKartlariIndir = async (type) => {
         />
 
         <ProtectedPage>
-          <div className="p-6 pt-8 lg:ml-64 dark-bg-primary">
-            <div className="p-6 mt-16 dark-card-bg neumorphic-card rounded-3xl">
+          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 lg:ml-64 dark-bg-primary">
+            <div className="p-3 md:p-4 lg:p-6 mt-16 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
               <div className="flex items-center pb-4 justify-between">
               <div className="flex items-center">
                 <div className="pr-4 items-center ">
                   <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between ">
-                    <p className="font-bold text-xl dark-text-primary">Kartlarım</p>
+                    <p className="font-semibold text-base md:text-lg dark-text-primary">Kartlarım</p>
                   </div>
                 </div>
               </div>
@@ -565,21 +565,21 @@ const secilenKartlariIndir = async (type) => {
               {/* Desktop action buttons and search bar - only show on md and up */}
               <div className="flex items-center">
                 <div className="hidden md:flex items-center">
-                  <div className="items-center bg-red-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                    <button onClick={silSecilenleri} className="font-semibold text-my-beyaz text-md">Seçilenleri Sil</button>
+                  <div className="items-center p-2 pl-4 pr-4 rounded-full ml-4" style={{ backgroundColor: '#0A0875' }}>
+                    <button onClick={silSecilenleri} className="font-semibold text-white text-md">Seçilenleri Sil</button>
                   </div>
-                  <div className="items-center bg-green-500 p-2 pl-4 pr-4 rounded-full ml-4">
-                    <button onClick={() => secilenKartlariIndir('excel')} className="font-semibold text-my-beyaz text-md">Seçilenleri Excel İndir</button>
+                  <div className="items-center p-2 pl-4 pr-4 rounded-full ml-4" style={{ backgroundColor: '#3D1566' }}>
+                    <button onClick={() => secilenKartlariIndir('excel')} className="font-semibold text-white text-md">Seçilenleri Excel İndir</button>
                   </div>
-                  <div className="items-center bg-orange-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                    <button onClick={() => secilenKartlariIndir('pdf')} className="font-semibold text-my-beyaz text-md">Seçilenleri PDF İndir</button>
+                  <div className="items-center p-2 pl-4 pr-4 rounded-full ml-4" style={{ backgroundColor: '#6F2157' }}>
+                    <button onClick={() => secilenKartlariIndir('pdf')} className="font-semibold text-white text-md">Seçilenleri PDF İndir</button>
                   </div>
                 </div>
-                <div className="items-center bg-my-mavi p-2 pl-4 pr-4 rounded-full ml-4">
-                  <button onClick={toggleYeniKartEkleModal} className="font-semibold text-my-beyaz text-md">Yeni Kart Ekle</button>
+                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#A22E47' }}>
+                  <button onClick={toggleYeniKartEkleModal} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Yeni Kart Ekle</button>
                 </div>
-                <div className="items-center bg-purple-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                  <button onClick={togglePeriyodikBakimModal} className="font-semibold text-my-beyaz text-md">Periyodik Bakım Ekle</button>
+                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#D43A38' }}>
+                  <button onClick={togglePeriyodikBakimModal} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Periyodik Bakım</button>
                 </div>
                 <div className="hidden md:block pr-4 items-center pl-4">
                   <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between">
@@ -591,7 +591,7 @@ const secilenKartlariIndir = async (type) => {
                         </svg>
                       </div>
                       <input type="text" id="table-search"
-                        className="block p-2 ps-10 text-md dark-text-primary neumorphic-input rounded-full w-80"
+                        className="block p-2 ps-10 text-sm md:text-md dark-text-primary neumorphic-input rounded-full w-64 md:w-80"
                         placeholder="Kartları ara"
                         value={aramaTerimi}
                         onChange={(e) => setAramaTerimi(e.target.value)} />
@@ -752,7 +752,7 @@ const secilenKartlariIndir = async (type) => {
                   <input
                     type="text"
                     id="table-search-mobile"
-                    className="block w-full p-3 text-md dark-text-primary neumorphic-input rounded-full touch-manipulation"
+                    className="block w-full p-3 text-sm md:text-md dark-text-primary neumorphic-input rounded-full touch-manipulation min-h-[44px]"
                     placeholder="Kartları ara"
                     value={aramaTerimi}
                     onChange={(e) => setAramaTerimi(e.target.value)}
@@ -762,31 +762,36 @@ const secilenKartlariIndir = async (type) => {
                 <div className="flex flex-col gap-3 w-full mb-4">
                   <button 
                     onClick={silSecilenleri} 
-                    className="w-full bg-red-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    style={{ backgroundColor: '#0A0875' }}
                   >
                     Seçilenleri Sil
                   </button>
                   <button 
                     onClick={() => secilenKartlariIndir('excel')} 
-                    className="w-full bg-green-500 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    style={{ backgroundColor: '#3D1566' }}
                   >
                     Seçilenleri Excel İndir
                   </button>
                   <button 
                     onClick={() => secilenKartlariIndir('pdf')} 
-                    className="w-full bg-blue-500 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    style={{ backgroundColor: '#6F2157' }}
                   >
                     Seçilenleri PDF İndir
                   </button>
                   <button 
                     onClick={toggleYeniKartEkleModal} 
-                    className="w-full bg-my-mavi text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    style={{ backgroundColor: '#A22E47' }}
                   >
                     Yeni Kart Ekle
                   </button>
                   <button 
                     onClick={togglePeriyodikBakimModal} 
-                    className="w-full bg-purple-600 text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
+                    style={{ backgroundColor: '#D43A38' }}
                   >
                     Periyodik Bakım Ekle
                   </button>

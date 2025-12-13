@@ -214,8 +214,8 @@ function Stok() {
           <ProtectedPage>
             {/* DESKTOP LAYOUT (hidden on mobile) */}
             <div className="hidden md:block">
-              <div className="p-6 pt-8 lg:ml-64 dark-bg-primary">
-                <div className="p-6 mt-16 dark-card-bg neumorphic-card rounded-3xl">
+              <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 lg:ml-64 dark-bg-primary">
+                <div className="p-3 md:p-4 lg:p-6 mt-16 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
                 <div className="flex items-center pb-4">
                   <p className="font-semibold text-base md:text-lg dark-text-primary">Stok Ekle</p>
                 </div>
@@ -223,27 +223,27 @@ function Stok() {
                   <div className="grid gap-6 mb-4 md:grid-cols-3">
                     <div>
                       <label htmlFor="text" className="block mb-2 text-sm font-medium dark-text-primary">Stok Adı</label>
-                      <input type="text" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Stok Adı Giriniz" value={stokAdi} onChange={(e) => handleChange(e, setStokAdi)} required/>
+                      <input type="text" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Stok Adı Giriniz" value={stokAdi} onChange={(e) => handleChange(e, setStokAdi)} required/>
                     </div>
                     <div>
                         <label htmlFor="number" className="block mb-2 text-sm font-medium dark-text-primary">Adet</label>
-                        <input type="number" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Adet Giriniz" value={adet}  onChange={(e) => handleChange(e, setAdet)} required/>
+                        <input type="number" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Adet Giriniz" value={adet}  onChange={(e) => handleChange(e, setAdet)} required/>
                     </div>
                     <div>
                         <label htmlFor="date" className="block mb-2 text-sm font-medium dark-text-primary">Ekleniş Tarihi</label>
-                        <input type="date" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Ekleniş Tarihi Giriniz" value={eklenisTarihi}  onChange={(e) => handleChange(e, setEklenisTarihi)} required/>
+                        <input type="date" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Ekleniş Tarihi Giriniz" value={eklenisTarihi}  onChange={(e) => handleChange(e, setEklenisTarihi)} required/>
                     </div>
                   </div>
                   <div className="mb-6">
                       <label htmlFor="text" className="block mb-2 text-sm font-medium dark-text-primary">Açıklama</label>
-                      <input type="text" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Açıklama Giriniz ..." value={info}  onChange={(e) => handleChange(e, setInfo)} required/>
+                      <input type="text" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Açıklama Giriniz ..." value={info}  onChange={(e) => handleChange(e, setInfo)} required/>
                   </div>
                   <div className="flex justify-end">
-                      <button type="submit" className="text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 text-center neumorphic-inset">Ekle</button>
+                      <button type="submit" className="text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Ekle</button>
                   </div>
               </form>
               </div>
-              <div className="p-6 dark-card-bg neumorphic-card rounded-3xl mt-6">
+              <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl mt-4 md:mt-6">
                 <div className="flex items-center pb-4 justify-between">
                   <div className="flex items-center">
                     <div className="pr-4 items-center ">
@@ -253,8 +253,8 @@ function Stok() {
                     </div>
                   </div>
                   <div className="flex items-center">
-                    <div className="items-center bg-red-600 p-2 pl-4 pr-4 rounded-full ml-4">
-                      <button onClick={handleClearItems} href="" className="font-semibold text-white text-md">Seçilenleri Sil</button>
+                    <div className="items-center bg-red-600 p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4">
+                      <button onClick={handleClearItems} href="" className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Seçilenleri Sil</button>
                     </div>
                     <div className="pr-4 items-center pl-4">
                       <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between">
@@ -263,7 +263,7 @@ function Stok() {
                           <div className="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
                             <svg className="w-5 h-5 dark-text-muted" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg>
                           </div>
-                          <input type="text" id="table-search" className="block p-2 ps-10 text-md dark-text-primary neumorphic-input rounded-full w-80" placeholder="Search for items" value={searchTerm} onChange={handleSearch}/>
+                          <input type="text" id="table-search" className="block p-2 ps-10 text-sm md:text-md dark-text-primary neumorphic-input rounded-full w-64 md:w-80" placeholder="Search for items" value={searchTerm} onChange={handleSearch}/>
                         </div>
                       </div>
                     </div>
@@ -311,15 +311,15 @@ function Stok() {
                           <div className="flex items-center space-x-2">
                             <button 
                               onClick={() => handleAdetUpdate(stok.id, 'decrement')}
-                              className="p-1 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 neumorphic-inset"
+                              className="p-1.5 md:p-1 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 neumorphic-inset touch-manipulation min-w-[32px] md:min-w-0 min-h-[32px] md:min-h-0 active:scale-95"
                               disabled={stok.adet <= 0}
                             >
                               -
                             </button>
-                            <span className="dark-text-primary">{stok.adet}</span>
+                            <span className="dark-text-primary min-w-[30px] text-center">{stok.adet}</span>
                             <button 
                               onClick={() => handleAdetUpdate(stok.id, 'increment')}
-                              className="p-1 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-400 neumorphic-inset"
+                              className="p-1.5 md:p-1 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-400 neumorphic-inset touch-manipulation min-w-[32px] md:min-w-0 min-h-[32px] md:min-h-0 active:scale-95"
                             >
                               +
                             </button>
@@ -348,21 +348,21 @@ function Stok() {
               <form onSubmit={handleSubmit} className="dark-card-bg neumorphic-card p-4 rounded-xl">
                 <div className="mb-2">
                   <label htmlFor="stokAdi" className="block mb-1 text-sm font-medium dark-text-primary">Stok Adı</label>
-                  <input type="text" id="stokAdi" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Stok Adı Giriniz" value={stokAdi} onChange={(e) => handleChange(e, setStokAdi)} required/>
+                  <input type="text" id="stokAdi" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-3 touch-manipulation min-h-[44px]" placeholder="Stok Adı Giriniz" value={stokAdi} onChange={(e) => handleChange(e, setStokAdi)} required/>
                 </div>
                 <div className="mb-2">
                   <label htmlFor="adet" className="block mb-1 text-sm font-medium dark-text-primary">Adet</label>
-                  <input type="number" id="adet" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Adet Giriniz" value={adet} onChange={(e) => handleChange(e, setAdet)} required/>
+                  <input type="number" id="adet" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-3 touch-manipulation min-h-[44px]" placeholder="Adet Giriniz" value={adet} onChange={(e) => handleChange(e, setAdet)} required/>
                 </div>
                 <div className="mb-2">
                   <label htmlFor="eklenisTarihi" className="block mb-1 text-sm font-medium dark-text-primary">Ekleniş Tarihi</label>
-                  <input type="date" id="eklenisTarihi" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Ekleniş Tarihi Giriniz" value={eklenisTarihi} onChange={(e) => handleChange(e, setEklenisTarihi)} required/>
+                  <input type="date" id="eklenisTarihi" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-3 touch-manipulation min-h-[44px]" placeholder="Ekleniş Tarihi Giriniz" value={eklenisTarihi} onChange={(e) => handleChange(e, setEklenisTarihi)} required/>
                 </div>
                 <div className="mb-2">
                   <label htmlFor="info" className="block mb-1 text-sm font-medium dark-text-primary">Açıklama</label>
-                  <input type="text" id="info" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5" placeholder="Açıklama Giriniz ..." value={info} onChange={(e) => handleChange(e, setInfo)} required/>
+                  <input type="text" id="info" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-3 touch-manipulation min-h-[44px]" placeholder="Açıklama Giriniz ..." value={info} onChange={(e) => handleChange(e, setInfo)} required/>
                 </div>
-                <button type="submit" className="w-full text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-2.5 text-center neumorphic-inset">Ekle</button>
+                <button type="submit" className="w-full text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-3 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Ekle</button>
               </form>
             </div>
             {/* Search bar at the top */}
@@ -370,7 +370,7 @@ function Stok() {
               <input
                 type="text"
                 id="table-search-mobile"
-                className="block w-full p-2 text-md dark-text-primary neumorphic-input rounded-full"
+                className="block w-full p-3 text-sm md:text-md dark-text-primary neumorphic-input rounded-full touch-manipulation min-h-[44px]"
                 placeholder="Stok ara"
                 value={searchTerm}
                 onChange={handleSearch}
@@ -378,7 +378,7 @@ function Stok() {
             </div>
             {/* Action button full width */}
             <div className="flex flex-col gap-2 w-full mb-4">
-              <button onClick={handleClearItems} className="w-full bg-red-600 text-white font-semibold py-2 rounded-full neumorphic-inset">Seçilenleri Sil</button>
+              <button onClick={handleClearItems} className="w-full bg-red-600 text-white font-semibold py-3 rounded-full neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Seçilenleri Sil</button>
             </div>
             {/* Stok list as cards */}
             <div className="w-full dark-card-bg neumorphic-card rounded-xl overflow-hidden">
@@ -396,15 +396,15 @@ function Stok() {
                     <div className="flex items-center space-x-2">
                       <button 
                         onClick={() => handleAdetUpdate(stok.id, 'decrement')}
-                        className="p-1 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 neumorphic-inset"
+                        className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/30 text-red-400 neumorphic-inset touch-manipulation min-w-[36px] min-h-[36px] active:scale-95"
                         disabled={stok.adet <= 0}
                       >
                         -
                       </button>
-                      <span className="text-green-400 font-semibold dark-text-primary">{stok.adet}</span>
+                      <span className="text-green-400 font-semibold dark-text-primary min-w-[30px] text-center">{stok.adet}</span>
                       <button 
                         onClick={() => handleAdetUpdate(stok.id, 'increment')}
-                        className="p-1 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-400 neumorphic-inset"
+                        className="p-2 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-400 neumorphic-inset touch-manipulation min-w-[36px] min-h-[36px] active:scale-95"
                       >
                         +
                       </button>

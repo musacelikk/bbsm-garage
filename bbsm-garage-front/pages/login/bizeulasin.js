@@ -101,12 +101,12 @@ function BizeUlasin() {
         />
 
         <ProtectedPage>
-          <div className="p-4 sm:p-6 pt-16 lg:ml-64">
+          <div className="p-3 md:p-4 lg:p-6 pt-16 lg:ml-64">
             <div className="max-w-7xl mx-auto">
               <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-4 md:mb-6">Bize Ulaşın</h1>
 
               {/* İletişim Kartları */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-4 md:mb-6 lg:mb-8">
                 <div className="dark-card-bg neumorphic-card rounded-lg p-4 hover:shadow-lg transition-shadow">
                   <div className="flex items-center justify-center w-10 h-10 bg-blue-500/20 rounded-lg mb-3">
                     <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

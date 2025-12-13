@@ -150,7 +150,7 @@ function Oneri() {
         />
 
         <ProtectedPage>
-          <div className="p-4 md:p-6 pt-6 md:pt-8 mt-16 lg:ml-64 pb-8">
+          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 pb-6 md:pb-8">
             {/* Başlık Bölümü */}
             <div className="mb-4 md:mb-6">
               <div className="flex items-center gap-3 mb-2">
@@ -172,39 +172,39 @@ function Oneri() {
 
             {/* Bildirimler Bölümü */}
             {notifications.length > 0 && (
-              <div className="mb-4 md:mb-6 dark-card-bg neumorphic-card rounded-xl p-4 md:p-6 border border-blue-500/20">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center border border-blue-500/30">
-                      <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-3 md:mb-4 lg:mb-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center border border-blue-500/30">
+                      <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="text-lg md:text-xl font-semibold dark-text-primary">Bildirimler</h2>
+                      <h2 className="text-sm md:text-base lg:text-lg font-medium dark-text-primary">Bildirimler</h2>
                       {unreadCount > 0 && (
-                        <p className="text-xs dark-text-muted">{unreadCount} okunmamış bildirim</p>
+                        <p className="text-[10px] md:text-xs dark-text-muted">{unreadCount} okunmamış</p>
                       )}
                     </div>
                   </div>
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold"
+                      className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 font-medium touch-manipulation min-h-[32px] px-2"
                     >
                       Tümünü Okundu İşaretle
                     </button>
                   )}
                 </div>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
+                <div className="space-y-1.5 md:space-y-2 max-h-56 md:max-h-64 overflow-y-auto">
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
                       onClick={() => markAsRead(notification.id)}
-                      className={`p-3 rounded-lg neumorphic-inset cursor-pointer transition-all border-2 ${
+                      className={`p-2.5 md:p-3 rounded-lg neumorphic-inset cursor-pointer transition-all border-2 touch-manipulation ${
                         !notification.isRead
                           ? 'border-blue-500/30 bg-blue-500/10'
-                          : 'border-transparent hover:dark-bg-tertiary'
+                          : 'border-transparent hover:dark-bg-tertiary active:scale-95'
                       }`}
                     >
                       <div className="flex items-start gap-3">
@@ -238,7 +238,7 @@ function Oneri() {
             )}
 
             {/* Form */}
-            <div className="dark-card-bg neumorphic-card rounded-xl p-4 md:p-6 border border-purple-500/20">
+            <div className="dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 border border-purple-500/20">
               {formGonderildi && (
                 <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg neumorphic-inset">
                   <div className="flex items-center gap-2">
@@ -250,7 +250,7 @@ function Oneri() {
                 </div>
               )}
 
-              <form onSubmit={handleOneriSubmit} className="space-y-4">
+              <form onSubmit={handleOneriSubmit} className="space-y-3 md:space-y-4">
                 {/* 1. Öneri Başlığı */}
                 <div>
                   <label className="block text-xs md:text-sm font-semibold dark-text-primary mb-1.5">
@@ -261,7 +261,7 @@ function Oneri() {
                     type="text"
                     value={oneriBaslik}
                     onChange={(e) => setOneriBaslik(e.target.value)}
-                    className="w-full px-3 py-2 neumorphic-input rounded-lg dark-text-primary text-sm"
+                    className="w-full px-3 py-2.5 md:py-2 neumorphic-input rounded-lg dark-text-primary text-sm touch-manipulation min-h-[44px]"
                     placeholder="Örn: Otomatik fatura oluşturma özelliği"
                     required
                   />
@@ -277,7 +277,7 @@ function Oneri() {
                     value={sorunTanimi}
                     onChange={(e) => setSorunTanimi(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 neumorphic-input rounded-lg dark-text-primary resize-none text-sm"
+                    className="w-full px-3 py-2.5 md:py-2 neumorphic-input rounded-lg dark-text-primary resize-none text-sm touch-manipulation min-h-[100px]"
                     placeholder="Bu özellik sayesinde..."
                     required
                   />
@@ -293,7 +293,7 @@ function Oneri() {
                     value={mevcutCozum}
                     onChange={(e) => setMevcutCozum(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 neumorphic-input rounded-lg dark-text-primary resize-none text-sm"
+                    className="w-full px-3 py-2.5 md:py-2 neumorphic-input rounded-lg dark-text-primary resize-none text-sm touch-manipulation min-h-[100px]"
                     placeholder="Şu anda..."
                     required
                   />
@@ -316,7 +316,7 @@ function Oneri() {
                         key={item.deger}
                         type="button"
                         onClick={() => handleEtkiAlaniToggle(item.deger)}
-                        className={`p-3 rounded-lg neumorphic-inset transition-all border-2 ${
+                        className={`p-2.5 md:p-3 rounded-lg neumorphic-inset transition-all border-2 touch-manipulation min-h-[60px] md:min-h-0 active:scale-95 ${
                           etkiAlani.includes(item.deger)
                             ? 'border-purple-500 bg-purple-500/20 dark-bg-tertiary'
                             : 'border-transparent hover:border-purple-500/30'
@@ -339,7 +339,7 @@ function Oneri() {
                     value={ekNot}
                     onChange={(e) => setEkNot(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 neumorphic-input rounded-lg dark-text-primary resize-none text-sm"
+                    className="w-full px-3 py-2.5 md:py-2 neumorphic-input rounded-lg dark-text-primary resize-none text-sm touch-manipulation min-h-[80px]"
                     placeholder="Ek notlarınız..."
                   />
                 </div>
@@ -361,7 +361,7 @@ function Oneri() {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="w-full py-2.5 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg neumorphic-inset hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-900/40 text-sm"
+                  className="w-full py-3 md:py-2.5 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg neumorphic-inset hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-900/40 text-sm md:text-sm touch-manipulation min-h-[44px] active:scale-95"
                 >
                   Öneriyi Gönder
                 </button>
