@@ -332,6 +332,18 @@ const Kartlar = () => {
           return sortConfig.direction === 'asc' ? 1 : -1;
         }
         return 0;
+      } else if (sortConfig.key === 'periyodikBakim') {
+        const aValue = a.periyodikBakim === true || a.periyodikBakim === 1 || a.periyodikBakim === 'true' || a.periyodikBakim === '1';
+        const bValue = b.periyodikBakim === true || b.periyodikBakim === 1 || b.periyodikBakim === 'true' || b.periyodikBakim === '1';
+        
+        if (aValue === bValue) return 0;
+        if (aValue && !bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (!aValue && bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
       } else {
         if (a[sortConfig.key] < b[sortConfig.key]) {
           return sortConfig.direction === 'asc' ? -1 : 1;
@@ -626,8 +638,8 @@ const secilenKartlariIndir = async (type) => {
                       <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('girisTarihi')}>
                         Giriş Tarihi {sortConfig.key === 'girisTarihi' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                       </th>
-                      <th scope="col" className="px-6 py-3">
-                        Türü
+                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('periyodikBakim')}>
+                        Türü {sortConfig.key === 'periyodikBakim' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                       </th>
                       <th scope="col" className="px-6 py-3">
                         Ödeme

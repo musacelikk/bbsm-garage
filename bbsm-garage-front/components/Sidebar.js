@@ -167,15 +167,15 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
 
   return (
     <>
-      {isOpen && (
-        <div 
+        {isOpen && (
+          <div 
           className="fixed inset-0 bg-black bg-opacity-70 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => {
             setIsSettingsOpen(false);
             onClose();
           }}
-        />
-      )}
+          />
+        )}
       <aside className={`fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-500 ease-out lg:transition-none ${isOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} dark-bg-secondary lg:translate-x-0`} aria-label="Sidebar" style={{ boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)' }}>
         <div className="h-full px-4 pt-6 pb-4 overflow-y-auto dark-bg-secondary relative z-40 flex flex-col">
           {/* Profil Bölümü */}
@@ -258,10 +258,10 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
                 {isPageLocked(item.key) ? (
                   <div className={getLinkClassName(item.key)}>
                     {item.icon}
-                    <span>{item.label}</span>
+                      <span>{item.label}</span>
                     <svg className="w-5 h-5 dark-text-muted ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
                   </div>
                 ) : (
                   <Link 

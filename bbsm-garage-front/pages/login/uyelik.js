@@ -126,12 +126,11 @@ function Uyelik() {
       months: 0.25, // 7 gün yaklaşık 0.25 ay
       duration: '7 Gün',
       price: 'Ücretsiz',
-      description: 'Tüm özellikleri deneyin',
+      description: 'Sistemi tam olarak deneyin',
       features: [
         'Tüm özelliklere erişim',
-        'Sınırsız kart kaydı',
-        'Sınırsız teklif oluşturma',
-        'Raporlama ve analiz'
+        'Sınırsız kullanım',
+        '7 gün tam deneme'
       ],
       color: 'from-purple-500 to-purple-600',
       buttonColor: 'bg-purple-600 hover:bg-purple-700'
@@ -142,13 +141,13 @@ function Uyelik() {
       months: 6,
       duration: '6 Ay',
       price: 'Özel Fiyat',
-      description: 'En popüler seçenek',
+      description: '6 ay öde, %15 indirim kazan',
+      discount: '%15 İndirim',
       features: [
         'Tüm özelliklere erişim',
-        'Sınırsız kart kaydı',
-        'Sınırsız teklif oluşturma',
-        'Raporlama ve analiz',
-        'Öncelikli destek'
+        'Sınırsız kullanım',
+        'Öncelikli destek',
+        'Aylık ödemeye göre %15 daha uygun'
       ],
       color: 'from-blue-500 to-blue-600',
       buttonColor: 'bg-blue-600 hover:bg-blue-700',
@@ -160,14 +159,14 @@ function Uyelik() {
       months: 12,
       duration: '12 Ay',
       price: 'En İyi Fiyat',
-      description: 'En iyi değer',
+      description: '1 yıl öde, %25 indirim kazan',
+      discount: '%25 İndirim',
       features: [
         'Tüm özelliklere erişim',
-        'Sınırsız kart kaydı',
-        'Sınırsız teklif oluşturma',
-        'Raporlama ve analiz',
+        'Sınırsız kullanım',
         'Öncelikli destek',
-        'Özel özellikler'
+        'Özel özellik önceliği',
+        'Aylık ödemeye göre %25 daha uygun - En iyi değer'
       ],
       color: 'from-green-500 to-green-600',
       buttonColor: 'bg-green-600 hover:bg-green-700'
@@ -295,6 +294,11 @@ function Uyelik() {
                       </div>
                       <div className="relative z-10">
                         <h3 className="text-base md:text-lg font-semibold mb-2">{plan.name}</h3>
+                        {plan.discount && (
+                          <div className="inline-block bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold mb-2">
+                            {plan.discount}
+                          </div>
+                        )}
                         <div className="text-3xl sm:text-4xl font-bold mb-1">{plan.price}</div>
                         <div className="text-sm sm:text-base opacity-90">{plan.duration}</div>
                       </div>

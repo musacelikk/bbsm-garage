@@ -77,6 +77,20 @@ function SonHareketler() {
     if (action === 'card_edit') return 'Kart Düzenledi';
     if (action === 'card_create') return 'Kart Ekledi';
     if (action === 'card_delete') return 'Kart Sildi';
+    if (action === 'excel_download') return 'Excel İndirdi';
+    if (action === 'pdf_download') return 'PDF İndirdi';
+    if (action === 'teklif_create') return 'Teklif Oluşturdu';
+    if (action === 'teklif_delete') return 'Teklif Sildi';
+    if (action === 'teklif_to_card') return 'Teklif → Kart Aktardı';
+    if (action === 'stok_create') return 'Stok Ekledi';
+    if (action === 'stok_delete') return 'Stok Sildi';
+    if (action === 'stok_update') return 'Stok Güncelledi';
+    if (action === 'oneri_send') return 'Öneri Gönderdi';
+    if (action === 'oneri_approve') return 'Öneri Onaylandı';
+    if (action === 'oneri_reject') return 'Öneri Reddedildi';
+    if (action === 'payment_update') return 'Ödeme Durumu Güncellendi';
+    if (action === 'password_change') return 'Şifre Değiştirdi';
+    if (action === 'profile_update') return 'Profil Güncelledi';
     return action;
   };
 
@@ -86,11 +100,40 @@ function SonHareketler() {
     if (action === 'card_edit') return 'text-blue-400 bg-blue-500/20';
     if (action === 'card_create') return 'text-purple-400 bg-purple-500/20';
     if (action === 'card_delete') return 'text-red-400 bg-red-500/30';
+    if (action === 'excel_download') return 'text-green-400 bg-green-500/20';
+    if (action === 'pdf_download') return 'text-orange-400 bg-orange-500/20';
+    if (action === 'teklif_create') return 'text-cyan-400 bg-cyan-500/20';
+    if (action === 'teklif_delete') return 'text-red-400 bg-red-500/30';
+    if (action === 'teklif_to_card') return 'text-blue-400 bg-blue-500/20';
+    if (action === 'stok_create') return 'text-emerald-400 bg-emerald-500/20';
+    if (action === 'stok_delete') return 'text-red-400 bg-red-500/30';
+    if (action === 'stok_update') return 'text-yellow-400 bg-yellow-500/20';
+    if (action === 'oneri_send') return 'text-indigo-400 bg-indigo-500/20';
+    if (action === 'oneri_approve') return 'text-green-400 bg-green-500/20';
+    if (action === 'oneri_reject') return 'text-red-400 bg-red-500/20';
+    if (action === 'payment_update') return 'text-amber-400 bg-amber-500/20';
+    if (action === 'password_change') return 'text-pink-400 bg-pink-500/20';
+    if (action === 'profile_update') return 'text-violet-400 bg-violet-500/20';
     return 'dark-text-muted dark-bg-tertiary';
   };
 
   // Hareketleri kategorilere ayır
-  const girisCikisHareketleri = hareketler.filter(h => h.action === 'login' || h.action === 'logout');
+  const girisCikisHareketleri = hareketler.filter(h => 
+    h.action === 'excel_download' || 
+    h.action === 'pdf_download' || 
+    h.action === 'teklif_create' || 
+    h.action === 'teklif_delete' || 
+    h.action === 'teklif_to_card' ||
+    h.action === 'stok_create' ||
+    h.action === 'stok_delete' ||
+    h.action === 'stok_update' ||
+    h.action === 'oneri_send' ||
+    h.action === 'oneri_approve' ||
+    h.action === 'oneri_reject' ||
+    h.action === 'payment_update' ||
+    h.action === 'password_change' ||
+    h.action === 'profile_update'
+  );
   const duzenlemeHareketleri = hareketler.filter(h => h.action === 'card_edit' || h.action === 'card_create' || h.action === 'card_delete');
 
   // Sayfalama hesaplamaları
@@ -149,7 +192,7 @@ function SonHareketler() {
                         : 'border-transparent dark-text-muted hover:dark-text-secondary hover:border-dark-border'
                     }`}
                   >
-                    Giriş/Çıkış
+                    Sistem İşlemleri
                     {girisCikisHareketleri.length > 0 && (
                       <span className={`ml-2 px-2 py-0.5 rounded-full text-xs neumorphic-inset ${
                         activeTab === 'giris-cikis' ? 'bg-green-500/20 text-green-400' : 'dark-bg-tertiary dark-text-muted'
@@ -191,7 +234,7 @@ function SonHareketler() {
                   </div>
                 ) : girisCikisHareketleri.length === 0 ? (
                   <div className="text-center py-12">
-                    <p className="dark-text-muted text-base sm:text-lg">Henüz giriş/çıkış kaydı bulunmamaktadır.</p>
+                    <p className="dark-text-muted text-base sm:text-lg">Henüz sistem işlemi kaydı bulunmamaktadır.</p>
                   </div>
                 ) : (
                   <>

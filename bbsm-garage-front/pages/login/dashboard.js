@@ -135,18 +135,18 @@ function Dashboard() {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
-    // Son 7 günlük ciro
-    const yediGunOnce = new Date();
-    yediGunOnce.setDate(yediGunOnce.getDate() - 6);
-    yediGunOnce.setHours(0, 0, 0, 0);
-    const yediGunOnceStr = yediGunOnce.toISOString().split('T')[0];
+    // Son 7 günlük ciro (bugün dahil son 7 gün)
+    const bugunSonu = new Date(bugun);
+    bugunSonu.setHours(23, 59, 59, 999); // Bugünün sonu
+    const yediGunOnce = new Date(bugun);
+    yediGunOnce.setDate(yediGunOnce.getDate() - 6); // Bugün dahil 7 gün (bugün + 6 gün önce)
+    yediGunOnce.setHours(0, 0, 0, 0); // Günün başlangıcı
 
     const son7GunKartlar = kartlar.filter(kart => {
       if (!kart.girisTarihi) return false;
       const kartTarihi = new Date(kart.girisTarihi);
-      kartTarihi.setHours(0, 0, 0, 0);
-      const kartTarihiStr = kartTarihi.toISOString().split('T')[0];
-      return kartTarihiStr >= yediGunOnceStr && kartTarihiStr <= bugunStr;
+      // Tarih aralığı kontrolü: yediGunOnce <= kartTarihi <= bugunSonu
+      return kartTarihi >= yediGunOnce && kartTarihi <= bugunSonu;
     });
 
     const son7GunlukCiro = son7GunKartlar.reduce((toplam, kart) => {
@@ -904,46 +904,99 @@ function Dashboard() {
                 )}
               </div>
 
-              {/* En Aktif Kullanıcılar */}
+              {/* Ödeme Bekleyen Kartlar */}
               <div className="dark-card-bg neumorphic-card rounded-lg p-3 md:p-4 border border-blue-500/20">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center border border-blue-500/20">
-                      <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center border border-amber-500/20">
+                      <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <h2 className="text-sm md:text-base font-medium dark-text-primary">En Aktif Kullanıcılar</h2>
+                    <h2 className="text-sm md:text-base font-medium dark-text-primary">Ödeme Bekleyen Kartlar</h2>
                   </div>
+                  <Link href="/login/kartlar" className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors">
+                    Tümü →
+                  </Link>
                 </div>
                 {loading ? (
                   <div className="flex justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
                   </div>
-                ) : istatistikler.enAktifKullanicilar && istatistikler.enAktifKullanicilar.length > 0 ? (
-                  <div className="space-y-2">
-                    {istatistikler.enAktifKullanicilar.map((kullanici, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className="w-8 h-8 bg-blue-500/30 rounded-lg flex items-center justify-center text-white font-bold text-xs transition-all group-hover:scale-105">
-                            {kullanici.username.substring(0, 2).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium dark-text-primary truncate">{kullanici.username}</p>
-                            <p className="text-[10px] dark-text-muted">{kullanici.sayi} işlem</p>
-                          </div>
+                ) : (() => {
+                  const hesaplaToplamFiyat = (yapilanlar) => {
+                    if (!yapilanlar || !Array.isArray(yapilanlar)) return 0;
+                    return yapilanlar.reduce((toplam, item) => {
+                      const birimFiyati = parseFloat(item.birimFiyati) || 0;
+                      const birimAdedi = parseInt(item.birimAdedi) || 0;
+                      return toplam + (birimFiyati * birimAdedi);
+                    }, 0);
+                  };
+                  const odemeBekleyenKartlar = kartlar.filter(kart => !kart.odemeAlindi);
+                  const toplamTutar = odemeBekleyenKartlar.reduce((toplam, kart) => {
+                    return toplam + hesaplaToplamFiyat(kart.yapilanlar);
+                  }, 0);
+                  const formatPara = (tutar) => {
+                    return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(tutar);
+                  };
+                  const capitalizeWords = (string) => {
+                    if (!string) return '-';
+                    return string.split(' ').map(word => {
+                      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+                    }).join(' ');
+                  };
+                  const toUpperCase = (string) => {
+                    if (!string) return '-';
+                    return string.toUpperCase();
+                  };
+                  
+                  return odemeBekleyenKartlar.length > 0 ? (
+                    <>
+                      <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg neumorphic-inset">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs dark-text-secondary">Toplam Bekleyen Tutar:</span>
+                          <span className="text-sm font-semibold text-amber-400">{formatPara(toplamTutar)}</span>
                         </div>
-                        <Link href="/login/son-hareketler" className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors flex-shrink-0">
-                          Gör →
-                        </Link>
+                        <div className="flex items-center justify-between mt-1">
+                          <span className="text-xs dark-text-secondary">Kart Sayısı:</span>
+                          <span className="text-sm font-semibold text-amber-400">{odemeBekleyenKartlar.length}</span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-xs dark-text-muted">Henüz aktif kullanıcı bulunmamaktadır.</p>
-                  </div>
-                )}
+                      <div className="space-y-2">
+                        {odemeBekleyenKartlar
+                          .sort((a, b) => {
+                            const tarihA = a.girisTarihi ? new Date(a.girisTarihi) : new Date(0);
+                            const tarihB = b.girisTarihi ? new Date(b.girisTarihi) : new Date(0);
+                            return tarihA - tarihB;
+                          })
+                          .slice(0, 5)
+                          .map((kart) => {
+                            const kartTutari = hesaplaToplamFiyat(kart.yapilanlar);
+                            return (
+                              <div key={kart.card_id} className="flex items-center justify-between p-2 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <div className="w-8 h-8 bg-amber-500/30 rounded-lg flex items-center justify-center text-white font-bold text-xs transition-all group-hover:scale-105">
+                                    {kart.plaka ? kart.plaka.substring(0, 2).toUpperCase() : '??'}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium dark-text-primary truncate">{capitalizeWords(kart.adSoyad || '-')}</p>
+                                    <p className="text-[10px] dark-text-muted truncate">{toUpperCase(kart.plaka || '-')} • {formatPara(kartTutari)}</p>
+                                  </div>
+                                </div>
+                                <Link href={`/login/kartlar/detay?id=${kart.card_id}`} className="text-[10px] md:text-xs text-blue-400 hover:text-blue-300 font-medium transition-colors flex-shrink-0">
+                                  Gör →
+                                </Link>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-xs dark-text-muted">Tüm ödemeler alınmış.</p>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>

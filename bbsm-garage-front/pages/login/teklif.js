@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from 'next/router';
@@ -29,6 +29,7 @@ function Teklif() {
   const [teklifler, setTeklifler] = useState([]);
   const [secilenTeklifler, setSecilenTeklifler] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const DetailPage = (id) => {
     return (id ? `/login/teklifler/detayT?id=${id}` : '/login/teklif');
@@ -259,7 +260,56 @@ function Teklif() {
     setLoading(false);
   };
 
-  const filtrelenmisTeklifler = teklifler.filter(teklif => {
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const parseDate = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    return isNaN(date.getTime()) ? null : date;
+  };
+
+  const sortedTeklifler = useMemo(() => {
+    let sortableItems = [...teklifler];
+  
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        if (sortConfig.key === 'girisTarihi') {
+          const dateA = parseDate(a.girisTarihi);
+          const dateB = parseDate(b.girisTarihi);
+    
+          if (dateA === null && dateB !== null) return 1;
+          if (dateA !== null && dateB === null) return -1;
+          if (dateA === null && dateB === null) return 0;
+    
+          if (dateA < dateB) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
+          }
+          if (dateA > dateB) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        } else {
+          if (a[sortConfig.key] < b[sortConfig.key]) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
+          }
+          if (a[sortConfig.key] > b[sortConfig.key]) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        }
+      });
+    }
+  
+    return sortableItems;
+  }, [teklifler, sortConfig]);
+
+  const filtrelenmisTeklifler = sortedTeklifler.filter(teklif => {
     const searchLower = aramaTerimi.toLowerCase();
     return (
       (teklif.adSoyad?.toLowerCase().includes(searchLower)) ||
@@ -613,8 +663,8 @@ const secilenTeklifleriIndir = async (type) => {
                     <th scope="col" className="px-6 py-3">
                       Şasİ No
                     </th>
-                    <th scope="col" className="px-6 py-3">
-                      Giriş Tarihi
+                    <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('girisTarihi')}>
+                      Giriş Tarihi {sortConfig.key === 'girisTarihi' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
                     </th>
                     <th scope="col" className="px-4 py-3">
                       Kartlara Ekle
