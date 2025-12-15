@@ -692,8 +692,8 @@ const handlePrint = async (kartId) => {
   } catch (error) {
     console.error('PDF yazdırma hatası:', error);
     showError('PDF yazdırma sırasında bir hata oluştu.');
-  }
-  setLoading(false);
+    }
+    setLoading(false);
 };
 
   const handlePDFDownload = async (kartId) => {
@@ -937,7 +937,7 @@ const secilenKartlariIndir = async (type) => {
                             className="absolute right-0 top-0 h-full w-2 cursor-col-resize"
                             onMouseDown={(e) => handleResizeMouseDown(e, column.id)}
                           />
-                        </th>
+                      </th>
                       ))}
                     </tr>
                   </thead>
@@ -967,9 +967,9 @@ const secilenKartlariIndir = async (type) => {
                             key={`${kart.card_id}-${column.id}`}
                             className={`${getTdClass(column.id)} ${borderWeightCell} ${borderColorClass}`}
                             style={{ width: column.width || 'auto', minWidth: column.minWidth || 90 }}
-                          >
+                            >
                             {renderCellContent(column, kart)}
-                          </td>
+                        </td>
                         ))}
                       </tr>
                     ))}

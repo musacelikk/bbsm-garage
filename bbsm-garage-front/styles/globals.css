@@ -21,6 +21,9 @@
   --accent-teal: #14b8a6;
   --accent-amber: #f59e0b;
   --accent-red: #ef4444;
+  /* Layout-specific backgrounds */
+  --layout-sidebar-bg: #111827;
+  --layout-nav-bg: #111827;
 }
 
 /* Typography scale for consistent hierarchy */
@@ -380,35 +383,26 @@ tr:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* ============================================
-   DARK NEUMORPHIC SAAS DASHBOARD STYLES
-   ============================================ */
-
-/* Neumorphic Inset (İçe Gömülü) - Butonlar için */
+/* Modern Flat Inset (Önceden içe gömülü olan butonlar için) */
 .neumorphic-inset {
-  background: var(--dark-bg-secondary);
-  box-shadow: 
-    inset 3px 3px 6px var(--dark-shadow-dark),
-    inset -3px -3px 6px var(--dark-shadow-light);
+  background: var(--dark-bg-tertiary);
   border: 1px solid var(--dark-border);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.25);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .neumorphic-inset:hover {
-  box-shadow: 
-    inset 4px 4px 10px var(--dark-shadow-dark),
-    inset -4px -4px 10px var(--dark-shadow-light);
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.28);
+  transform: translateY(-1px);
 }
 
 .neumorphic-inset:active {
-  box-shadow: 
-    inset 2px 2px 3px var(--dark-shadow-dark),
-    inset -2px -2px 3px var(--dark-shadow-light);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.2);
+  transform: translateY(0);
 }
 
-/* Neumorphic Outset (Dışa Çıkık) - Kartlar için */
+/* Neumorphic Outset (Dışa Çıkık) - Kartlar / vurgulu alanlar için */
 .neumorphic-outset {
-  background: var(--dark-card-bg);
   box-shadow: 
     6px 6px 14px var(--dark-shadow-dark),
     -6px -6px 14px var(--dark-shadow-light);
@@ -443,23 +437,21 @@ tr:hover {
   transform: translateY(-2px);
 }
 
-/* Neumorphic Input (İçe Gömülü Input Alanları) */
+/* Flat Input (Önceden içe gömülü input alanları) */
 .neumorphic-input {
-  background: var(--dark-bg-secondary);
-  box-shadow: 
-    inset 3px 3px 6px var(--dark-shadow-dark),
-    inset -3px -3px 6px var(--dark-shadow-light);
+  background: var(--dark-bg-tertiary);
   border: 1px solid var(--dark-border);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
   color: var(--dark-text-primary);
-  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .neumorphic-input:focus {
   box-shadow: 
-    inset 4px 4px 8px var(--dark-shadow-dark),
-    inset -4px -4px 8px var(--dark-shadow-light),
-    0 0 0 2px rgba(59, 130, 246, 0.3);
+    0 0 0 1px rgba(59, 130, 246, 0.7),
+    0 4px 10px rgba(15, 23, 42, 0.25);
   outline: none;
+  background: var(--dark-bg-tertiary);
 }
 
 /* Neumorphic Card (Kartlar için) */
@@ -495,6 +487,20 @@ tr:hover {
 
 .dark-card-bg {
   background-color: var(--dark-card-bg);
+}
+
+/* Layout helpers */
+.sidebar-bg {
+  background-color: var(--layout-sidebar-bg);
+}
+
+.navbar-bg {
+  background-color: var(--layout-nav-bg);
+}
+
+/* Sidebar active item gradient */
+.sidebar-active {
+  background: linear-gradient(90deg, #0A0875 0%, #2563EB 100%);
 }
 
 /* Dark Text Colors */

@@ -564,6 +564,13 @@ export class AuthService {
 
       await this.databaseRepository.save(user);
 
+      // Log kaydı oluştur
+      try {
+        await this.logService.createLog(user.tenant_id, user.username, 'membership_add', null);
+      } catch (error) {
+        console.error('Üyelik ekleme log kaydetme hatası:', error);
+      }
+
       return { 
         success: true, 
         message: `${months} ay üyelik eklendi`,
@@ -739,6 +746,13 @@ export class AuthService {
       request.admin_response = 'Teklif onaylandı';
       await this.membershipRequestRepository.save(request);
 
+      // Log kaydı oluştur (kullanıcı için)
+      try {
+        await this.logService.createLog(user.tenant_id, user.username, 'membership_request_approve', null);
+      } catch (error) {
+        console.error('Üyelik teklifi onaylama log kaydetme hatası:', error);
+      }
+
       return { 
         success: true, 
         message: 'Teklif onaylandı ve üyelik aktifleştirildi',
@@ -782,6 +796,18 @@ export class AuthService {
       request.status = 'rejected';
       request.admin_response = reason || 'Teklif reddedildi';
       await this.membershipRequestRepository.save(request);
+
+      // Log kaydı oluştur (kullanıcı için)
+      try {
+        const user = await this.databaseRepository.findOne({
+          where: { id: request.user_id }
+        });
+        if (user) {
+          await this.logService.createLog(user.tenant_id, user.username, 'membership_request_reject', null);
+        }
+      } catch (error) {
+        console.error('Üyelik teklifi reddetme log kaydetme hatası:', error);
+      }
 
       return { 
         success: true, 

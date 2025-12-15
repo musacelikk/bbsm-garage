@@ -131,19 +131,29 @@ function Teklif() {
 
       for (const teklif of secilenTeklifObjesi) {
         try {
+          // yapilanlar array'ini DTO formatına dönüştür
+          const yapilanlarDTO = (teklif.yapilanlar || []).map(y => ({
+            birimAdedi: y.birimAdedi || 0,
+            parcaAdi: y.parcaAdi || "",
+            birimFiyati: y.birimFiyati || 0,
+            toplamFiyat: y.toplamFiyat || 0,
+          }));
+
+          // Sadece DTO'da olan alanları gönder (teklif_id, tenant_id gibi alanları çıkar)
           const updatedTeklif = {
-            ...teklif,
-            km: teklif.km ? parseInt(teklif.km, 10) : null,
-            modelYili: teklif.modelYili ? parseInt(teklif.modelYili, 10) : null,
             adSoyad: teklif.adSoyad || "Tanımsız",
+            telNo: teklif.telNo || "",
             markaModel: teklif.markaModel || "Tanımsız",
             plaka: teklif.plaka || "Tanımsız",
+            km: teklif.km ? parseInt(teklif.km, 10) : 0,
+            modelYili: teklif.modelYili ? parseInt(teklif.modelYili, 10) : 0,
             sasi: teklif.sasi || "Tanımsız",
+            renk: teklif.renk || "",
             girisTarihi: teklif.girisTarihi || "Tanımsız",
             notlar: teklif.notlar || "",
             adres: teklif.adres || "",
             duzenleyen: teklif.duzenleyen || username,
-            yapilanlar: teklif.yapilanlar || [],
+            yapilanlar: yapilanlarDTO,
           };
 
           // Önce kartı oluştur
@@ -155,16 +165,39 @@ function Teklif() {
             body: JSON.stringify(updatedTeklif),
           });
 
-          if (postResponse.ok) {
+          if (postResponse && postResponse.ok) {
             // Kart başarıyla oluşturuldu, teklifi sil
-            await fetchWithAuth(`${API_URL}/teklif/${teklif.teklif_id}`, {
+            const deleteResponse = await fetchWithAuth(`${API_URL}/teklif/${teklif.teklif_id}`, {
               method: 'DELETE',
               headers: {
                 'Content-Type': 'application/json',
               },
             });
-            basariliSayisi++;
+            
+            if (deleteResponse && deleteResponse.ok) {
+              // Log kaydı oluştur
+              try {
+                await fetchWithAuth(`${API_URL}/log/create`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ action: 'teklif_to_card', duzenleyen: updatedTeklif.duzenleyen || username })
+                });
+              } catch (logError) {
+                console.error('Log kaydetme hatası:', logError);
+                // Log hatası işlemi engellemez
+              }
+              basariliSayisi++;
+            } else {
+              console.error('Teklif silinirken hata:', deleteResponse);
+              hataSayisi++;
+            }
           } else {
+            const errorData = await postResponse?.json().catch(() => ({}));
+            console.error('Kart oluşturulurken hata:', errorData);
+            console.error('Gönderilen veri:', JSON.stringify(updatedTeklif, null, 2));
+            if (errorData.message && Array.isArray(errorData.message)) {
+              console.error('Validation hataları:', errorData.message);
+            }
             hataSayisi++;
           }
         } catch (error) {
@@ -201,19 +234,29 @@ function Teklif() {
 
   const handleTeklifEkle = async (teklif) => {
     setLoading(true);
+    // yapilanlar array'ini DTO formatına dönüştür
+    const yapilanlarDTO = (teklif.yapilanlar || []).map(y => ({
+      birimAdedi: y.birimAdedi || 0,
+      parcaAdi: y.parcaAdi || "",
+      birimFiyati: y.birimFiyati || 0,
+      toplamFiyat: y.toplamFiyat || 0,
+    }));
+
+    // Sadece DTO'da olan alanları gönder (teklif_id, tenant_id gibi alanları çıkar)
     const updatedTeklif = {
-      ...teklif,
-      km: teklif.km ? parseInt(teklif.km, 10) : null,
-      modelYili: teklif.modelYili ? parseInt(teklif.modelYili, 10) : null,
       adSoyad: teklif.adSoyad || "Tanımsız",
+      telNo: teklif.telNo || "",
       markaModel: teklif.markaModel || "Tanımsız",
       plaka: teklif.plaka || "Tanımsız",
+      km: teklif.km ? parseInt(teklif.km, 10) : 0,
+      modelYili: teklif.modelYili ? parseInt(teklif.modelYili, 10) : 0,
       sasi: teklif.sasi || "Tanımsız",
+      renk: teklif.renk || "",
       girisTarihi: teklif.girisTarihi || "Tanımsız",
       notlar: teklif.notlar || "",
       adres: teklif.adres || "",
       duzenleyen: teklif.duzenleyen || username,
-      yapilanlar: teklif.yapilanlar || [],
+      yapilanlar: yapilanlarDTO,
     };
 
     try {
@@ -226,7 +269,7 @@ function Teklif() {
         body: JSON.stringify(updatedTeklif),
       });
 
-      if (postResponse.ok) {
+      if (postResponse && postResponse.ok) {
         // Kart başarıyla oluşturuldu, teklifi sil
         const deleteResponse = await fetchWithAuth(`${API_URL}/teklif/${teklif.teklif_id}`, {
           method: 'DELETE',
@@ -235,7 +278,19 @@ function Teklif() {
           },
         });
 
-        if (deleteResponse.ok) {
+        if (deleteResponse && deleteResponse.ok) {
+          // Log kaydı oluştur
+          try {
+            await fetchWithAuth(`${API_URL}/log/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'teklif_to_card', duzenleyen: updatedTeklif.duzenleyen || username })
+            });
+          } catch (logError) {
+            console.error('Log kaydetme hatası:', logError);
+            // Log hatası işlemi engellemez
+          }
+          
           setTeklifler(teklifler.filter(t => t.teklif_id !== teklif.teklif_id));
           success('Teklif başarıyla kartlara aktarıldı!');
           // Kartlar sayfasına yönlendir
@@ -243,10 +298,20 @@ function Teklif() {
             router.push('/login/kartlar');
           }, 1500);
         } else {
+          const errorData = await deleteResponse?.json().catch(() => ({}));
+          console.error('Teklif silinirken hata:', errorData);
           showError('Teklif silinirken bir hata oluştu.');
         }
       } else {
-        showError('Kart eklenirken bir hata oluştu.');
+        const errorData = await postResponse?.json().catch(() => ({}));
+        console.error('Kart eklenirken hata:', errorData);
+        console.error('Gönderilen veri:', JSON.stringify(updatedTeklif, null, 2));
+        if (errorData.message && Array.isArray(errorData.message)) {
+          console.error('Validation hataları:', errorData.message);
+          showError(`Kart eklenirken hata: ${errorData.message.join(', ')}`);
+        } else {
+          showError(errorData.message || 'Kart eklenirken bir hata oluştu.');
+        }
       }
     } catch (error) {
       console.error('İşlem sırasında bir hata oluştu:', error);

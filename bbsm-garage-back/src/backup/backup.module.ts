@@ -13,5 +13,6 @@ import { YapilanlarEntity } from '../yapilanlar/entities/yapilanlar.entity';
   ],
   controllers: [BackupController],
   providers: [BackupService],
+  exports: [BackupService],
 })
 export class BackupModule {}

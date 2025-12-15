@@ -7,6 +7,7 @@ import { CurrencyProvider } from '../contexts/CurrencyContext';
 import { ProfileProvider } from '../contexts/ProfileContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import ToastContainer from '../components/ToastContainer';
+import { ThemeProvider } from '../contexts/ThemeContext';
 
 const LoadingContext = createContext();
 
@@ -51,7 +52,9 @@ function MyApp({ Component, pageProps }) {
           <CurrencyProvider>
             <NotificationProvider>
         <ToastProvider>
+                  <ThemeProvider>
           <AppContent Component={Component} pageProps={pageProps} />
+                  </ThemeProvider>
         </ToastProvider>
             </NotificationProvider>
           </CurrencyProvider>

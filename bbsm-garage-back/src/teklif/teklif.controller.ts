@@ -37,8 +37,9 @@ export class TeklifController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTeklifDto: UpdateTeklifDto, @TenantId() tenant_id: number) {
-    return this.teklifService.update(+id, updateTeklifDto, tenant_id);
+  update(@Param('id') id: string, @Body() updateTeklifDto: UpdateTeklifDto, @TenantId() tenant_id: number, @Request() req) {
+    const username = req.user?.username;
+    return this.teklifService.update(+id, updateTeklifDto, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)

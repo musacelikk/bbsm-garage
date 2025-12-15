@@ -10,16 +10,18 @@ import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function Ayarlar() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, refreshProfile } = useProfile();
   const { success, error: showError } = useToast();
+  const { activeTheme, setActiveTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState('profil'); // 'profil', 'bildirimler', 'sifre', 'tema', 'veri', 'gorunum', 'gizlilik', 'entegrasyonlar', 'performans'
+  const [activeTab, setActiveTab] = useState('profil'); // 'profil', 'bildirimler', 'sifre', 'tema', 'veri', 'gizlilik'
   
   // Profil form state
   const [profileFormData, setProfileFormData] = useState({
@@ -52,21 +54,6 @@ function Ayarlar() {
     notificationTimeEnd: '18:00',
   });
 
-  // Tema ayarları
-  const [themeSettings, setThemeSettings] = useState({
-    mode: 'dark', // 'dark', 'light'
-    colorScheme: 'blue', // 'blue', 'green', 'purple'
-  });
-
-  // Görünüm ayarları
-  const [viewSettings, setViewSettings] = useState({
-    language: 'tr',
-    autoRefresh: 30, // saniye
-    tablePageSize: 20,
-    defaultSort: 'girisTarihi',
-    defaultSortDirection: 'desc',
-  });
-
   // Gizlilik ayarları
   const [privacySettings, setPrivacySettings] = useState({
     showLogs: true,
@@ -74,30 +61,11 @@ function Ayarlar() {
     dataSharing: false,
   });
 
-  // Entegrasyon ayarları
-  const [integrationSettings, setIntegrationSettings] = useState({
-    apiKey: '',
-    webhookUrl: '',
-    thirdPartyIntegrations: [],
-  });
-
-  // Performans istatistikleri
-  const [performanceStats, setPerformanceStats] = useState({
-    cacheSize: 0,
-    databaseSize: 0,
-    totalCards: 0,
-    totalTeklifler: 0,
-    totalStok: 0,
-  });
 
   useEffect(() => {
     loadPreferences();
     loadProfileData();
-    loadThemeSettings();
-    loadViewSettings();
     loadPrivacySettings();
-    loadIntegrationSettings();
-    loadPerformanceStats();
   }, []);
 
   useEffect(() => {
@@ -266,48 +234,6 @@ function Ayarlar() {
     50
   );
 
-  // Tema ayarları yükleme/kaydetme
-  const loadThemeSettings = () => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('themeSettings');
-      if (saved) {
-        try {
-          setThemeSettings(JSON.parse(saved));
-        } catch (e) {
-          console.error('Tema ayarları yüklenemedi:', e);
-        }
-      }
-    }
-  };
-
-  const saveThemeSettings = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('themeSettings', JSON.stringify(themeSettings));
-      success('Tema ayarları kaydedildi!');
-    }
-  };
-
-  // Görünüm ayarları yükleme/kaydetme
-  const loadViewSettings = () => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('viewSettings');
-      if (saved) {
-        try {
-          setViewSettings(JSON.parse(saved));
-        } catch (e) {
-          console.error('Görünüm ayarları yüklenemedi:', e);
-        }
-      }
-    }
-  };
-
-  const saveViewSettings = async () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('viewSettings', JSON.stringify(viewSettings));
-      success('Görünüm ayarları kaydedildi!');
-    }
-  };
-
   // Gizlilik ayarları yükleme/kaydetme
   const loadPrivacySettings = () => {
     if (typeof window !== 'undefined') {
@@ -329,67 +255,18 @@ function Ayarlar() {
     }
   };
 
-  // Entegrasyon ayarları yükleme/kaydetme
-  const loadIntegrationSettings = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}/auth/integrations`, { method: 'GET' });
-      if (response && response.ok) {
-        const data = await response.json();
-        setIntegrationSettings(data);
-      }
-    } catch (error) {
-      console.error('Entegrasyon ayarları yükleme hatası:', error);
-    }
-    setLoading(false);
-  };
-
-  const saveIntegrationSettings = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}/auth/integrations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(integrationSettings),
-      });
-      if (response && response.ok) {
-        success('Entegrasyon ayarları kaydedildi!');
-      } else {
-        showError('Entegrasyon ayarları kaydedilemedi.');
-      }
-    } catch (error) {
-      console.error('Entegrasyon ayarları kaydetme hatası:', error);
-      showError('Entegrasyon ayarları kaydedilemedi.');
-    }
-    setLoading(false);
-  };
-
-  // Performans istatistikleri yükleme
-  const loadPerformanceStats = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}/stats/performance`, { method: 'GET' });
-      if (response && response.ok) {
-        const data = await response.json();
-        setPerformanceStats(data);
-      }
-    } catch (error) {
-      console.error('Performans istatistikleri yükleme hatası:', error);
-    }
-    setLoading(false);
-  };
-
   // Veri yedekleme
   const handleDataBackup = async () => {
     setLoading(true);
     try {
-      const response = await fetchWithAuth(`${API_URL}/data/backup`, { method: 'GET' });
+      // Excel full export endpoint'i: POST /excel/full-export
+      const response = await fetchWithAuth(`${API_URL}/excel/full-export`, { method: 'POST' });
       if (response && response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `backup-${new Date().toISOString().split('T')[0]}.json`;
+        a.download = `bbsm-veri-${new Date().toISOString().split('T')[0]}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -545,22 +422,6 @@ function Ayarlar() {
                       </div>
                     </button>
                     <button
-                      onClick={() => setActiveTab('gorunum')}
-                      className={`px-4 md:px-6 py-3 text-sm md:text-base font-medium transition-all touch-manipulation min-h-[44px] whitespace-nowrap ${
-                        activeTab === 'gorunum'
-                          ? 'dark-text-primary border-b-2 border-blue-500'
-                          : 'dark-text-muted hover:dark-text-primary'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                        </svg>
-                        <span>Görünüm</span>
-                      </div>
-                    </button>
-                    <button
                       onClick={() => setActiveTab('gizlilik')}
                       className={`px-4 md:px-6 py-3 text-sm md:text-base font-medium transition-all touch-manipulation min-h-[44px] whitespace-nowrap ${
                         activeTab === 'gizlilik'
@@ -573,36 +434,6 @@ function Ayarlar() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                         <span>Gizlilik</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('entegrasyonlar')}
-                      className={`px-4 md:px-6 py-3 text-sm md:text-base font-medium transition-all touch-manipulation min-h-[44px] whitespace-nowrap ${
-                        activeTab === 'entegrasyonlar'
-                          ? 'dark-text-primary border-b-2 border-blue-500'
-                          : 'dark-text-muted hover:dark-text-primary'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>Entegrasyonlar</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('performans')}
-                      className={`px-4 md:px-6 py-3 text-sm md:text-base font-medium transition-all touch-manipulation min-h-[44px] whitespace-nowrap ${
-                        activeTab === 'performans'
-                          ? 'dark-text-primary border-b-2 border-blue-500'
-                          : 'dark-text-muted hover:dark-text-primary'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                        </svg>
-                        <span>Performans</span>
                       </div>
                     </button>
                   </div>
@@ -1051,64 +882,76 @@ function Ayarlar() {
                     
                     <div className="space-y-6">
                       <div>
-                        <h3 className="text-base font-medium dark-text-primary mb-3">Tema Modu</h3>
-                        <div className="grid grid-cols-2 gap-4">
+                        <h3 className="text-base font-medium dark-text-primary mb-3">Tema Seçimi</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <button
-                            onClick={() => setThemeSettings({ ...themeSettings, mode: 'dark' })}
-                            className={`p-4 rounded-lg border-2 transition-all ${
-                              themeSettings.mode === 'dark'
-                                ? 'border-blue-500 bg-blue-500/20'
+                            onClick={async () => {
+                              if (activeTheme !== 'classic') {
+                                setActiveTheme('classic');
+                                // Log kaydı oluştur
+                                try {
+                                  await fetchWithAuth(`${API_URL}/log/create`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ action: 'theme_change', duzenleyen: 'Klasik Tema' })
+                                  });
+                                } catch (error) {
+                                  console.error('Tema değiştirme log kaydetme hatası:', error);
+                                }
+                              }
+                            }}
+                            className={`p-4 rounded-lg border-2 transition-all text-left ${
+                              activeTheme === 'classic'
+                                ? 'border-blue-500 bg-blue-500/10'
                                 : 'dark-border hover:dark-bg-tertiary'
                             }`}
                           >
-                            <div className="text-center">
-                              <div className="w-12 h-12 bg-gray-800 rounded-lg mx-auto mb-2"></div>
-                              <span className="dark-text-primary font-medium">Koyu Mod</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-slate-900 border border-slate-700"></div>
+                              <div>
+                                <p className="dark-text-primary font-semibold">Klasik Tema</p>
+                                <p className="text-xs dark-text-muted">Mevcut BBSM Garage görünümü</p>
+                              </div>
                             </div>
                           </button>
+
                           <button
-                            onClick={() => setThemeSettings({ ...themeSettings, mode: 'light' })}
-                            className={`p-4 rounded-lg border-2 transition-all ${
-                              themeSettings.mode === 'light'
-                                ? 'border-blue-500 bg-blue-500/20'
+                            onClick={async () => {
+                              if (activeTheme !== 'modern') {
+                                setActiveTheme('modern');
+                                // Log kaydı oluştur
+                                try {
+                                  await fetchWithAuth(`${API_URL}/log/create`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ action: 'theme_change', duzenleyen: 'Modern Tema' })
+                                  });
+                                } catch (error) {
+                                  console.error('Tema değiştirme log kaydetme hatası:', error);
+                                }
+                              }
+                            }}
+                            className={`p-4 rounded-lg border-2 transition-all text-left ${
+                              activeTheme === 'modern'
+                                ? 'border-emerald-500 bg-emerald-500/10'
                                 : 'dark-border hover:dark-bg-tertiary'
                             }`}
                           >
-                            <div className="text-center">
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg mx-auto mb-2"></div>
-                              <span className="dark-text-primary font-medium">Açık Mod</span>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-white border border-slate-300"></div>
+                              <div>
+                                <p className="dark-text-primary font-semibold">Modern Tema</p>
+                                <p className="text-xs dark-text-muted">Daha aydınlık ve modern görünüm</p>
+                              </div>
                             </div>
                           </button>
                         </div>
                       </div>
 
-                      <div>
-                        <h3 className="text-base font-medium dark-text-primary mb-3">Renk Teması</h3>
-                        <div className="grid grid-cols-3 gap-4">
-                          {['blue', 'green', 'purple'].map((color) => (
-                            <button
-                              key={color}
-                              onClick={() => setThemeSettings({ ...themeSettings, colorScheme: color })}
-                              className={`p-4 rounded-lg border-2 transition-all ${
-                                themeSettings.colorScheme === color
-                                  ? 'border-blue-500 bg-blue-500/20'
-                                  : 'dark-border hover:dark-bg-tertiary'
-                              }`}
-                            >
-                              <div className={`w-full h-8 rounded bg-${color}-500 mb-2`}></div>
-                              <span className="dark-text-primary font-medium capitalize">{color}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end pt-4 border-t dark-border">
-                        <button
-                          onClick={saveThemeSettings}
-                          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          Kaydet
-                        </button>
+                      <div className="border-t dark-border pt-4">
+                        <p className="text-xs dark-text-muted">
+                          Tema değişikliği tüm uygulamaya uygulanır ve bir sonraki girişinizde de hatırlanır.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1159,65 +1002,6 @@ function Ayarlar() {
                           }}
                         >
                           Tüm Verileri Sil
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Görünüm Sekmesi */}
-                {activeTab === 'gorunum' && (
-                  <div className="dark-card-bg neumorphic-inset rounded-lg p-4 md:p-6">
-                    <h2 className="text-lg font-medium dark-text-primary mb-4">Görünüm ve Davranış</h2>
-                    
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium dark-text-primary mb-2">Dil</label>
-                        <select
-                          value={viewSettings.language}
-                          onChange={(e) => setViewSettings({ ...viewSettings, language: e.target.value })}
-                          className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
-                        >
-                          <option value="tr">Türkçe</option>
-                          <option value="en">English</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium dark-text-primary mb-2">
-                          Otomatik Yenileme Süresi: {viewSettings.autoRefresh} saniye
-                        </label>
-                        <input
-                          type="range"
-                          min="10"
-                          max="300"
-                          step="10"
-                          value={viewSettings.autoRefresh}
-                          onChange={(e) => setViewSettings({ ...viewSettings, autoRefresh: parseInt(e.target.value) })}
-                          className="w-full"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium dark-text-primary mb-2">Tablo Sayfa Başına Kayıt</label>
-                        <select
-                          value={viewSettings.tablePageSize}
-                          onChange={(e) => setViewSettings({ ...viewSettings, tablePageSize: parseInt(e.target.value) })}
-                          className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
-                        >
-                          <option value="10">10</option>
-                          <option value="20">20</option>
-                          <option value="50">50</option>
-                          <option value="100">100</option>
-                        </select>
-                      </div>
-
-                      <div className="flex justify-end pt-4 border-t dark-border">
-                        <button
-                          onClick={saveViewSettings}
-                          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                        >
-                          Kaydet
                         </button>
                       </div>
                     </div>
@@ -1286,102 +1070,6 @@ function Ayarlar() {
                   </div>
                 )}
 
-                {/* Entegrasyonlar Sekmesi */}
-                {activeTab === 'entegrasyonlar' && (
-                  <div className="dark-card-bg neumorphic-inset rounded-lg p-4 md:p-6">
-                    <h2 className="text-lg font-medium dark-text-primary mb-4">Entegrasyonlar</h2>
-                    
-                    <div className="space-y-6">
-                      <div>
-                        <label className="block text-sm font-medium dark-text-primary mb-2">API Anahtarı</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={integrationSettings.apiKey}
-                            onChange={(e) => setIntegrationSettings({ ...integrationSettings, apiKey: e.target.value })}
-                            className="flex-1 p-3 rounded-lg neumorphic-input dark-text-primary font-mono text-sm"
-                            placeholder="API anahtarınızı girin"
-                          />
-                          <button
-                            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
-                            onClick={() => {
-                              const newKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-                              setIntegrationSettings({ ...integrationSettings, apiKey: newKey });
-                            }}
-                          >
-                            Yeni Oluştur
-                          </button>
-                        </div>
-                        <p className="text-xs dark-text-muted mt-1">API anahtarınızı güvenli tutun</p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium dark-text-primary mb-2">Webhook URL</label>
-                        <input
-                          type="url"
-                          value={integrationSettings.webhookUrl}
-                          onChange={(e) => setIntegrationSettings({ ...integrationSettings, webhookUrl: e.target.value })}
-                          className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
-                          placeholder="https://example.com/webhook"
-                        />
-                        <p className="text-xs dark-text-muted mt-1">Webhook URL'nizi girin</p>
-                      </div>
-
-                      <div className="flex justify-end pt-4 border-t dark-border">
-                        <button
-                          onClick={saveIntegrationSettings}
-                          disabled={loading}
-                          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-                        >
-                          {loading ? 'Kaydediliyor...' : 'Kaydet'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Performans Sekmesi */}
-                {activeTab === 'performans' && (
-                  <div className="dark-card-bg neumorphic-inset rounded-lg p-4 md:p-6">
-                    <h2 className="text-lg font-medium dark-text-primary mb-4">Performans</h2>
-                    
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className="text-base font-medium dark-text-primary mb-3">Kullanım İstatistikleri</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 dark-bg-tertiary rounded-lg">
-                            <p className="text-sm dark-text-muted mb-1">Toplam Kart</p>
-                            <p className="text-2xl font-bold dark-text-primary">{performanceStats.totalCards || 0}</p>
-                          </div>
-                          <div className="p-4 dark-bg-tertiary rounded-lg">
-                            <p className="text-sm dark-text-muted mb-1">Toplam Teklif</p>
-                            <p className="text-2xl font-bold dark-text-primary">{performanceStats.totalTeklifler || 0}</p>
-                          </div>
-                          <div className="p-4 dark-bg-tertiary rounded-lg">
-                            <p className="text-sm dark-text-muted mb-1">Toplam Stok</p>
-                            <p className="text-2xl font-bold dark-text-primary">{performanceStats.totalStok || 0}</p>
-                          </div>
-                          <div className="p-4 dark-bg-tertiary rounded-lg">
-                            <p className="text-sm dark-text-muted mb-1">Veritabanı Boyutu</p>
-                            <p className="text-2xl font-bold dark-text-primary">{performanceStats.databaseSize ? `${(performanceStats.databaseSize / 1024).toFixed(2)} MB` : '0 MB'}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="border-t dark-border pt-6">
-                        <h3 className="text-base font-medium dark-text-primary mb-3">Cache Yönetimi</h3>
-                        <p className="text-sm dark-text-muted mb-4">Cache boyutu: {performanceStats.cacheSize ? `${(performanceStats.cacheSize / 1024).toFixed(2)} KB` : '0 KB'}</p>
-                        <button
-                          onClick={handleClearCache}
-                          className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                        >
-                          Cache'i Temizle
-                        </button>
-                        <p className="text-xs dark-text-muted mt-2">Cache temizlendikten sonra sayfa yenilenecektir</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>

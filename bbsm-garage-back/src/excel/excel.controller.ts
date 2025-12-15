@@ -5,12 +5,14 @@ import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { TenantId } from '../auth/tenant.decorator';
 import { LogService } from '../log/log.service';
+import { BackupService } from '../backup/backup.service';
 
 @Controller('excel')
 export class ExcelController {
   constructor(
     private readonly excelService: ExcelService,
     private readonly logService: LogService,
+    private readonly backupService: BackupService,
   ) {}
 
   @UseGuards(JwtAuthGuard)
@@ -64,6 +66,33 @@ export class ExcelController {
       }
     } catch (error) {
       res.status(500).json({ message: 'PDF download failed', error: error.message });
+    }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('full-export')
+  async downloadFullExport(
+    @TenantId() tenant_id: number,
+    @Res() res: Response,
+    @Request() req,
+  ) {
+    try {
+      const backup = await this.backupService.createBackup(tenant_id);
+      const excelBuffer = await this.excelService.generateFullExport(backup);
+
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', 'attachment; filename=bbsm-veri-export.xlsx');
+      res.send(excelBuffer);
+
+      if (req.user?.username && req.user?.tenant_id) {
+        try {
+          await this.logService.createLog(req.user.tenant_id, req.user.username, 'excel_full_export');
+        } catch (error) {
+          console.error('Full Excel export log kaydetme hatası:', error);
+        }
+      }
+    } catch (error) {
+      res.status(500).json({ message: 'Full Excel export failed', error: error.message });
     }
   }
 

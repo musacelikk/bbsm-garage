@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import * as https from 'https';
+import * as ExcelJS from 'exceljs';
 import { CardService } from '../card/card.service';
 import { TeklifService } from '../teklif/teklif.service';
 
@@ -42,6 +43,107 @@ export class ExcelService {
     } catch (error) {
       this.logger.error('Error generating Excel:', error);
       throw new Error(`Failed to generate Excel: ${error.message}`);
+    }
+  }
+
+  async generateFullExport(backup: any): Promise<Buffer> {
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const data = backup.data || {};
+
+      // Kartlar Sheet
+      if (data.cards && Array.isArray(data.cards)) {
+        const cardsSheet = workbook.addWorksheet('Kartlar');
+        cardsSheet.columns = [
+          { header: 'Ad Soyad', key: 'adSoyad', width: 20 },
+          { header: 'Marka-Model', key: 'markaModel', width: 25 },
+          { header: 'Plaka', key: 'plaka', width: 15 },
+          { header: 'Giriş Tarihi', key: 'girisTarihi', width: 15 },
+          { header: 'Ödeme Alındı', key: 'odemeAlindi', width: 15 },
+        ];
+        
+        data.cards.forEach((card: any) => {
+          cardsSheet.addRow({
+            adSoyad: card.adSoyad || '',
+            markaModel: card.markaModel || '',
+            plaka: card.plaka || '',
+            girisTarihi: card.girisTarihi || '',
+            odemeAlindi: card.odemeAlindi ? 'Evet' : 'Hayır',
+          });
+        });
+      }
+
+      // Borçlular Sheet (ödeme alınmayan kartlar)
+      if (data.cards && Array.isArray(data.cards)) {
+        const borclular = data.cards.filter((card: any) => !card.odemeAlindi);
+        if (borclular.length > 0) {
+          const borclularSheet = workbook.addWorksheet('Borçlular');
+          borclularSheet.columns = [
+            { header: 'Ad Soyad', key: 'adSoyad', width: 20 },
+            { header: 'Marka-Model', key: 'markaModel', width: 25 },
+            { header: 'Plaka', key: 'plaka', width: 15 },
+            { header: 'Giriş Tarihi', key: 'girisTarihi', width: 15 },
+            { header: 'Ödeme Durumu', key: 'odemeDurumu', width: 15 },
+          ];
+          
+          borclular.forEach((card: any) => {
+            borclularSheet.addRow({
+              adSoyad: card.adSoyad || '',
+              markaModel: card.markaModel || '',
+              plaka: card.plaka || '',
+              girisTarihi: card.girisTarihi || '',
+              odemeDurumu: 'Ödenmedi',
+            });
+          });
+        }
+      }
+
+      // Teklifler Sheet
+      if (data.teklifler && Array.isArray(data.teklifler)) {
+        const tekliflerSheet = workbook.addWorksheet('Teklifler');
+        tekliflerSheet.columns = [
+          { header: 'Ad Soyad', key: 'adSoyad', width: 20 },
+          { header: 'Marka-Model', key: 'markaModel', width: 25 },
+          { header: 'Plaka', key: 'plaka', width: 15 },
+          { header: 'Giriş Tarihi', key: 'girisTarihi', width: 15 },
+        ];
+        
+        data.teklifler.forEach((teklif: any) => {
+          tekliflerSheet.addRow({
+            adSoyad: teklif.adSoyad || '',
+            markaModel: teklif.markaModel || '',
+            plaka: teklif.plaka || '',
+            girisTarihi: teklif.girisTarihi || '',
+          });
+        });
+      }
+
+      // Stok Sheet
+      if (data.stoklar && Array.isArray(data.stoklar)) {
+        const stokSheet = workbook.addWorksheet('Stok');
+        stokSheet.columns = [
+          { header: 'Ürün Adı', key: 'urunAdi', width: 25 },
+          { header: 'Adet', key: 'adet', width: 15 },
+          { header: 'Birim Fiyatı', key: 'fiyat', width: 15 },
+          { header: 'Ekleniş Tarihi', key: 'eklenisTarihi', width: 15 },
+        ];
+        
+        data.stoklar.forEach((stok: any) => {
+          stokSheet.addRow({
+            urunAdi: stok.urunAdi || '',
+            adet: stok.adet || 0,
+            fiyat: stok.fiyat || 0,
+            eklenisTarihi: stok.eklenisTarihi || '',
+          });
+        });
+      }
+
+      // Buffer'a dönüştür
+      const buffer = await workbook.xlsx.writeBuffer();
+      return Buffer.from(buffer);
+    } catch (error) {
+      this.logger.error('Error generating full Excel export:', error);
+      throw new Error(`Failed to generate full Excel export: ${error.message}`);
     }
   }
 

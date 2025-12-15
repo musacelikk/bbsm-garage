@@ -16,6 +16,7 @@ import { NotificationModule } from './notification/notification.module';
 import { BackupModule } from './backup/backup.module';
 import { ArchiveModule } from './archive/archive.module';
 import { WebhookModule } from './webhook/webhook.module';
+import { ContactModule } from './contact/contact.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -72,6 +73,7 @@ import { APP_GUARD } from '@nestjs/core';
     BackupModule,
     ArchiveModule,
     WebhookModule,
+    ContactModule,
   ],
   controllers: [AppController],
   providers: [

@@ -7,7 +7,7 @@ function Navbar({
 }) {
 
   return (
-    <nav className="fixed top-0 left-0 z-40 w-full dark-bg-secondary neumorphic-outset border-b dark-border lg:left-64 lg:w-[calc(100%-16rem)]">
+    <nav className="fixed top-0 left-0 z-40 w-full navbar-bg neumorphic-outset border-b dark-border lg:left-64 lg:w-[calc(100%-16rem)]">
       <div className="px-3 py-2 lg:px-5">
         <div className="flex items-center justify-between w-full">
           {/* Sol taraf: Logo + BBSM Tech + ServisPanel */}

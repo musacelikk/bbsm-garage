@@ -109,7 +109,8 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
       key: 'ayarlar',
       icon: (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
       )
     },
@@ -124,7 +125,7 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
     }
     
     if (isActive) {
-      return `flex items-center gap-3 p-3 text-md font-semibold text-white bg-gradient-to-r from-cyan-500 to-teal-500 neumorphic-outset rounded-xl group transition-all shadow-lg`;
+      return `flex items-center gap-3 p-3 text-md font-semibold text-white sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg`;
     }
     
     return `flex items-center gap-3 p-3 font-medium text-md dark-text-secondary rounded-xl hover:dark-text-primary hover:dark-bg-tertiary group transition-all`;
@@ -145,22 +146,21 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
           }}
           />
         )}
-      <aside className={`fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-500 ease-out lg:transition-none ${isOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} dark-bg-secondary lg:translate-x-0`} aria-label="Sidebar" style={{ boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)' }}>
-        <div className="h-full px-4 pt-6 pb-4 overflow-y-auto dark-bg-secondary relative z-40 flex flex-col">
+      <aside className={`fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-500 ease-out lg:transition-none ${isOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} sidebar-bg lg:translate-x-0`} aria-label="Sidebar" style={{ boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)' }}>
+        <div className="h-full px-4 pt-6 pb-4 overflow-y-auto sidebar-bg relative z-40 flex flex-col">
           {/* Profil Bölümü */}
-          <div className="mb-8 px-2">
-            <Link href="/login/ayarlar" className="w-full flex items-start gap-3 p-3 rounded-xl neumorphic-inset hover:dark-bg-tertiary transition-all cursor-pointer">
+          <div className="mb-6 px-2 pt-2">
+            <Link href="/login/ayarlar" className="w-full flex flex-col items-center justify-center p-2 rounded-xl transition-all cursor-pointer">
               <img 
                 src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
-                className="h-10 w-10 rounded-full object-cover border-2 dark-border flex-shrink-0 mt-0.5" 
+                className="h-14 w-14 rounded-full object-cover border-2 dark-border mb-2" 
                 alt="Kullanıcı"
                 onError={(e) => {
                   e.target.src = '/images/yasin.webp';
                 }}
               />
-              <div className="flex-1 text-left min-w-0 overflow-hidden">
+              <div className="text-center w-full">
                 <p className="text-sm font-semibold dark-text-primary break-words leading-tight">{firmaAdi}</p>
-                <p className="text-xs dark-text-muted mt-1">Firma Hesabı</p>
               </div>
             </Link>
           </div>
@@ -205,23 +205,7 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
             </button>
           </div>
 
-          {/* Bottom Card - Bilgilendirme */}
-          <div className="mt-6 dark-card-bg neumorphic-card rounded-xl p-4 border dark-border glassmorphic">
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <h3 className="text-sm font-semibold dark-text-primary">Son Güncellemeler</h3>
-              </div>
-              <button className="dark-text-muted hover:dark-text-primary">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                </svg>
-              </button>
-            </div>
-            <p className="text-xs dark-text-secondary">Haftalık raporlarınızı kontrol edin.</p>
-          </div>
+          
         </div>
       </aside>
     </>

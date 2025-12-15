@@ -201,4 +201,122 @@ public class ExcelService {
             return 0.0;
         }
     }
+
+    @SuppressWarnings("unchecked")
+    public ByteArrayOutputStream exportFull(Map<String, Object> backup) throws IOException {
+        XSSFWorkbook workbook = new XSSFWorkbook();
+
+        Map<String, Object> data = (Map<String, Object>) backup.get("data");
+        if (data != null) {
+            List<Map<String, Object>> cards = (List<Map<String, Object>>) data.get("cards");
+            List<Map<String, Object>> teklifler = (List<Map<String, Object>>) data.get("teklifler");
+            List<Map<String, Object>> stoklar = (List<Map<String, Object>>) data.get("stoklar");
+
+            if (cards != null) {
+                createCardsSheet(workbook, cards);
+                createBorclularSheet(workbook, cards);
+            }
+            if (teklifler != null) {
+                createTekliflerSheet(workbook, teklifler);
+            }
+            if (stoklar != null) {
+                createStokSheet(workbook, stoklar);
+            }
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        workbook.write(out);
+        workbook.close();
+        return out;
+    }
+
+    private void createCardsSheet(Workbook workbook, List<Map<String, Object>> cards) {
+        Sheet sheet = workbook.createSheet("Kartlar");
+        int rowIdx = 0;
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Ad Soyad");
+        header.createCell(1).setCellValue("Marka-Model");
+        header.createCell(2).setCellValue("Plaka");
+        header.createCell(3).setCellValue("Giriş Tarihi");
+        header.createCell(4).setCellValue("Ödeme Alındı");
+
+        for (Map<String, Object> card : cards) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(toString(card.get("adSoyad")));
+            row.createCell(1).setCellValue(toString(card.get("markaModel")));
+            row.createCell(2).setCellValue(toString(card.get("plaka")));
+            row.createCell(3).setCellValue(toString(card.get("girisTarihi")));
+            row.createCell(4).setCellValue(toString(card.get("odemeAlindi")));
+        }
+        for (int i = 0; i <= 4; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+
+    private void createBorclularSheet(Workbook workbook, List<Map<String, Object>> cards) {
+        Sheet sheet = workbook.createSheet("Borçlular");
+        int rowIdx = 0;
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Ad Soyad");
+        header.createCell(1).setCellValue("Marka-Model");
+        header.createCell(2).setCellValue("Plaka");
+        header.createCell(3).setCellValue("Giriş Tarihi");
+
+        for (Map<String, Object> card : cards) {
+            Object odeme = card.get("odemeAlindi");
+            boolean odemeAlindi = odeme instanceof Boolean ? (Boolean) odeme : Boolean.parseBoolean(toString(odeme));
+            if (!odemeAlindi) {
+                Row row = sheet.createRow(rowIdx++);
+                row.createCell(0).setCellValue(toString(card.get("adSoyad")));
+                row.createCell(1).setCellValue(toString(card.get("markaModel")));
+                row.createCell(2).setCellValue(toString(card.get("plaka")));
+                row.createCell(3).setCellValue(toString(card.get("girisTarihi")));
+            }
+        }
+        for (int i = 0; i <= 3; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+
+    private void createTekliflerSheet(Workbook workbook, List<Map<String, Object>> teklifler) {
+        Sheet sheet = workbook.createSheet("Teklifler");
+        int rowIdx = 0;
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Ad Soyad");
+        header.createCell(1).setCellValue("Marka-Model");
+        header.createCell(2).setCellValue("Plaka");
+        header.createCell(3).setCellValue("Giriş Tarihi");
+
+        for (Map<String, Object> teklif : teklifler) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(toString(teklif.get("adSoyad")));
+            row.createCell(1).setCellValue(toString(teklif.get("markaModel")));
+            row.createCell(2).setCellValue(toString(teklif.get("plaka")));
+            row.createCell(3).setCellValue(toString(teklif.get("girisTarihi")));
+        }
+        for (int i = 0; i <= 3; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
+
+    private void createStokSheet(Workbook workbook, List<Map<String, Object>> stoklar) {
+        Sheet sheet = workbook.createSheet("Stok");
+        int rowIdx = 0;
+        Row header = sheet.createRow(rowIdx++);
+        header.createCell(0).setCellValue("Ürün");
+        header.createCell(1).setCellValue("Adet");
+        header.createCell(2).setCellValue("Fiyat");
+        header.createCell(3).setCellValue("Ekleniş Tarihi");
+
+        for (Map<String, Object> stok : stoklar) {
+            Row row = sheet.createRow(rowIdx++);
+            row.createCell(0).setCellValue(toString(stok.get("urunAdi")));
+            row.createCell(1).setCellValue(toString(stok.get("adet")));
+            row.createCell(2).setCellValue(toString(stok.get("fiyat")));
+            row.createCell(3).setCellValue(toString(stok.get("eklenisTarihi")));
+        }
+        for (int i = 0; i <= 3; i++) {
+            sheet.autoSizeColumn(i);
+        }
+    }
 }

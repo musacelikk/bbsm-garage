@@ -20,6 +20,7 @@ function AdminPanel() {
   const [selectedOneri, setSelectedOneri] = useState(null);
   const [isOneriModalOpen, setIsOneriModalOpen] = useState(false);
   const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const [systemSettings, setSystemSettings] = useState({
     maintenanceMode: false,
     maxUsers: 100,
@@ -75,10 +76,12 @@ function AdminPanel() {
       fetchUsers();
       fetchMembershipRequests();
       fetchOneriler();
+      fetchNotifications();
       // Her 30 saniyede bir teklifleri yenile
       const interval = setInterval(() => {
         fetchMembershipRequests();
         fetchOneriler();
+        fetchNotifications();
       }, 30000);
       return () => clearInterval(interval);
     }
@@ -301,7 +304,42 @@ function AdminPanel() {
     }
   };
 
+  const fetchNotifications = async () => {
+    try {
+      // Admin için bildirimleri çek (tenant_id: 0, username: 'musacelik')
+      // Admin token ile notification endpoint'ini çağır
+      const response = await fetchWithAdminAuth(`${API_URL}/notification`, {
+        method: 'GET',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data || []);
+      } else {
+        console.error('Bildirimler yüklenemedi');
+      }
+    } catch (error) {
+      console.error('Bildirimler yükleme hatası:', error);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      const response = await fetchWithAdminAuth(`${API_URL}/notification/${notificationId}/read`, {
+        method: 'PATCH',
+      });
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+        );
+      }
+    } catch (error) {
+      console.error('Bildirim okundu işaretlenirken hata:', error);
+    }
+  };
+
   const pendingRequestsCount = membershipRequests.filter(r => r.status === 'pending').length;
+  const unreadNotificationsCount = notifications.filter(n => !n.isRead && n.type === 'contact_message').length;
+  const totalNotificationCount = pendingRequestsCount + unreadNotificationsCount;
 
   // Eğer authenticate değilse hiçbir şey render etme
   if (!isAuthenticated) {
@@ -359,14 +397,66 @@ function AdminPanel() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
-                  {pendingRequestsCount > 0 && (
+                  {totalNotificationCount > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {pendingRequestsCount}
+                      {totalNotificationCount}
                     </span>
                   )}
                 </button>
                 {isNotificationOpen && (
-                  <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
+                  <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50 max-h-[600px] overflow-y-auto">
+                    {/* Contact Mesajları */}
+                    {notifications.filter(n => n.type === 'contact_message').length > 0 && (
+                      <>
+                        <div className="p-4 border-b border-gray-200 bg-blue-50">
+                          <h3 className="font-semibold text-gray-900">İletişim Mesajları</h3>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {unreadNotificationsCount > 0 
+                              ? `${unreadNotificationsCount} okunmamış mesaj`
+                              : `${notifications.filter(n => n.type === 'contact_message').length} mesaj`}
+                          </p>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {notifications
+                            .filter(n => n.type === 'contact_message')
+                            .slice(0, 5)
+                            .map((notification) => (
+                              <div 
+                                key={notification.id} 
+                                className={`p-4 hover:bg-gray-50 cursor-pointer ${!notification.isRead ? 'bg-blue-50' : ''}`}
+                                onClick={() => markNotificationAsRead(notification.id)}
+                              >
+                                <div className="flex items-start justify-between mb-2">
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-gray-900 text-sm">{notification.title}</p>
+                                    <p className="text-xs text-gray-600 mt-1">{notification.message}</p>
+                                    {notification.content && (
+                                      <div className="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-700 whitespace-pre-wrap max-h-32 overflow-y-auto">
+                                        {notification.content}
+                                      </div>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-2">
+                                      {new Date(notification.createdAt).toLocaleString('tr-TR')}
+                                    </p>
+                                  </div>
+                                  {!notification.isRead && (
+                                    <span className="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                        </div>
+                        {notifications.filter(n => n.type === 'contact_message').length > 5 && (
+                          <div className="p-2 border-t border-gray-200 bg-gray-50">
+                            <p className="text-xs text-center text-gray-500">
+                              {notifications.filter(n => n.type === 'contact_message').length - 5} mesaj daha...
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* Üyelik Teklifleri */}
                     <div className="p-4 border-b border-gray-200">
                       <h3 className="font-semibold text-gray-900">Üyelik Teklifleri</h3>
                       <p className="text-xs text-gray-500 mt-1">{pendingRequestsCount} bekleyen teklif</p>

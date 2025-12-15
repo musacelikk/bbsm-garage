@@ -45,13 +45,18 @@ function BizeUlasin() {
         body: JSON.stringify(formData),
       });
 
-      if (response.ok) {
-        setFormStatus({ type: 'success', message: 'Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız.' });
+      const data = await response.json().catch(() => null);
+
+      if (response.ok && data && data.success) {
+        setFormStatus({ type: 'success', message: data.message || 'Mesajınız başarıyla gönderildi! En kısa sürede size dönüş yapacağız.' });
         setFormData({ name: '', email: '', subject: '', message: '' });
       } else {
-        setFormStatus({ type: 'error', message: 'Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.' });
+        const errorMessage = data?.message || 'Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.';
+        setFormStatus({ type: 'error', message: errorMessage });
+        console.error('Mesaj gönderme hatası:', data);
       }
     } catch (error) {
+      console.error('Mesaj gönderme hatası:', error);
       setFormStatus({ type: 'error', message: 'Mesaj gönderilirken bir hata oluştu. Lütfen tekrar deneyin.' });
     } finally {
       setIsSubmitting(false);

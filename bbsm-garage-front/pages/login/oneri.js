@@ -387,8 +387,11 @@ function Oneri() {
               </div>
               <div className="w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
                 <div 
-                  className="h-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all duration-300 ease-out rounded-full"
-                  style={{ width: `${calculateFormProgress()}%` }}
+                  className="h-full transition-all duration-300 ease-out rounded-full"
+                  style={{ 
+                    width: `${calculateFormProgress()}%`,
+                    background: 'linear-gradient(90deg, #81ADDE 0%, #0A0875 50%, #D43A38 100%)'
+                  }}
                 ></div>
               </div>
             </div>

@@ -5,6 +5,7 @@ import { ExcelService } from './excel.service';
 import { CardModule } from '../card/card.module';
 import { TeklifModule } from '../teklif/teklif.module';
 import { LogModule } from '../log/log.module';
+import { BackupModule } from '../backup/backup.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { LogModule } from '../log/log.module';
     forwardRef(() => CardModule),
     forwardRef(() => TeklifModule),
     LogModule,
+    BackupModule,
   ],
   controllers: [ExcelController],
   providers: [ExcelService],

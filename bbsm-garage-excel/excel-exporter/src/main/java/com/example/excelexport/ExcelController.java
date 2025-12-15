@@ -41,6 +41,23 @@ public class ExcelController {
         }
     }
 
+    @PostMapping("/excel/full-export")
+    public ResponseEntity<byte[]> generateFullExport(@RequestBody Map<String, Object> backup) {
+        try {
+            ByteArrayOutputStream outputStream = excelService.exportFull(backup);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDispositionFormData("attachment", "bbsm-veri-export.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(outputStream.toByteArray());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping("/excel/pdf")
     public ResponseEntity<byte[]> generatePDF(@RequestBody Map<String, Object> data) {
         try {

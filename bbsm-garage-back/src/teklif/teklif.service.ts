@@ -73,8 +73,18 @@ export class TeklifService {
     });
   }
 
-  async update(id: number, updateTeklifDto: UpdateTeklifDto, tenant_id: number): Promise<TeklifEntity> {
+  async update(id: number, updateTeklifDto: UpdateTeklifDto, tenant_id: number, username?: string): Promise<TeklifEntity> {
     await this.databaseRepository.update({ teklif_id: id, tenant_id }, updateTeklifDto as unknown as Partial<TeklifEntity>);
+    
+    // Log kaydı oluştur
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'teklif_update');
+      } catch (error) {
+        console.error('Teklif güncelleme log kaydetme hatası:', error);
+      }
+    }
+    
     return this.findOne(id, tenant_id);
   }
 

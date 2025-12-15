@@ -19,7 +19,7 @@ function SonHareketler() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [hareketler, setHareketler] = useState([]);
-  const [activeTab, setActiveTab] = useState('giris-cikis');
+  const [activeTab, setActiveTab] = useState('sistem-islemleri');
   const [girisCikisPage, setGirisCikisPage] = useState(1);
   const [duzenlemePage, setDuzenlemePage] = useState(1);
   const itemsPerPage = 20;
@@ -79,8 +79,10 @@ function SonHareketler() {
     if (action === 'card_create') return 'Kart Ekledi';
     if (action === 'card_delete') return 'Kart Sildi';
     if (action === 'excel_download') return 'Excel İndirdi';
+    if (action === 'excel_full_export') return 'Veri Yedekleme Alındı';
     if (action === 'pdf_download') return 'PDF İndirdi';
     if (action === 'teklif_create') return 'Teklif Oluşturdu';
+    if (action === 'teklif_update') return 'Teklif Güncelledi';
     if (action === 'teklif_delete') return 'Teklif Sildi';
     if (action === 'teklif_to_card') return 'Teklif → Kart Aktardı';
     if (action === 'stok_create') return 'Stok Ekledi';
@@ -92,6 +94,11 @@ function SonHareketler() {
     if (action === 'payment_update') return 'Ödeme Durumu Güncellendi';
     if (action === 'password_change') return 'Şifre Değiştirdi';
     if (action === 'profile_update') return 'Profil Güncelledi';
+    if (action === 'theme_change') return 'Tema Değiştirildi';
+    if (action === 'membership_add') return 'Üyelik Eklendi';
+    if (action === 'membership_request_approve') return 'Üyelik Teklifi Onaylandı';
+    if (action === 'membership_request_reject') return 'Üyelik Teklifi Reddedildi';
+    if (action === 'contact_message') return 'Bize Ulaş Mesajı Gönderildi';
     return action;
   };
 
@@ -102,8 +109,10 @@ function SonHareketler() {
     if (action === 'card_create') return 'text-purple-400 bg-purple-500/20';
     if (action === 'card_delete') return 'text-red-400 bg-red-500/30';
     if (action === 'excel_download') return 'text-green-400 bg-green-500/20';
+    if (action === 'excel_full_export') return 'text-emerald-400 bg-emerald-500/20';
     if (action === 'pdf_download') return 'text-orange-400 bg-orange-500/20';
     if (action === 'teklif_create') return 'text-cyan-400 bg-cyan-500/20';
+    if (action === 'teklif_update') return 'text-cyan-400 bg-cyan-500/20';
     if (action === 'teklif_delete') return 'text-red-400 bg-red-500/30';
     if (action === 'teklif_to_card') return 'text-blue-400 bg-blue-500/20';
     if (action === 'stok_create') return 'text-emerald-400 bg-emerald-500/20';
@@ -115,6 +124,11 @@ function SonHareketler() {
     if (action === 'payment_update') return 'text-amber-400 bg-amber-500/20';
     if (action === 'password_change') return 'text-pink-400 bg-pink-500/20';
     if (action === 'profile_update') return 'text-violet-400 bg-violet-500/20';
+    if (action === 'theme_change') return 'text-purple-400 bg-purple-500/20';
+    if (action === 'membership_add') return 'text-teal-400 bg-teal-500/20';
+    if (action === 'membership_request_approve') return 'text-green-400 bg-green-500/20';
+    if (action === 'membership_request_reject') return 'text-red-400 bg-red-500/20';
+    if (action === 'contact_message') return 'text-blue-400 bg-blue-500/20';
     return 'dark-text-muted dark-bg-tertiary';
   };
 
@@ -171,11 +185,16 @@ function SonHareketler() {
   };
 
   // Hareketleri kategorilere ayır
+  // Sistem İşlemleri: Giriş/çıkış hariç tüm işlemler
   const girisCikisHareketleri = filtreleHareketler(
     hareketler.filter(h => 
-      h.action === 'excel_download' || 
+      h.action !== 'login' && 
+      h.action !== 'logout' &&
+      (h.action === 'excel_download' || 
+      h.action === 'excel_full_export' ||
       h.action === 'pdf_download' || 
       h.action === 'teklif_create' || 
+      h.action === 'teklif_update' ||
       h.action === 'teklif_delete' || 
       h.action === 'teklif_to_card' ||
       h.action === 'stok_create' ||
@@ -186,9 +205,18 @@ function SonHareketler() {
       h.action === 'oneri_reject' ||
       h.action === 'payment_update' ||
       h.action === 'password_change' ||
-      h.action === 'profile_update'
+      h.action === 'profile_update' ||
+      h.action === 'theme_change' ||
+      h.action === 'membership_add' ||
+      h.action === 'membership_request_approve' ||
+      h.action === 'membership_request_reject' ||
+      h.action === 'contact_message' ||
+      h.action === 'card_create' ||
+      h.action === 'card_edit' ||
+      h.action === 'card_delete')
     )
   );
+  // Düzenlemeler: Sadece kart işlemleri
   const duzenlemeHareketleri = filtreleHareketler(
     hareketler.filter(h => h.action === 'card_edit' || h.action === 'card_create' || h.action === 'card_delete')
   );
@@ -270,6 +298,7 @@ function SonHareketler() {
                     <option value="card_edit">Kart Düzenleme</option>
                     <option value="card_delete">Kart Silme</option>
                     <option value="teklif_create">Teklif Oluşturma</option>
+                    <option value="teklif_update">Teklif Güncelleme</option>
                     <option value="teklif_delete">Teklif Silme</option>
                     <option value="teklif_to_card">Teklif → Kart</option>
                     <option value="stok_create">Stok Ekleme</option>
@@ -279,10 +308,16 @@ function SonHareketler() {
                     <option value="oneri_approve">Öneri Onaylama</option>
                     <option value="oneri_reject">Öneri Reddetme</option>
                     <option value="excel_download">Excel İndirme</option>
+                    <option value="excel_full_export">Veri Yedekleme</option>
                     <option value="pdf_download">PDF İndirme</option>
                     <option value="payment_update">Ödeme Güncelleme</option>
                     <option value="password_change">Şifre Değiştirme</option>
                     <option value="profile_update">Profil Güncelleme</option>
+                    <option value="theme_change">Tema Değiştirme</option>
+                    <option value="membership_add">Üyelik Ekleme</option>
+                    <option value="membership_request_approve">Üyelik Teklifi Onaylama</option>
+                    <option value="membership_request_reject">Üyelik Teklifi Reddetme</option>
+                    <option value="contact_message">Bize Ulaş Mesajı</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -330,11 +365,11 @@ function SonHareketler() {
                 <nav className="flex -mb-px">
                   <button
                     onClick={() => {
-                      setActiveTab('giris-cikis');
+                      setActiveTab('sistem-islemleri');
                       setGirisCikisPage(1);
                     }}
                     className={`flex-1 py-4 px-6 text-center border-b-2 font-semibold text-sm transition-colors ${
-                      activeTab === 'giris-cikis'
+                      activeTab === 'sistem-islemleri'
                         ? 'border-green-400 text-green-400'
                         : 'border-transparent dark-text-muted hover:dark-text-secondary hover:border-dark-border'
                     }`}
@@ -342,7 +377,7 @@ function SonHareketler() {
                     Sistem İşlemleri
                     {girisCikisHareketleri.length > 0 && (
                       <span className={`ml-2 px-2 py-0.5 rounded-full text-xs neumorphic-inset ${
-                        activeTab === 'giris-cikis' ? 'bg-green-500/20 text-green-400' : 'dark-bg-tertiary dark-text-muted'
+                        activeTab === 'sistem-islemleri' ? 'bg-green-500/20 text-green-400' : 'dark-bg-tertiary dark-text-muted'
                       }`}>
                         {girisCikisHareketleri.length}
                       </span>
@@ -372,8 +407,8 @@ function SonHareketler() {
               </div>
             </div>
 
-            {/* Giriş/Çıkış Tab Content */}
-            {activeTab === 'giris-cikis' && (
+            {/* Sistem İşlemleri Tab Content */}
+            {activeTab === 'sistem-islemleri' && (
               <div className="dark-card-bg neumorphic-card rounded-lg p-4 sm:p-6">
                 {loading ? (
                   <div className="flex justify-center items-center py-12">
