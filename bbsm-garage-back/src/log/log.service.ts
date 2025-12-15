@@ -9,13 +9,15 @@ export class LogService {
     @InjectRepository(LogEntity) private logRepository: Repository<LogEntity>
   ) {}
 
-  async createLog(tenantId: number, username: string, action: string, duzenleyen?: string): Promise<LogEntity> {
+  async createLog(tenantId: number, username: string, action: string, duzenleyen?: string, ipAddress?: string, userAgent?: string): Promise<LogEntity> {
     const log = this.logRepository.create({
       tenant_id: tenantId,
       username,
       action,
       duzenleyen: duzenleyen || null,
-      timestamp: new Date()
+      timestamp: new Date(),
+      ip_address: ipAddress || null,
+      user_agent: userAgent || null,
     });
     return this.logRepository.save(log);
   }

@@ -9,5 +9,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
   imports: [TypeOrmModule.forFeature([TeklifEntity, YapilanlarEntity])],
   controllers: [TeklifController],
   providers: [TeklifService],
+  exports: [TeklifService],
 })
 export class TeklifModule {}

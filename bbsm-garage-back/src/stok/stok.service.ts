@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UpdateStokDto } from './dto/update-stok.dto';
+import { CreateStokDto } from './dto/create-stok.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StokEntity } from './entities/stok.entity';
 import { Repository } from 'typeorm';
@@ -10,8 +11,20 @@ export class StokService {
   constructor(
     @InjectRepository(StokEntity) private databaseRepository: Repository<StokEntity>,) {}
   
-  create(CreateStokDto: StokEntity, tenant_id: number) {
-    return this.databaseRepository.save({ ...CreateStokDto, tenant_id });
+  create(createStokDto: CreateStokDto, tenant_id: number) {
+    const stokData: any = {
+      ...createStokDto,
+      tenant_id,
+    };
+    
+    // Tarih string ise Date'e dönüştür, yoksa bugünün tarihini kullan
+    if (createStokDto.eklenisTarihi) {
+      stokData.eklenisTarihi = new Date(createStokDto.eklenisTarihi);
+    } else {
+      stokData.eklenisTarihi = new Date();
+    }
+    
+    return this.databaseRepository.save(stokData);
   }
 
   findAll(tenant_id: number) {

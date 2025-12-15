@@ -6,8 +6,6 @@ import Image from "next/image";
 import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
-import ProfileModal from '../../components/ProfileModal';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
@@ -20,18 +18,19 @@ function Stok() {
     const { profileData, refreshProfile } = useProfile();
     const username = getUsername() || 'Kullanıcı';
     const [isOpen, setIsOpen] = useState(false);
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-    const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
     const [stokAdi, setStokAdi] = useState('');
     const [adet, setAdet] = useState('');
     const [eklenisTarihi, setEklenisTarihi] = useState('');
     const [info, setInfo] = useState('');
+    const [kategori, setKategori] = useState('');
+    const [minStokSeviyesi, setMinStokSeviyesi] = useState(5);
     const [stokListesi, setStokListesi] = useState([]);
     const [filteredStokListesi, setFilteredStokListesi] = useState([]);
     const [selectedStok, setSelectedStok] = useState([]);
     const [allChecked, setAllChecked] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [seciliKategori, setSeciliKategori] = useState('hepsi');
 
     const capitalizeFirstLetter = (string) => {
         return string.charAt(0).toUpperCase() + string.slice(1);
@@ -82,9 +81,11 @@ function Stok() {
           e.preventDefault();
           const yeniStok = {
               "stokAdi": stokAdi,
-              "adet": adet,
+              "adet": parseInt(adet, 10),
               "eklenisTarihi": eklenisTarihi,
-              "info": info
+              "info": info,
+              "kategori": kategori || 'Genel',
+              "minStokSeviyesi": parseInt(minStokSeviyesi, 10) || 5
           };
 
           try {
@@ -105,6 +106,8 @@ function Stok() {
               setAdet('');
               setEklenisTarihi('');
               setInfo('');
+              setKategori('');
+              setMinStokSeviyesi(5);
 
               // Stok listesini yeniden fetch et
               fetchStokListesi();
@@ -152,9 +155,17 @@ function Stok() {
     };
 
     const handleSearch = (e) => {
-      const term = e.target.value.toLowerCase();
+      const term = e.target.value;
       setSearchTerm(term);
-      setFilteredStokListesi(stokListesi.filter(stok => stok.stokAdi.toLowerCase().includes(term) || stok.info.toLowerCase().includes(term)));
+      let filtered = stokListesi.filter(stok => 
+        stok.stokAdi.toLowerCase().includes(term.toLowerCase()) || 
+        stok.info.toLowerCase().includes(term.toLowerCase()) ||
+        (stok.kategori || '').toLowerCase().includes(term.toLowerCase())
+      );
+      if (seciliKategori !== 'hepsi') {
+        filtered = filtered.filter(stok => (stok.kategori || 'Genel') === seciliKategori);
+      }
+      setFilteredStokListesi(filtered);
     };
     
     const handleAdetUpdate = async (id, operation) => {
@@ -200,8 +211,8 @@ function Stok() {
           isOpen={isOpen} 
           onClose={() => setIsOpen(false)}
           activePage="stok"
-          setIsProfileModalOpen={setIsProfileModalOpen}
-          setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+          setIsProfileModalOpen={() => {}}
+          setIsChangePasswordModalOpen={() => {}}
           logout={logout}
         />
 
@@ -234,15 +245,77 @@ function Stok() {
                         <input type="date" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Ekleniş Tarihi Giriniz" value={eklenisTarihi}  onChange={(e) => handleChange(e, setEklenisTarihi)} required/>
                     </div>
                   </div>
-                  <div className="mb-6">
+                  <div className="grid gap-6 mb-4 md:grid-cols-3">
+                    <div>
+                      <label htmlFor="kategori" className="block mb-2 text-sm font-medium dark-text-primary">Kategori</label>
+                      <input type="text" id="kategori" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Kategori (örn: Yedek Parça, Yağ, Filtre)" value={kategori} onChange={(e) => handleChange(e, setKategori)}/>
+                    </div>
+                    <div>
+                      <label htmlFor="minStok" className="block mb-2 text-sm font-medium dark-text-primary">Minimum Stok Seviyesi</label>
+                      <input type="number" id="minStok" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Min. Stok (varsayılan: 5)" value={minStokSeviyesi} onChange={(e) => setMinStokSeviyesi(e.target.value)}/>
+                    </div>
+                    <div>
                       <label htmlFor="text" className="block mb-2 text-sm font-medium dark-text-primary">Açıklama</label>
-                      <input type="text" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Açıklama Giriniz ..." value={info}  onChange={(e) => handleChange(e, setInfo)} required/>
+                      <input type="text" id="text" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-2.5 md:p-2.5 touch-manipulation min-h-[44px]" placeholder="Açıklama Giriniz ..." value={info}  onChange={(e) => handleChange(e, setInfo)}/>
+                    </div>
                   </div>
                   <div className="flex justify-end">
                       <button type="submit" className="text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Ekle</button>
                   </div>
               </form>
               </div>
+              {/* Stok Uyarıları */}
+              {stokListesi.filter(s => (s.adet || 0) <= (s.minStokSeviyesi || 5)).length > 0 && (
+                <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl mt-4 md:mt-6 border border-red-500/20">
+                  <div className="flex items-center mb-4">
+                    <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <h2 className="text-lg font-semibold dark-text-primary">Stok Uyarıları</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {stokListesi.filter(s => (s.adet || 0) <= (s.minStokSeviyesi || 5)).map((stok, index) => (
+                      <div key={index} className="p-3 dark-bg-tertiary rounded-lg border border-red-500/30">
+                        <p className="font-medium dark-text-primary">{stok.stokAdi}</p>
+                        <p className="text-sm dark-text-muted">Kalan: {stok.adet} / Min: {stok.minStokSeviyesi || 5}</p>
+                        <p className="text-xs dark-text-muted mt-1">Kategori: {stok.kategori || 'Genel'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Kategori Filtresi */}
+              <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl mt-4 md:mt-6">
+                <div className="mb-4">
+                  <label className="block text-sm font-medium dark-text-primary mb-2">Kategori Filtresi</label>
+                  <select
+                    value={seciliKategori}
+                    onChange={(e) => {
+                      setSeciliKategori(e.target.value);
+                      if (e.target.value === 'hepsi') {
+                        setFilteredStokListesi(stokListesi.filter(stok => 
+                          stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          stok.info.toLowerCase().includes(searchTerm.toLowerCase())
+                        ));
+                      } else {
+                        setFilteredStokListesi(stokListesi.filter(stok => 
+                          (stok.kategori || 'Genel') === e.target.value &&
+                          (stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          stok.info.toLowerCase().includes(searchTerm.toLowerCase()))
+                        ));
+                      }
+                    }}
+                    className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full md:w-64 p-2.5 touch-manipulation min-h-[44px]"
+                  >
+                    <option value="hepsi">Tüm Kategoriler</option>
+                    {Array.from(new Set(stokListesi.map(s => s.kategori || 'Genel'))).map(kat => (
+                      <option key={kat} value={kat}>{kat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl mt-4 md:mt-6">
                 <div className="flex items-center pb-4 justify-between">
                   <div className="flex items-center">
@@ -285,7 +358,13 @@ function Stok() {
                         Ekleniş Tarihi
                       </th>
                       <th scope="col" className="px-6 py-3">
+                        Kategori
+                      </th>
+                      <th scope="col" className="px-6 py-3">
                         Adet
+                      </th>
+                      <th scope="col" className="px-6 py-3">
+                        Durum
                       </th>
                       <th scope="col" className="px-6 py-3">
                         Açıklama
@@ -307,6 +386,9 @@ function Stok() {
                         <td className="px-6 py-4 dark-text-secondary">
                           {new Date(stok.eklenisTarihi).toLocaleDateString()}
                         </td>
+                        <td className="px-6 py-4 dark-text-secondary">
+                          {stok.kategori || 'Genel'}
+                        </td>
                         <td className="px-6 py-4 text-green-400">
                           <div className="flex items-center space-x-2">
                             <button 
@@ -316,7 +398,9 @@ function Stok() {
                             >
                               -
                             </button>
-                            <span className="dark-text-primary min-w-[30px] text-center">{stok.adet}</span>
+                            <span className={`min-w-[30px] text-center font-semibold ${(stok.adet || 0) <= (stok.minStokSeviyesi || 5) ? 'text-red-400' : 'dark-text-primary'}`}>
+                              {stok.adet}
+                            </span>
                             <button 
                               onClick={() => handleAdetUpdate(stok.id, 'increment')}
                               className="p-1.5 md:p-1 rounded-full bg-green-500/20 hover:bg-green-500/30 text-green-400 neumorphic-inset touch-manipulation min-w-[32px] md:min-w-0 min-h-[32px] md:min-h-0 active:scale-95"
@@ -324,6 +408,13 @@ function Stok() {
                               +
                             </button>
                           </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          {(stok.adet || 0) <= (stok.minStokSeviyesi || 5) ? (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-red-500/20 text-red-400">Düşük Stok</span>
+                          ) : (
+                            <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">Normal</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 uppercase">
                         <textarea
@@ -418,35 +509,6 @@ function Stok() {
           </ProtectedPage>
         </div>
 
-      {/* Profil Bilgileri Modal */}
-      {isProfileModalOpen && (
-          <ProfileModal
-            isOpen={isProfileModalOpen}
-            onClose={async () => {
-              setIsProfileModalOpen(false);
-              setIsEditingProfile(false);
-              await refreshProfile();
-            }}
-            profileData={profileData}
-            setProfileData={refreshProfile}
-            isEditing={isEditingProfile}
-            setIsEditing={setIsEditingProfile}
-            fetchWithAuth={fetchWithAuth}
-            API_URL={API_URL}
-            setLoading={setLoading}
-          />
-        )}
-
-        {/* Şifre Değiştirme Modal */}
-        {isChangePasswordModalOpen && (
-          <ChangePasswordModal
-            isOpen={isChangePasswordModalOpen}
-            onClose={() => setIsChangePasswordModalOpen(false)}
-            fetchWithAuth={fetchWithAuth}
-            API_URL={API_URL}
-            setLoading={setLoading}
-          />
-        )}
     </div>
   );
 }

@@ -5,8 +5,6 @@ import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
-import ProfileModal from '../../components/ProfileModal';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
@@ -19,14 +17,17 @@ function SonHareketler() {
   const { profileData, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [hareketler, setHareketler] = useState([]);
   const [activeTab, setActiveTab] = useState('giris-cikis');
   const [girisCikisPage, setGirisCikisPage] = useState(1);
   const [duzenlemePage, setDuzenlemePage] = useState(1);
   const itemsPerPage = 20;
+  const [filtreArama, setFiltreArama] = useState('');
+  const [filtreKullanici, setFiltreKullanici] = useState('');
+  const [filtreAction, setFiltreAction] = useState('hepsi');
+  const [filtreBaslangicTarihi, setFiltreBaslangicTarihi] = useState('');
+  const [filtreBitisTarihi, setFiltreBitisTarihi] = useState('');
 
   const fetchHareketler = async () => {
     setLoading(true);
@@ -117,24 +118,80 @@ function SonHareketler() {
     return 'dark-text-muted dark-bg-tertiary';
   };
 
+  // Filtreleme fonksiyonu
+  const filtreleHareketler = (hareketListesi) => {
+    let filtrelenmis = [...hareketListesi];
+
+    // Arama filtresi
+    if (filtreArama && filtreArama.trim() !== '') {
+      const arama = filtreArama.toLowerCase().trim();
+      filtrelenmis = filtrelenmis.filter(h => {
+        const actionLabel = getActionLabel(h.action).toLowerCase();
+        const actionDetail = (h.action_detail || '').toLowerCase();
+        const username = (h.username || '').toLowerCase();
+        return actionLabel.includes(arama) || actionDetail.includes(arama) || username.includes(arama);
+      });
+    }
+
+    // Kullanıcı filtresi
+    if (filtreKullanici && filtreKullanici.trim() !== '') {
+      const kullanici = filtreKullanici.toLowerCase().trim();
+      filtrelenmis = filtrelenmis.filter(h => 
+        (h.username || '').toLowerCase().includes(kullanici)
+      );
+    }
+
+    // Action tipi filtresi
+    if (filtreAction !== 'hepsi') {
+      filtrelenmis = filtrelenmis.filter(h => h.action === filtreAction);
+    }
+
+    // Tarih filtresi
+    if (filtreBaslangicTarihi && filtreBitisTarihi) {
+      filtrelenmis = filtrelenmis.filter(h => {
+        if (!h.timestamp) return false;
+        const hareketTarihi = new Date(h.timestamp).toISOString().split('T')[0];
+        return hareketTarihi >= filtreBaslangicTarihi && hareketTarihi <= filtreBitisTarihi;
+      });
+    } else if (filtreBaslangicTarihi) {
+      filtrelenmis = filtrelenmis.filter(h => {
+        if (!h.timestamp) return false;
+        const hareketTarihi = new Date(h.timestamp).toISOString().split('T')[0];
+        return hareketTarihi >= filtreBaslangicTarihi;
+      });
+    } else if (filtreBitisTarihi) {
+      filtrelenmis = filtrelenmis.filter(h => {
+        if (!h.timestamp) return false;
+        const hareketTarihi = new Date(h.timestamp).toISOString().split('T')[0];
+        return hareketTarihi <= filtreBitisTarihi;
+      });
+    }
+
+    return filtrelenmis;
+  };
+
   // Hareketleri kategorilere ayır
-  const girisCikisHareketleri = hareketler.filter(h => 
-    h.action === 'excel_download' || 
-    h.action === 'pdf_download' || 
-    h.action === 'teklif_create' || 
-    h.action === 'teklif_delete' || 
-    h.action === 'teklif_to_card' ||
-    h.action === 'stok_create' ||
-    h.action === 'stok_delete' ||
-    h.action === 'stok_update' ||
-    h.action === 'oneri_send' ||
-    h.action === 'oneri_approve' ||
-    h.action === 'oneri_reject' ||
-    h.action === 'payment_update' ||
-    h.action === 'password_change' ||
-    h.action === 'profile_update'
+  const girisCikisHareketleri = filtreleHareketler(
+    hareketler.filter(h => 
+      h.action === 'excel_download' || 
+      h.action === 'pdf_download' || 
+      h.action === 'teklif_create' || 
+      h.action === 'teklif_delete' || 
+      h.action === 'teklif_to_card' ||
+      h.action === 'stok_create' ||
+      h.action === 'stok_delete' ||
+      h.action === 'stok_update' ||
+      h.action === 'oneri_send' ||
+      h.action === 'oneri_approve' ||
+      h.action === 'oneri_reject' ||
+      h.action === 'payment_update' ||
+      h.action === 'password_change' ||
+      h.action === 'profile_update'
+    )
   );
-  const duzenlemeHareketleri = hareketler.filter(h => h.action === 'card_edit' || h.action === 'card_create' || h.action === 'card_delete');
+  const duzenlemeHareketleri = filtreleHareketler(
+    hareketler.filter(h => h.action === 'card_edit' || h.action === 'card_create' || h.action === 'card_delete')
+  );
 
   // Sayfalama hesaplamaları
   const girisCikisTotalPages = Math.ceil(girisCikisHareketleri.length / itemsPerPage);
@@ -161,8 +218,8 @@ function SonHareketler() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="son-hareketler"
-        setIsProfileModalOpen={setIsProfileModalOpen}
-        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        setIsProfileModalOpen={() => {}}
+        setIsChangePasswordModalOpen={() => {}}
         logout={logout}
       />
 
@@ -176,6 +233,96 @@ function SonHareketler() {
           <div className="pt-16 pb-6 md:pb-8 px-3 md:px-4 lg:px-8 lg:ml-64">
             <div className="max-w-7xl mx-auto w-full">
             <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Son Hareketler</h1>
+            
+            {/* Filtreler */}
+            <div className="mb-4 dark-card-bg neumorphic-card rounded-lg p-3 md:p-4">
+              <h3 className="text-sm md:text-base font-medium dark-text-primary mb-3">Filtreler</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+                <div className="lg:col-span-2">
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Arama</label>
+                  <input
+                    type="text"
+                    placeholder="İşlem, kullanıcı veya detay ara..."
+                    value={filtreArama}
+                    onChange={(e) => setFiltreArama(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Kullanıcı</label>
+                  <input
+                    type="text"
+                    placeholder="Kullanıcı adı..."
+                    value={filtreKullanici}
+                    onChange={(e) => setFiltreKullanici(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">İşlem Tipi</label>
+                  <select
+                    value={filtreAction}
+                    onChange={(e) => setFiltreAction(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  >
+                    <option value="hepsi">Hepsi</option>
+                    <option value="card_create">Kart Ekleme</option>
+                    <option value="card_edit">Kart Düzenleme</option>
+                    <option value="card_delete">Kart Silme</option>
+                    <option value="teklif_create">Teklif Oluşturma</option>
+                    <option value="teklif_delete">Teklif Silme</option>
+                    <option value="teklif_to_card">Teklif → Kart</option>
+                    <option value="stok_create">Stok Ekleme</option>
+                    <option value="stok_update">Stok Güncelleme</option>
+                    <option value="stok_delete">Stok Silme</option>
+                    <option value="oneri_send">Öneri Gönderme</option>
+                    <option value="oneri_approve">Öneri Onaylama</option>
+                    <option value="oneri_reject">Öneri Reddetme</option>
+                    <option value="excel_download">Excel İndirme</option>
+                    <option value="pdf_download">PDF İndirme</option>
+                    <option value="payment_update">Ödeme Güncelleme</option>
+                    <option value="password_change">Şifre Değiştirme</option>
+                    <option value="profile_update">Profil Güncelleme</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Başlangıç</label>
+                    <input
+                      type="date"
+                      value={filtreBaslangicTarihi}
+                      onChange={(e) => setFiltreBaslangicTarihi(e.target.value)}
+                      className="w-full px-2 md:px-3 py-2 md:py-3 text-xs md:text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Bitiş</label>
+                    <input
+                      type="date"
+                      value={filtreBitisTarihi}
+                      onChange={(e) => setFiltreBitisTarihi(e.target.value)}
+                      className="w-full px-2 md:px-3 py-2 md:py-3 text-xs md:text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                    />
+                  </div>
+                </div>
+              </div>
+              {(filtreArama || filtreKullanici || filtreAction !== 'hepsi' || filtreBaslangicTarihi || filtreBitisTarihi) && (
+                <div className="flex justify-end mt-3">
+                  <button
+                    onClick={() => {
+                      setFiltreArama('');
+                      setFiltreKullanici('');
+                      setFiltreAction('hepsi');
+                      setFiltreBaslangicTarihi('');
+                      setFiltreBitisTarihi('');
+                    }}
+                    className="px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-gray-500 text-white hover:bg-gray-600 transition-all touch-manipulation min-h-[36px] active:scale-95"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                </div>
+              )}
+            </div>
             
             {/* Tab Navigation */}
             <div className="dark-card-bg neumorphic-card rounded-lg mb-4 sm:mb-6">
@@ -397,34 +544,6 @@ function SonHareketler() {
         </ProtectedPage>
       </div>
 
-      {isProfileModalOpen && (
-        <ProfileModal
-          isOpen={isProfileModalOpen}
-          onClose={async () => {
-            setIsProfileModalOpen(false);
-            setIsEditingProfile(false);
-            await refreshProfile();
-          }}
-          profileData={profileData}
-          setProfileData={refreshProfile}
-          isEditing={isEditingProfile}
-          setIsEditing={setIsEditingProfile}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
-
-      {/* Şifre Değiştirme Modal */}
-      {isChangePasswordModalOpen && (
-        <ChangePasswordModal
-          isOpen={isChangePasswordModalOpen}
-          onClose={() => setIsChangePasswordModalOpen(false)}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
     </div>
   );
 }

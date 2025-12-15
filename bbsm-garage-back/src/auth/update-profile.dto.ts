@@ -1,9 +1,28 @@
+import { IsString, IsOptional } from 'class-validator';
+
 export class UpdateProfileDto {
-    public firmaAdi?: string;
-    public yetkiliKisi?: string;
-    public telefon?: string;
-    public email?: string;
-    public adres?: string;
-    public vergiNo?: string;
+    @IsOptional()
+    @IsString()
+    firmaAdi?: string;
+
+    @IsOptional()
+    @IsString()
+    yetkiliKisi?: string;
+
+    @IsOptional()
+    @IsString()
+    telefon?: string;
+
+    @IsOptional()
+    @IsString()
+    email?: string;
+
+    @IsOptional()
+    @IsString()
+    adres?: string;
+
+    @IsOptional()
+    @IsString()
+    vergiNo?: string;
 }
 

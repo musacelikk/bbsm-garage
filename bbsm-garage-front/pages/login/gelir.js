@@ -5,8 +5,6 @@ import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
-import ProfileModal from '../../components/ProfileModal';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
@@ -19,14 +17,16 @@ function Gelir() {
   const { profileData, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   const [kartlar, setKartlar] = useState([]);
   const [teklifler, setTeklifler] = useState([]);
   const [baslangicTarihi, setBaslangicTarihi] = useState('');
   const [bitisTarihi, setBitisTarihi] = useState('');
+  const [filtreMarkaModel, setFiltreMarkaModel] = useState('');
+  const [filtrePlaka, setFiltrePlaka] = useState('');
+  const [filtreMusteri, setFiltreMusteri] = useState('');
+  const [filtreTip, setFiltreTip] = useState('hepsi'); // 'hepsi', 'kartlar', 'teklifler'
 
   // Varsayılan tarihleri ayarla (bugün ve 30 gün öncesi)
   useEffect(() => {
@@ -116,6 +116,7 @@ function Gelir() {
     let filtrelenmisKartlar = [];
     let filtrelenmisTeklifler = [];
 
+    // Tarih filtresi
     if (baslangicTarihi && bitisTarihi) {
       filtrelenmisKartlar = kartlar.filter(kart => 
         tarihAraligindaMi(kart.girisTarihi, baslangicTarihi, bitisTarihi)
@@ -126,6 +127,46 @@ function Gelir() {
     } else {
       filtrelenmisKartlar = kartlar;
       filtrelenmisTeklifler = teklifler;
+    }
+
+    // Marka/Model filtresi
+    if (filtreMarkaModel && filtreMarkaModel.trim() !== '') {
+      const markaModelLower = filtreMarkaModel.toLowerCase().trim();
+      filtrelenmisKartlar = filtrelenmisKartlar.filter(kart => 
+        (kart.markaModel || '').toLowerCase().includes(markaModelLower)
+      );
+      filtrelenmisTeklifler = filtrelenmisTeklifler.filter(teklif => 
+        (teklif.markaModel || '').toLowerCase().includes(markaModelLower)
+      );
+    }
+
+    // Plaka filtresi
+    if (filtrePlaka && filtrePlaka.trim() !== '') {
+      const plakaLower = filtrePlaka.toLowerCase().trim();
+      filtrelenmisKartlar = filtrelenmisKartlar.filter(kart => 
+        (kart.plaka || '').toLowerCase().includes(plakaLower)
+      );
+      filtrelenmisTeklifler = filtrelenmisTeklifler.filter(teklif => 
+        (teklif.plaka || '').toLowerCase().includes(plakaLower)
+      );
+    }
+
+    // Müşteri filtresi
+    if (filtreMusteri && filtreMusteri.trim() !== '') {
+      const musteriLower = filtreMusteri.toLowerCase().trim();
+      filtrelenmisKartlar = filtrelenmisKartlar.filter(kart => 
+        (kart.adSoyad || '').toLowerCase().includes(musteriLower)
+      );
+      filtrelenmisTeklifler = filtrelenmisTeklifler.filter(teklif => 
+        (teklif.adSoyad || '').toLowerCase().includes(musteriLower)
+      );
+    }
+
+    // Tip filtresi (kartlar/teklifler)
+    if (filtreTip === 'kartlar') {
+      filtrelenmisTeklifler = [];
+    } else if (filtreTip === 'teklifler') {
+      filtrelenmisKartlar = [];
     }
 
     // Toplam gelir hesapla
@@ -195,6 +236,33 @@ function Gelir() {
       .sort((a, b) => b.gelir - a.gelir)
       .slice(0, 10);
 
+    // Karşılaştırmalı analiz (önceki dönem)
+    const oncekiDonemBaslangic = new Date(baslangicTarihi || bugun);
+    const oncekiDonemBitis = new Date(bitisTarihi || bugun);
+    const gunFarki = Math.ceil((oncekiDonemBitis - oncekiDonemBaslangic) / (1000 * 60 * 60 * 24));
+    const oncekiDonemBaslangicYeni = new Date(oncekiDonemBaslangic);
+    oncekiDonemBaslangicYeni.setDate(oncekiDonemBaslangicYeni.getDate() - gunFarki - 1);
+    const oncekiDonemBitisYeni = new Date(oncekiDonemBaslangic);
+    oncekiDonemBitisYeni.setDate(oncekiDonemBitisYeni.getDate() - 1);
+    
+    const oncekiDonemKartlar = kartlar.filter(kart => 
+      tarihAraligindaMi(kart.girisTarihi, oncekiDonemBaslangicYeni.toISOString().split('T')[0], oncekiDonemBitisYeni.toISOString().split('T')[0])
+    );
+    const oncekiDonemTeklifler = teklifler.filter(teklif => 
+      tarihAraligindaMi(teklif.girisTarihi, oncekiDonemBaslangicYeni.toISOString().split('T')[0], oncekiDonemBitisYeni.toISOString().split('T')[0])
+    );
+    
+    const oncekiDonemGelir = [...oncekiDonemKartlar, ...oncekiDonemTeklifler].reduce((toplam, item) => {
+      return toplam + hesaplaToplamFiyat(item.yapilanlar);
+    }, 0);
+
+    const karsilastirma = {
+      mevcutDonem: toplamGelir,
+      oncekiDonem: oncekiDonemGelir,
+      fark: toplamGelir - oncekiDonemGelir,
+      yuzdeDegisim: oncekiDonemGelir > 0 ? ((toplamGelir - oncekiDonemGelir) / oncekiDonemGelir * 100).toFixed(2) : 0
+    };
+
     return {
       toplamGelir,
       toplamIslemSayisi,
@@ -202,6 +270,7 @@ function Gelir() {
       gunlukGelir,
       aylikGelir,
       enCokGelirGunler,
+      karsilastirma,
       filtrelenmisKartlar,
       filtrelenmisTeklifler
     };
@@ -277,8 +346,8 @@ function Gelir() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="gelir"
-        setIsProfileModalOpen={setIsProfileModalOpen}
-        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        setIsProfileModalOpen={() => {}}
+        setIsChangePasswordModalOpen={() => {}}
         logout={logout}
       />
 
@@ -298,9 +367,12 @@ function Gelir() {
 
             {/* Filtreler */}
             <div className="mb-4 md:mb-6 p-3 md:p-4 dark-card-bg neumorphic-card rounded-lg md:rounded-xl">
-              <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4 items-end">
-                <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                  <div className="flex-1 md:flex-none">
+              <h3 className="text-sm md:text-base font-medium dark-text-primary mb-3 md:mb-4">Filtreler</h3>
+              
+              {/* Tarih Filtreleri */}
+              <div className="mb-4">
+                <div className="flex flex-col md:flex-row gap-3 md:gap-4">
+                  <div className="flex-1">
                     <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Başlangıç Tarihi</label>
                     <input
                       type="date"
@@ -309,7 +381,7 @@ function Gelir() {
                       className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
                     />
                   </div>
-                  <div className="flex-1 md:flex-none">
+                  <div className="flex-1">
                     <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Bitiş Tarihi</label>
                     <input
                       type="date"
@@ -318,21 +390,83 @@ function Gelir() {
                       className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
                     />
                   </div>
-                </div>
-                
-                <div className="w-full md:w-auto">
-                  <button
-                    onClick={handleGunlukCiro}
-                    className="w-full md:w-auto px-6 py-3 rounded-full font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 neumorphic-inset"
-                  >
-                    Günlük Ciro
-                  </button>
+                  <div className="flex items-end">
+                    <button
+                      onClick={handleGunlukCiro}
+                      className="w-full md:w-auto px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 neumorphic-inset text-xs md:text-sm"
+                    >
+                      Bugün
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              {/* Detaylı Filtreler */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
+                <div>
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Marka/Model</label>
+                  <input
+                    type="text"
+                    placeholder="Marka veya model ara..."
+                    value={filtreMarkaModel}
+                    onChange={(e) => setFiltreMarkaModel(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Plaka</label>
+                  <input
+                    type="text"
+                    placeholder="Plaka ara..."
+                    value={filtrePlaka}
+                    onChange={(e) => setFiltrePlaka(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Müşteri</label>
+                  <input
+                    type="text"
+                    placeholder="Müşteri adı ara..."
+                    value={filtreMusteri}
+                    onChange={(e) => setFiltreMusteri(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs md:text-sm font-medium dark-text-primary mb-1.5">Tip</label>
+                  <select
+                    value={filtreTip}
+                    onChange={(e) => setFiltreTip(e.target.value)}
+                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm neumorphic-input rounded-lg dark-text-primary touch-manipulation min-h-[44px]"
+                  >
+                    <option value="hepsi">Hepsi</option>
+                    <option value="kartlar">Kartlar</option>
+                    <option value="teklifler">Teklifler</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Filtreleri Temizle */}
+              {(filtreMarkaModel || filtrePlaka || filtreMusteri || filtreTip !== 'hepsi') && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      setFiltreMarkaModel('');
+                      setFiltrePlaka('');
+                      setFiltreMusteri('');
+                      setFiltreTip('hepsi');
+                    }}
+                    className="px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-gray-500 text-white hover:bg-gray-600 transition-all touch-manipulation min-h-[36px] active:scale-95"
+                  >
+                    Filtreleri Temizle
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Özet Kartlar */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
                 <h3 className="text-base md:text-lg font-medium mb-2">Toplam Gelir</h3>
                 <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.toplamGelir)}</p>
@@ -345,6 +479,73 @@ function Gelir() {
                 <h3 className="text-base md:text-lg font-medium mb-2">Son 7 Günlük Ciro</h3>
                 <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.son7GunlukCiro)}</p>
               </div>
+              <div className={`bg-gradient-to-br ${gelirVerileri.karsilastirma.fark >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} text-white p-4 md:p-6 rounded-xl shadow-lg`}>
+                <h3 className="text-base md:text-lg font-medium mb-2">Önceki Dönem Karşılaştırma</h3>
+                <p className="text-lg md:text-xl font-bold break-words">
+                  {gelirVerileri.karsilastirma.fark >= 0 ? '+' : ''}{formatPara(gelirVerileri.karsilastirma.fark)}
+                </p>
+                <p className="text-sm mt-1">
+                  {gelirVerileri.karsilastirma.yuzdeDegisim >= 0 ? '+' : ''}{gelirVerileri.karsilastirma.yuzdeDegisim}%
+                </p>
+              </div>
+            </div>
+
+            {/* PDF Export Butonu */}
+            <div className="mb-6 flex justify-end">
+              <button
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const reportData = {
+                      baslangicTarihi,
+                      bitisTarihi,
+                      toplamGelir: gelirVerileri.toplamGelir,
+                      toplamIslemSayisi: gelirVerileri.toplamIslemSayisi,
+                      son7GunlukCiro: gelirVerileri.son7GunlukCiro,
+                      karsilastirma: gelirVerileri.karsilastirma,
+                    };
+                    const response = await fetchWithAuth(`${API_URL}/excel/pdf`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        vehicleInfo: {
+                          adSoyad: 'Gelir Raporu',
+                          telNo: '',
+                          markaModel: `${baslangicTarihi} - ${bitisTarihi}`,
+                          plaka: '',
+                          km: 0,
+                          modelYili: 0,
+                          sasi: '',
+                          renk: '',
+                          girisTarihi: new Date().toISOString().split('T')[0],
+                          notlar: `Toplam Gelir: ${formatPara(gelirVerileri.toplamGelir)}\nToplam İşlem: ${gelirVerileri.toplamIslemSayisi}\nKarşılaştırma: ${gelirVerileri.karsilastirma.yuzdeDegisim}%`,
+                          adres: '',
+                        },
+                        data: [],
+                        notes: `Gelir Raporu\nTarih Aralığı: ${baslangicTarihi} - ${bitisTarihi}\nToplam Gelir: ${formatPara(gelirVerileri.toplamGelir)}`
+                      }),
+                    });
+                    if (response && response.ok) {
+                      const blob = await response.blob();
+                      const url = window.URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `gelir-raporu-${baslangicTarihi}-${bitisTarihi}.pdf`;
+                      document.body.appendChild(a);
+                      a.click();
+                      window.URL.revokeObjectURL(url);
+                    }
+                  } catch (error) {
+                    console.error('PDF export error:', error);
+                  }
+                  setLoading(false);
+                }}
+                className="px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-all touch-manipulation min-h-[44px] active:scale-95"
+              >
+                PDF Rapor İndir
+              </button>
             </div>
 
             {/* Günlük Gelir Tablosu */}
@@ -482,35 +683,6 @@ function Gelir() {
           </div>
         </div>
 
-        {/* Profil Bilgileri Modal */}
-        {isProfileModalOpen && (
-          <ProfileModal
-            isOpen={isProfileModalOpen}
-            onClose={async () => {
-              setIsProfileModalOpen(false);
-              setIsEditingProfile(false);
-              await refreshProfile();
-            }}
-            profileData={profileData}
-            setProfileData={refreshProfile}
-            isEditing={isEditingProfile}
-            setIsEditing={setIsEditingProfile}
-            fetchWithAuth={fetchWithAuth}
-            API_URL={API_URL}
-            setLoading={setLoading}
-          />
-        )}
-
-        {/* Şifre Değiştirme Modal */}
-        {isChangePasswordModalOpen && (
-          <ChangePasswordModal
-            isOpen={isChangePasswordModalOpen}
-            onClose={() => setIsChangePasswordModalOpen(false)}
-            fetchWithAuth={fetchWithAuth}
-            API_URL={API_URL}
-            setLoading={setLoading}
-          />
-        )}
         </ProtectedPage>
       </div>
     </div>

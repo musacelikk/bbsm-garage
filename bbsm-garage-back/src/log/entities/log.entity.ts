@@ -17,6 +17,12 @@ export class LogEntity {
   @Column({ type: 'text', nullable: true })
   duzenleyen: string; // Kart işlemleri için düzenleyen bilgisi
 
+  @Column({ type: 'varchar', length: 45, nullable: true })
+  ip_address: string; // IP adresi
+
+  @Column({ type: 'text', nullable: true })
+  user_agent: string; // User agent
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   timestamp: Date;
 }

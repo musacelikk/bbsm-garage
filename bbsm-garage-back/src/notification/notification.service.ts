@@ -2,12 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationEntity } from './entities/notification.entity';
+import { NotificationPreferenceEntity } from './entities/notification-preference.entity';
 
 @Injectable()
 export class NotificationService {
   constructor(
     @InjectRepository(NotificationEntity)
     private notificationRepository: Repository<NotificationEntity>,
+    @InjectRepository(NotificationPreferenceEntity)
+    private preferenceRepository: Repository<NotificationPreferenceEntity>,
   ) {}
 
   async findAll(tenant_id: number, username: string) {
@@ -34,5 +37,42 @@ export class NotificationService {
       { isRead: true },
     );
     return { success: true };
+  }
+
+  async getPreferences(tenant_id: number, username: string) {
+    let preference = await this.preferenceRepository.findOne({
+      where: { tenant_id, username },
+    });
+    if (!preference) {
+      preference = this.preferenceRepository.create({
+        tenant_id,
+        username,
+        emailEnabled: true,
+        smsEnabled: false,
+        oneriApproved: true,
+        oneriRejected: true,
+        paymentReminder: true,
+        maintenanceReminder: true,
+      });
+      await this.preferenceRepository.save(preference);
+    }
+    return preference;
+  }
+
+  async updatePreferences(tenant_id: number, username: string, preferences: Partial<NotificationPreferenceEntity>) {
+    let preference = await this.preferenceRepository.findOne({
+      where: { tenant_id, username },
+    });
+    if (!preference) {
+      preference = this.preferenceRepository.create({
+        tenant_id,
+        username,
+        ...preferences,
+      });
+    } else {
+      Object.assign(preference, preferences);
+      preference.updatedAt = new Date();
+    }
+    return await this.preferenceRepository.save(preference);
   }
 }

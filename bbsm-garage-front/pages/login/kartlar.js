@@ -914,6 +914,52 @@ const secilenKartlariIndir = async (type) => {
         </ProtectedPage>
       </div>
 
+      {/* Silme Onay Modali */}
+      {isSilmeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setIsSilmeModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl dark-card-bg neumorphic-card p-6 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-lg font-semibold dark-text-primary mb-4">
+              Seçilen kartları sil
+            </h3>
+            <p className="dark-text-secondary text-sm mb-4">
+              Silme işlemine devam etmek için düzenleyen bilgisini girin.
+            </p>
+            <label className="block text-sm font-medium dark-text-secondary mb-2">
+              Düzenleyen
+            </label>
+            <input
+              type="text"
+              className="w-full neumorphic-input rounded-xl p-3 dark-text-primary"
+              placeholder="Ad Soyad"
+              value={silmeDuzenleyen}
+              onChange={(e) => setSilmeDuzenleyen(e.target.value)}
+              autoFocus
+            />
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setIsSilmeModalOpen(false)}
+                className="px-4 py-2 rounded-full dark-bg-tertiary dark-text-secondary active:scale-95 transition-transform"
+              >
+                Vazgeç
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 rounded-full text-white font-semibold active:scale-95 transition-transform"
+                style={{ backgroundColor: '#0A0875' }}
+              >
+                Onayla ve Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal - moved outside the main content div */}
       {isYeniKartEkleModalOpen && (
         <div className="fixed inset-0 bg-gray-500 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50 modal-overlay" onClick={closeModal}>

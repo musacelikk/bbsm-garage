@@ -6,8 +6,6 @@ import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
-import ProfileModal from '../../components/ProfileModal';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
@@ -23,8 +21,6 @@ function Teklif() {
   const router = useRouter();
   const username = getUsername() || 'Kullanıcı';
   const [isOpen, setIsOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [teklifler, setTeklifler] = useState([]);
   const [secilenTeklifler, setSecilenTeklifler] = useState([]);
@@ -479,8 +475,8 @@ const secilenTeklifleriIndir = async (type) => {
         isOpen={isOpen} 
         onClose={() => setIsOpen(false)}
         activePage="teklif"
-        setIsProfileModalOpen={setIsProfileModalOpen}
-        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        setIsProfileModalOpen={() => {}}
+        setIsChangePasswordModalOpen={() => {}}
         logout={logout}
       />
 
@@ -737,35 +733,6 @@ const secilenTeklifleriIndir = async (type) => {
         </ProtectedPage>
       </div>
 
-      {/* Profil Bilgileri Modal */}
-      {isProfileModalOpen && (
-        <ProfileModal
-          isOpen={isProfileModalOpen}
-          onClose={async () => {
-            setIsProfileModalOpen(false);
-            setIsEditingProfile(false);
-            await refreshProfile();
-          }}
-          profileData={profileData}
-          setProfileData={refreshProfile}
-          isEditing={isEditingProfile}
-          setIsEditing={setIsEditingProfile}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
-
-      {/* Şifre Değiştirme Modal */}
-      {isChangePasswordModalOpen && (
-        <ChangePasswordModal
-          isOpen={isChangePasswordModalOpen}
-          onClose={() => setIsChangePasswordModalOpen(false)}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-          />
-      )}
     </div>
   );
 }

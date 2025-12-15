@@ -5,8 +5,6 @@ import { useLoading } from '../_app';
 import withAuth from '../../withAuth';
 import { useAuth } from '../../auth-context';
 import { API_URL } from '../../config';
-import ProfileModal from '../../components/ProfileModal';
-import ChangePasswordModal from '../../components/ChangePasswordModal';
 import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
@@ -19,8 +17,6 @@ function Dashboard() {
   const { profileData, firmaAdi, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   
   const [kartlar, setKartlar] = useState([]);
@@ -34,6 +30,7 @@ function Dashboard() {
     const bugun = new Date();
     return bugun.toISOString().split('T')[0];
   });
+  const [aramaMetni, setAramaMetni] = useState('');
 
 
   const fetchKartlar = async () => {
@@ -317,6 +314,66 @@ function Dashboard() {
 
   const periyodikBakimData = hesaplaPeriyodikBakim();
 
+  // Arama fonksiyonu
+  const aramaSonuclari = () => {
+    if (!aramaMetni || aramaMetni.trim() === '') {
+      return { kartlar: [], teklifler: [], hareketler: [] };
+    }
+
+    const arama = aramaMetni.toLowerCase().trim();
+    
+    const filtrelenmisKartlar = kartlar.filter(kart => {
+      const plaka = (kart.plaka || '').toLowerCase();
+      const markaModel = (kart.markaModel || '').toLowerCase();
+      const adSoyad = (kart.adSoyad || '').toLowerCase();
+      const telNo = (kart.telNo || '').toLowerCase();
+      const sasi = (kart.sasi || '').toLowerCase();
+      const notlar = (kart.notlar || '').toLowerCase();
+      
+      return plaka.includes(arama) || 
+             markaModel.includes(arama) || 
+             adSoyad.includes(arama) || 
+             telNo.includes(arama) || 
+             sasi.includes(arama) || 
+             notlar.includes(arama);
+    });
+
+    const filtrelenmisTeklifler = teklifler.filter(teklif => {
+      const plaka = (teklif.plaka || '').toLowerCase();
+      const markaModel = (teklif.markaModel || '').toLowerCase();
+      const adSoyad = (teklif.adSoyad || '').toLowerCase();
+      const telNo = (teklif.telNo || '').toLowerCase();
+      const notlar = (teklif.notlar || '').toLowerCase();
+      
+      return plaka.includes(arama) || 
+             markaModel.includes(arama) || 
+             adSoyad.includes(arama) || 
+             telNo.includes(arama) || 
+             notlar.includes(arama);
+    });
+
+    const filtrelenmisHareketler = hareketler.filter(hareket => {
+      const action = (getActionLabel(hareket.action) || '').toLowerCase();
+      const actionDetail = (hareket.action_detail || '').toLowerCase();
+      const username = (hareket.username || '').toLowerCase();
+      
+      return action.includes(arama) || 
+             actionDetail.includes(arama) || 
+             username.includes(arama);
+    });
+
+    return {
+      kartlar: filtrelenmisKartlar.slice(0, 5),
+      teklifler: filtrelenmisTeklifler.slice(0, 5),
+      hareketler: filtrelenmisHareketler.slice(0, 5),
+      toplamKart: filtrelenmisKartlar.length,
+      toplamTeklif: filtrelenmisTeklifler.length,
+      toplamHareket: filtrelenmisHareketler.length
+    };
+  };
+
+  const aramaSonuc = aramaSonuclari();
+
   // Para formatı
   const formatPara = (tutar) => {
     return new Intl.NumberFormat('tr-TR', {
@@ -383,8 +440,8 @@ function Dashboard() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="dashboard"
-        setIsProfileModalOpen={setIsProfileModalOpen}
-        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        setIsProfileModalOpen={() => {}}
+        setIsChangePasswordModalOpen={() => {}}
         logout={logout}
       />
 
@@ -415,6 +472,137 @@ function Dashboard() {
                 </div>
               </div>
             </div>
+
+            {/* Arama Kutusu */}
+            <div className="mb-4 md:mb-6">
+              <div className="dark-card-bg neumorphic-inset rounded-lg p-2 md:p-3">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                  <input
+                    type="text"
+                    placeholder="Kartlar, teklifler ve hareketlerde ara..."
+                    value={aramaMetni}
+                    onChange={(e) => setAramaMetni(e.target.value)}
+                    className="flex-1 bg-transparent border-none outline-none text-sm md:text-base dark-text-primary placeholder-gray-500 min-h-[36px] md:min-h-[40px]"
+                  />
+                  {aramaMetni && (
+                    <button
+                      onClick={() => setAramaMetni('')}
+                      className="text-gray-400 hover:text-gray-300 transition-colors p-1"
+                      aria-label="Aramayı temizle"
+                    >
+                      <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Arama Sonuçları */}
+            {aramaMetni && aramaMetni.trim() !== '' && (
+              <div className="mb-4 md:mb-6 dark-card-bg neumorphic-card rounded-lg p-3 md:p-4 border border-blue-500/20">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm md:text-base font-medium dark-text-primary">
+                    Arama Sonuçları: "{aramaMetni}"
+                  </h2>
+                  <span className="text-xs dark-text-muted">
+                    {aramaSonuc.toplamKart + aramaSonuc.toplamTeklif + aramaSonuc.toplamHareket} sonuç bulundu
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                  {/* Kartlar Sonuçları */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Kartlar ({aramaSonuc.toplamKart})</h3>
+                      {aramaSonuc.toplamKart > 5 && (
+                        <Link href={`/login/kartlar?arama=${encodeURIComponent(aramaMetni)}`} className="text-[10px] text-blue-400 hover:text-blue-300">
+                          Tümü →
+                        </Link>
+                      )}
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {aramaSonuc.kartlar.length === 0 ? (
+                        <p className="text-[10px] dark-text-muted text-center py-2">Sonuç bulunamadı</p>
+                      ) : (
+                        aramaSonuc.kartlar.map((kart) => (
+                          <Link
+                            key={kart.card_id}
+                            href={`/login/kartlar/detay?card_id=${kart.card_id}`}
+                            className="block p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
+                          >
+                            <p className="text-xs font-medium dark-text-primary truncate">{kart.plaka || 'Plaka Yok'}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{kart.markaModel || 'Marka/Model Yok'}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{kart.adSoyad || 'Müşteri Yok'}</p>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Teklifler Sonuçları */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Teklifler ({aramaSonuc.toplamTeklif})</h3>
+                      {aramaSonuc.toplamTeklif > 5 && (
+                        <Link href={`/login/teklif?arama=${encodeURIComponent(aramaMetni)}`} className="text-[10px] text-blue-400 hover:text-blue-300">
+                          Tümü →
+                        </Link>
+                      )}
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {aramaSonuc.teklifler.length === 0 ? (
+                        <p className="text-[10px] dark-text-muted text-center py-2">Sonuç bulunamadı</p>
+                      ) : (
+                        aramaSonuc.teklifler.map((teklif) => (
+                          <Link
+                            key={teklif.teklif_id}
+                            href={`/login/teklifler/detayT?teklif_id=${teklif.teklif_id}`}
+                            className="block p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
+                          >
+                            <p className="text-xs font-medium dark-text-primary truncate">{teklif.plaka || 'Plaka Yok'}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{teklif.markaModel || 'Marka/Model Yok'}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{teklif.adSoyad || 'Müşteri Yok'}</p>
+                          </Link>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Hareketler Sonuçları */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Hareketler ({aramaSonuc.toplamHareket})</h3>
+                      {aramaSonuc.toplamHareket > 5 && (
+                        <Link href={`/login/son-hareketler?arama=${encodeURIComponent(aramaMetni)}`} className="text-[10px] text-blue-400 hover:text-blue-300">
+                          Tümü →
+                        </Link>
+                      )}
+                    </div>
+                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                      {aramaSonuc.hareketler.length === 0 ? (
+                        <p className="text-[10px] dark-text-muted text-center py-2">Sonuç bulunamadı</p>
+                      ) : (
+                        aramaSonuc.hareketler.map((hareket) => (
+                          <div
+                            key={hareket.id}
+                            className="p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
+                          >
+                            <p className="text-xs font-medium dark-text-primary truncate">{getActionLabel(hareket.action)}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{hareket.action_detail || '-'}</p>
+                            <p className="text-[10px] dark-text-muted truncate">{formatTarih(hareket.timestamp)}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-4 md:space-y-6">
 
@@ -1004,35 +1192,6 @@ function Dashboard() {
         </ProtectedPage>
         </div>
 
-      {/* Profil Bilgileri Modal */}
-      {isProfileModalOpen && (
-        <ProfileModal
-          isOpen={isProfileModalOpen}
-          onClose={async () => {
-            setIsProfileModalOpen(false);
-            setIsEditingProfile(false);
-            await refreshProfile();
-          }}
-          profileData={profileData}
-          setProfileData={refreshProfile}
-          isEditing={isEditingProfile}
-          setIsEditing={setIsEditingProfile}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
-
-      {/* Şifre Değiştirme Modal */}
-      {isChangePasswordModalOpen && (
-        <ChangePasswordModal
-          isOpen={isChangePasswordModalOpen}
-          onClose={() => setIsChangePasswordModalOpen(false)}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
 
 
       {/* WhatsApp Destek Butonu */}

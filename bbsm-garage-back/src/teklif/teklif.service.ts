@@ -18,8 +18,8 @@ export class TeklifService {
 
   async create(createTeklifDto: CreateTeklifDto, tenant_id: number): Promise<TeklifEntity> {
     try {
-      // teklif_id ve yapilanlar'ı çıkar çünkü auto-increment ve ayrı kaydedilecek
-      const { teklif_id, yapilanlar, ...teklifDataWithoutId } = createTeklifDto;
+      // teklif_id, yapilanlar ve Entity'de olmayan alanları çıkar
+      const { teklif_id, yapilanlar, odemeAlindi, periyodikBakim, duzenleyen, ...teklifDataWithoutId } = createTeklifDto;
       // TeklifEntity oluşturuluyor ve veritabanına kaydediliyor (yapilanlar olmadan)
       const teklif = await this.databaseRepository.create({ ...teklifDataWithoutId as unknown as Partial<TeklifEntity>, tenant_id });
       const savedTeklif = await this.databaseRepository.save(teklif);

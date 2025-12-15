@@ -15,5 +15,6 @@ import { LogModule } from '../log/log.module';
   ],
   controllers: [CardController],
   providers: [CardService],
+  exports: [CardService],
 })
 export class CardModule {}

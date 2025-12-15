@@ -1,14 +1,31 @@
 import { CardEntity } from "src/card/entities/card.entity";
 import { TeklifEntity } from "src/teklif/entities/teklif.entity";
+import { IsNumber, IsString, IsOptional } from 'class-validator';
 
 export class CreateYapilanlarDto {
   // kart: CardEntity;
   // teklif: TeklifEntity;
-  card_id : number;
-  teklif_id : number;
+  
+  @IsOptional()
+  @IsNumber()
+  card_id?: number;
+  
+  @IsOptional()
+  @IsNumber()
+  teklif_id?: number;
+  
+  @IsNumber()
   birimAdedi: number;
+  
+  @IsString()
   parcaAdi: string;
+  
+  @IsNumber()
   birimFiyati: number;
+  
+  @IsNumber()
   toplamFiyat: number;
-  id: any;
+  
+  @IsOptional()
+  id?: any;
   }

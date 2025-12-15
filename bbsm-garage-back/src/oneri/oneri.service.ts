@@ -15,11 +15,18 @@ export class OneriService {
   ) {}
 
   async create(createOneriDto: CreateOneriDto, tenant_id: number) {
-    const oneri = this.oneriRepository.create({
+    const oneriData: any = {
       ...createOneriDto,
       tenant_id,
       status: 'pending',
-    });
+    };
+    
+    // Tarih string ise Date'e dönüştür, yoksa undefined bırak (Entity'de default var)
+    if (createOneriDto.tarih) {
+      oneriData.tarih = new Date(createOneriDto.tarih);
+    }
+    
+    const oneri = this.oneriRepository.create(oneriData);
     return await this.oneriRepository.save(oneri);
   }
 

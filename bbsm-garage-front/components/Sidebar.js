@@ -1,28 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useProfile } from '../contexts/ProfileContext';
 import { API_URL } from '../config';
 
 const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChangePasswordModalOpen, logout }) => {
   const { profileData, firmaAdi, refreshProfile } = useProfile();
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const dropdownRef = useRef(null);
-  const buttonRef = useRef(null);
-
-  const handleProfileClick = async () => {
-    setIsSettingsOpen(false);
-    try {
-      const data = await refreshProfile();
-      if (data) {
-        setIsProfileModalOpen(true);
-      } else {
-        alert('Profil bilgileri yüklenemedi');
-      }
-    } catch (error) {
-      console.error('Profil yükleme hatası:', error);
-      alert('Profil bilgileri yüklenirken bir hata oluştu');
-    }
-  };
   
   // Kilitli sayfalar (üyelik sayfası hariç)
   const lockedPages = ['dashboard', 'kartlar', 'teklif', 'stok', 'gelir', 'son-hareketler', 'bizeulasin'];
@@ -121,6 +103,16 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
         </svg>
       )
     },
+    { 
+      href: '/login/ayarlar', 
+      label: 'Ayarlar', 
+      key: 'ayarlar',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+      )
+    },
   ];
 
   const getLinkClassName = (key) => {
@@ -142,29 +134,6 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
     return lockedPages.includes(key) && !hasMembership;
   };
 
-  // Click outside to close dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (
-        isSettingsOpen &&
-        dropdownRef.current &&
-        buttonRef.current &&
-        !dropdownRef.current.contains(event.target) &&
-        !buttonRef.current.contains(event.target)
-      ) {
-        setIsSettingsOpen(false);
-      }
-    };
-
-    if (isSettingsOpen) {
-      document.addEventListener('pointerdown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('pointerdown', handleClickOutside);
-    };
-  }, [isSettingsOpen]);
-
   return (
     <>
         {isOpen && (
@@ -180,75 +149,20 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
         <div className="h-full px-4 pt-6 pb-4 overflow-y-auto dark-bg-secondary relative z-40 flex flex-col">
           {/* Profil Bölümü */}
           <div className="mb-8 px-2">
-            <div className="relative">
-              <button 
-                ref={buttonRef}
-                type="button" 
-                onClick={() => setIsSettingsOpen(!isSettingsOpen)}
-                className="w-full flex items-start gap-3 p-3 rounded-xl neumorphic-inset hover:dark-bg-tertiary transition-all cursor-pointer"
-              >
-                <img 
-                  src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
-                  className="h-10 w-10 rounded-full object-cover border-2 dark-border flex-shrink-0 mt-0.5" 
-                  alt="Kullanıcı"
-                  onError={(e) => {
-                    e.target.src = '/images/yasin.webp';
-                  }}
-                />
-                <div className="flex-1 text-left min-w-0 overflow-hidden">
-                  <p className="text-sm font-semibold dark-text-primary break-words leading-tight">{firmaAdi}</p>
-                  <p className="text-xs dark-text-muted mt-1">Firma Hesabı</p>
-                </div>
-                <svg className={`w-4 h-4 dark-text-muted transition-transform flex-shrink-0 mt-1 ${isSettingsOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              
-              {/* Settings Dropdown */}
-              {isSettingsOpen && (
-                <div 
-                  ref={dropdownRef}
-                  className="absolute left-0 top-full mt-2 w-full dark-card-bg neumorphic-outset rounded-lg dark-border z-[60] animate-fade-in"
-                >
-                    <div className="py-2">
-                      <button
-                        onClick={handleProfileClick}
-                        className="w-full text-left px-4 py-3 text-sm dark-text-primary hover:dark-bg-tertiary transition-colors flex items-center gap-3 rounded-lg mx-1"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        Profil Bilgileri
-                      </button>
-                      <button
-                        onClick={() => {
-                          setIsSettingsOpen(false);
-                          setIsChangePasswordModalOpen(true);
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm dark-text-primary hover:dark-bg-tertiary transition-colors flex items-center gap-3 rounded-lg mx-1"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                        </svg>
-                        Şifre Değiştir
-                      </button>
-                      <div className="border-t dark-border my-1"></div>
-                      <button
-                        onClick={() => {
-                          setIsSettingsOpen(false);
-                          logout();
-                        }}
-                        className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition-colors flex items-center gap-3 rounded-lg mx-1"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                        Çıkış Yap
-                      </button>
-                    </div>
-                  </div>
-              )}
-            </div>
+            <Link href="/login/ayarlar" className="w-full flex items-start gap-3 p-3 rounded-xl neumorphic-inset hover:dark-bg-tertiary transition-all cursor-pointer">
+              <img 
+                src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
+                className="h-10 w-10 rounded-full object-cover border-2 dark-border flex-shrink-0 mt-0.5" 
+                alt="Kullanıcı"
+                onError={(e) => {
+                  e.target.src = '/images/yasin.webp';
+                }}
+              />
+              <div className="flex-1 text-left min-w-0 overflow-hidden">
+                <p className="text-sm font-semibold dark-text-primary break-words leading-tight">{firmaAdi}</p>
+                <p className="text-xs dark-text-muted mt-1">Firma Hesabı</p>
+              </div>
+            </Link>
           </div>
 
           {/* Navigation Items */}
@@ -275,6 +189,21 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
               </li>
             ))}
           </ul>
+
+          {/* Çıkış Yap Butonu */}
+          <div className="mt-4">
+            <button
+              onClick={() => {
+                logout();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition-colors rounded-lg neumorphic-inset"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              <span>Çıkış Yap</span>
+            </button>
+          </div>
 
           {/* Bottom Card - Bilgilendirme */}
           <div className="mt-6 dark-card-bg neumorphic-card rounded-xl p-4 border dark-border glassmorphic">

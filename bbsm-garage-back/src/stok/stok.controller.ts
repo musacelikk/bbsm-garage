@@ -12,7 +12,7 @@ export class StokController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createStokDto: StokEntity, @TenantId() tenant_id: number) {
+  create(@Body() createStokDto: CreateStokDto, @TenantId() tenant_id: number) {
     return this.stokService.create(createStokDto, tenant_id);
   }
 

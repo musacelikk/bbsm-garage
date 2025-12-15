@@ -1,14 +1,22 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { AxiosResponse } from 'axios';
 import * as https from 'https';
+import { CardService } from '../card/card.service';
+import { TeklifService } from '../teklif/teklif.service';
 
 @Injectable()
 export class ExcelService {
   private readonly logger = new Logger(ExcelService.name);
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    @Inject(forwardRef(() => CardService))
+    private readonly cardService: CardService,
+    @Inject(forwardRef(() => TeklifService))
+    private readonly teklifService: TeklifService,
+  ) {}
 
   async generateExcel(data: any): Promise<Buffer> {
     try {
@@ -63,4 +71,5 @@ export class ExcelService {
       throw new Error(`Failed to generate PDF: ${error.message}`);
     }
   }
+
 } 

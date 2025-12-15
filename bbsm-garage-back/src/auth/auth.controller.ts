@@ -4,6 +4,11 @@ import { AuthDto } from './auth.dto';
 import { ChangePasswordDto } from './change-password.dto';
 import { UpdateProfileDto } from './update-profile.dto';
 import { ResetPasswordDto } from './reset-password.dto';
+import { SelectMembershipPlanDto } from './dto/select-membership-plan.dto';
+import { ToggleUserActiveDto } from './dto/toggle-user-active.dto';
+import { AddMembershipDto } from './dto/add-membership.dto';
+import { AdminResponseDto } from './dto/admin-response.dto';
+import { MembershipRequestResponseDto } from './dto/membership-request-response.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
 import { OneriService } from '../oneri/oneri.service';
@@ -128,28 +133,28 @@ export class AuthController {
   async toggleUserActive(
     @Headers('authorization') authorization: string,
     @Param('id') id: string,
-    @Body() body: { isActive: boolean }
+    @Body() toggleUserActiveDto: ToggleUserActiveDto
   ) {
     const userId = parseInt(id);
-    return this.authService.toggleUserActive(authorization, userId, body.isActive);
+    return this.authService.toggleUserActive(authorization, userId, toggleUserActiveDto.isActive);
   }
 
   @Post('admin/users/:id/add-membership')
   async addMembership(
     @Headers('authorization') authorization: string,
     @Param('id') id: string,
-    @Body() body: { months: number; customDate?: string }
+    @Body() addMembershipDto: AddMembershipDto
   ) {
     const userId = parseInt(id);
-    const customDate = body.customDate ? new Date(body.customDate) : undefined;
-    return this.authService.addMembership(authorization, userId, body.months, customDate);
+    const customDate = addMembershipDto.customDate ? new Date(addMembershipDto.customDate) : undefined;
+    return this.authService.addMembership(authorization, userId, addMembershipDto.months, customDate);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('select-membership-plan')
-  async selectMembershipPlan(@Request() req, @Body() body: { months: number }) {
+  async selectMembershipPlan(@Request() req, @Body() selectMembershipPlanDto: SelectMembershipPlanDto) {
     const username = req.user.username;
-    return this.authService.selectMembershipPlan(username, body.months);
+    return this.authService.selectMembershipPlan(username, selectMembershipPlanDto.months);
   }
 
   @Get('admin/membership-requests')
@@ -170,10 +175,10 @@ export class AuthController {
   async rejectMembershipRequest(
     @Headers('authorization') authorization: string,
     @Param('id') id: string,
-    @Body() body: { reason?: string }
+    @Body() membershipRequestResponseDto: MembershipRequestResponseDto
   ) {
     const requestId = parseInt(id);
-    return this.authService.rejectMembershipRequest(authorization, requestId, body.reason);
+    return this.authService.rejectMembershipRequest(authorization, requestId, membershipRequestResponseDto.reason);
   }
 
   @Get('admin/oneriler')
@@ -185,19 +190,19 @@ export class AuthController {
   async approveOneri(
     @Headers('authorization') authorization: string,
     @Param('id') id: string,
-    @Body() body: { adminResponse?: string }
+    @Body() adminResponseDto: AdminResponseDto
   ) {
     const oneriId = parseInt(id);
-    return this.authService.approveOneri(authorization, oneriId, body.adminResponse);
+    return this.authService.approveOneri(authorization, oneriId, adminResponseDto.adminResponse);
   }
 
   @Patch('admin/oneriler/:id/reject')
   async rejectOneri(
     @Headers('authorization') authorization: string,
     @Param('id') id: string,
-    @Body() body: { adminResponse?: string }
+    @Body() adminResponseDto: AdminResponseDto
   ) {
     const oneriId = parseInt(id);
-    return this.authService.rejectOneri(authorization, oneriId, body.adminResponse);
+    return this.authService.rejectOneri(authorization, oneriId, adminResponseDto.adminResponse);
   }
 }

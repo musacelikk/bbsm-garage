@@ -40,7 +40,14 @@ async function bootstrap() {
     methods: '*',
     credentials: true,
   });
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true, // Sadece DTO'da tanımlı alanları kabul et
+    forbidNonWhitelisted: true, // DTO'da olmayan alanları reddet
+    transform: true, // Otomatik tip dönüşümü
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }));
 
   const port = process.env.PORT || 4000;
   await app.listen(port);

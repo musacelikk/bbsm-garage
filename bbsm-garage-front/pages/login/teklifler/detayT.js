@@ -6,8 +6,6 @@ import { useLoading } from '../../_app';
 import withAuth from '../../../withAuth';
 import { useAuth } from '../../../auth-context';
 import { API_URL } from '../../../config';
-import ProfileModal from '../../../components/ProfileModal';
-import ChangePasswordModal from '../../../components/ChangePasswordModal';
 import Sidebar from '../../../components/Sidebar';
 import Navbar from '../../../components/Navbar';
 import { useProfile } from '../../../contexts/ProfileContext';
@@ -18,8 +16,6 @@ function Detay() {
   const { profileData, refreshProfile } = useProfile();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [detay_id, setDetay_id] = useState(0);
   const [veri, setVeri] = useState({});
@@ -395,8 +391,8 @@ function Detay() {
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
         activePage="teklif"
-        setIsProfileModalOpen={setIsProfileModalOpen}
-        setIsChangePasswordModalOpen={setIsChangePasswordModalOpen}
+        setIsProfileModalOpen={() => {}}
+        setIsChangePasswordModalOpen={() => {}}
         logout={logout}
       />
 
@@ -507,33 +503,4 @@ function Detay() {
         </div>
       </div>
 
-      {/* Profil Bilgileri Modal */}
-      {isProfileModalOpen && (
-        <ProfileModal
-          isOpen={isProfileModalOpen}
-          onClose={async () => {
-            setIsProfileModalOpen(false);
-            setIsEditingProfile(false);
-            await refreshProfile();
-          }}
-          profileData={profileData}
-          setProfileData={refreshProfile}
-          isEditing={isEditingProfile}
-          setIsEditing={setIsEditingProfile}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
-
-      {/* Şifre Değiştirme Modal */}
-      {isChangePasswordModalOpen && (
-        <ChangePasswordModal
-          isOpen={isChangePasswordModalOpen}
-          onClose={() => setIsChangePasswordModalOpen(false)}
-          fetchWithAuth={fetchWithAuth}
-          API_URL={API_URL}
-          setLoading={setLoading}
-        />
-      )}
 

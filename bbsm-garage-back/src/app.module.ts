@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { CardModule } from './card/card.module';
 import { StokModule } from './stok/stok.module';
@@ -13,6 +13,9 @@ import { HttpModule } from '@nestjs/axios';
 import { LogModule } from './log/log.module';
 import { OneriModule } from './oneri/oneri.module';
 import { NotificationModule } from './notification/notification.module';
+import { BackupModule } from './backup/backup.module';
+import { ArchiveModule } from './archive/archive.module';
+import { WebhookModule } from './webhook/webhook.module';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 
@@ -26,25 +29,35 @@ import { APP_GUARD } from '@nestjs/core';
       ttl: 60000,
       limit: 100,
     }]),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST,
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_DATABASE,
-      entities: [],
-      synchronize: true,
-      autoLoadEntities: true,
-      ssl: process.env.DB_SSL === 'true' ? {
-        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
-        ca: process.env.DB_SSL_CERT
-      } : false,
-      extra: process.env.DB_SSL === 'true' ? {
-        ssl: {
-          rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
-        }
-      } : {}
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get('DB_HOST', 'localhost'),
+        port: parseInt(configService.get('DB_PORT', '5432')),
+        username: configService.get('DB_USERNAME'),
+        password: configService.get('DB_PASSWORD', ''),
+        database: configService.get('DB_DATABASE'),
+        entities: [],
+        synchronize: true,
+        autoLoadEntities: true,
+        ssl: configService.get('DB_SSL') === 'true' ? {
+          rejectUnauthorized: configService.get('DB_SSL_REJECT_UNAUTHORIZED') !== 'false',
+          ca: configService.get('DB_SSL_CERT')
+        } : false,
+        extra: {
+          ...(configService.get('DB_SSL') === 'true' ? {
+            ssl: {
+              rejectUnauthorized: configService.get('DB_SSL_REJECT_UNAUTHORIZED') !== 'false'
+            }
+          } : {}),
+          connectionTimeoutMillis: 10000,
+          max: 10,
+        },
+        retryAttempts: 5,
+        retryDelay: 3000,
+      }),
+      inject: [ConfigService],
     }),
     AuthModule,
     CardModule,
@@ -56,6 +69,9 @@ import { APP_GUARD } from '@nestjs/core';
     LogModule,
     OneriModule,
     NotificationModule,
+    BackupModule,
+    ArchiveModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [

@@ -19,5 +19,11 @@ export class StokEntity {
 
     @Column()
     eklenisTarihi: Date;
+
+    @Column({ nullable: true })
+    kategori: string;
+
+    @Column({ type: 'int', default: 5 })
+    minStokSeviyesi: number;
     
 }

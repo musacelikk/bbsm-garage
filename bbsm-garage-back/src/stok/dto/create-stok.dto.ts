@@ -1,8 +1,26 @@
+import { IsString, IsNumber, IsOptional, IsDateString } from 'class-validator';
+
 export class CreateStokDto {
 
-    public stokAdi: string;
-    public adet: number;
-    public info: string;
-    public eklenisTarihi: Date;
+    @IsString()
+    stokAdi: string;
+
+    @IsNumber()
+    adet: number;
+
+    @IsString()
+    info: string;
+
+    @IsOptional()
+    @IsDateString()
+    eklenisTarihi?: string;
+
+    @IsOptional()
+    @IsString()
+    kategori?: string;
+
+    @IsOptional()
+    @IsNumber()
+    minStokSeviyesi?: number;
     
 }

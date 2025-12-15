@@ -19,6 +19,13 @@ function AdminPanel() {
   const [oneriler, setOneriler] = useState([]);
   const [selectedOneri, setSelectedOneri] = useState(null);
   const [isOneriModalOpen, setIsOneriModalOpen] = useState(false);
+  const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
+  const [systemSettings, setSystemSettings] = useState({
+    maintenanceMode: false,
+    maxUsers: 100,
+    emailNotifications: true,
+    smsNotifications: false,
+  });
 
   // Admin kontrolü - sayfa yüklenmeden önce kontrol et
   useEffect(() => {
@@ -620,6 +627,26 @@ function AdminPanel() {
               </button>
             </div>
 
+            {/* Öneri İstatistikleri */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 text-white p-4 rounded-lg">
+                <h3 className="text-sm font-medium mb-1">Bekleyen</h3>
+                <p className="text-2xl font-bold">{oneriler.filter(o => o.status === 'pending').length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-green-400 to-green-500 text-white p-4 rounded-lg">
+                <h3 className="text-sm font-medium mb-1">Onaylanan</h3>
+                <p className="text-2xl font-bold">{oneriler.filter(o => o.status === 'approved').length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-red-400 to-red-500 text-white p-4 rounded-lg">
+                <h3 className="text-sm font-medium mb-1">Reddedilen</h3>
+                <p className="text-2xl font-bold">{oneriler.filter(o => o.status === 'rejected').length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-blue-400 to-blue-500 text-white p-4 rounded-lg">
+                <h3 className="text-sm font-medium mb-1">Toplam</h3>
+                <p className="text-2xl font-bold">{oneriler.length}</p>
+              </div>
+            </div>
+
             {loading ? (
               <div className="flex justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -800,6 +827,84 @@ function AdminPanel() {
               </div>
             </div>
           )}
+
+          {/* Sistem Ayarları */}
+          <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+              <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Sistem Ayarları</h2>
+              <button
+                onClick={() => setIsSystemSettingsOpen(!isSystemSettingsOpen)}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {isSystemSettingsOpen ? 'Gizle' : 'Göster'}
+              </button>
+            </div>
+
+            {isSystemSettingsOpen && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-gray-700 font-medium">Bakım Modu</span>
+                      <input
+                        type="checkbox"
+                        checked={systemSettings.maintenanceMode}
+                        onChange={(e) => setSystemSettings({ ...systemSettings, maintenanceMode: e.target.checked })}
+                        className="w-5 h-5 rounded"
+                      />
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">Sistem bakım moduna alınır</p>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 font-medium mb-2">Maksimum Kullanıcı Sayısı</label>
+                    <input
+                      type="number"
+                      value={systemSettings.maxUsers}
+                      onChange={(e) => setSystemSettings({ ...systemSettings, maxUsers: parseInt(e.target.value, 10) || 100 })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-gray-700 font-medium">E-posta Bildirimleri</span>
+                      <input
+                        type="checkbox"
+                        checked={systemSettings.emailNotifications}
+                        onChange={(e) => setSystemSettings({ ...systemSettings, emailNotifications: e.target.checked })}
+                        className="w-5 h-5 rounded"
+                      />
+                    </label>
+                  </div>
+                  <div>
+                    <label className="flex items-center justify-between cursor-pointer">
+                      <span className="text-gray-700 font-medium">SMS Bildirimleri</span>
+                      <input
+                        type="checkbox"
+                        checked={systemSettings.smsNotifications}
+                        onChange={(e) => setSystemSettings({ ...systemSettings, smsNotifications: e.target.checked })}
+                        className="w-5 h-5 rounded"
+                      />
+                    </label>
+                  </div>
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    onClick={() => {
+                      // Sistem ayarlarını kaydet (backend endpoint'i eklenebilir)
+                      alert('Sistem ayarları kaydedildi (Backend endpoint gerekli)');
+                    }}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Ayarları Kaydet
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Kullanıcılar Listesi */}
           <div className="bg-white rounded-xl shadow-md p-5 md:p-6">

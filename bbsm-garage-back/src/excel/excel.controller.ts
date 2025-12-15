@@ -1,7 +1,9 @@
-import { Controller, Post, Body, Res, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Res, UseGuards, Get, Query } from '@nestjs/common';
 import { ExcelService } from './excel.service';
+import { ExcelDataDto } from './dto/excel-data.dto';
 import { Response } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TenantId } from '../auth/tenant.decorator';
 
 @Controller('excel')
 export class ExcelController {
@@ -10,7 +12,7 @@ export class ExcelController {
   @UseGuards(JwtAuthGuard)
   @Post('download')
   async downloadExcel(
-    @Body() data: any,
+    @Body() data: ExcelDataDto,
     @Res() res: Response,
   ) {
     try {
@@ -27,7 +29,7 @@ export class ExcelController {
   @UseGuards(JwtAuthGuard)
   @Post('pdf')
   async downloadPDF(
-    @Body() data: any,
+    @Body() data: ExcelDataDto,
     @Res() res: Response,
   ) {
     try {
@@ -40,4 +42,5 @@ export class ExcelController {
       res.status(500).json({ message: 'PDF download failed', error: error.message });
     }
   }
+
 } 

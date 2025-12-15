@@ -59,6 +59,12 @@ export class AuthEntity {
     @Column({ type: 'varchar', length: 20, default: 'inactive' })
     membership_status: string;
 
+    @Column({ type: 'varchar', length: 50, default: 'user' })
+    role: string; // 'user', 'admin', 'moderator'
+
+    @Column({ type: 'text', nullable: true })
+    permissions: string; // JSON string of permissions array
+
     @BeforeInsert()
     generateTenantId() {
         if (!this.tenant_id) {
