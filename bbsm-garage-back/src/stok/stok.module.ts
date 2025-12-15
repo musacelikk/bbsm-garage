@@ -9,5 +9,6 @@ import { LogModule } from '../log/log.module';
   imports: [TypeOrmModule.forFeature([StokEntity]), LogModule],
   controllers: [StokController],
   providers: [StokService],
+  exports: [StokService], // Diğer modüllerden kullanılabilmesi için export et
 })
 export class StokModule {}

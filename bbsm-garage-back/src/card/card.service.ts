@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { CreateCardDto } from './dto/create-card.dto';
 import { CardEntity } from './entities/card.entity';
 import { Repository } from 'typeorm';
@@ -6,6 +6,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { YapilanlarEntity } from 'src/yapilanlar/entities/yapilanlar.entity';
 import { CreateYapilanlarDto } from 'src/yapilanlar/dto/create-yapilanlar.dto';
 import { LogService } from '../log/log.service';
+import { StokService } from '../stok/stok.service';
 
 @Injectable()
 export class CardService {
@@ -15,6 +16,7 @@ export class CardService {
     @InjectRepository(YapilanlarEntity) 
     private yapilanlarRepository: Repository<YapilanlarEntity>,
     private readonly logService: LogService,
+    private readonly stokService: StokService,
   ) {}
 
   async create(createCardDto: CreateCardDto, tenant_id: number, username?: string) {
@@ -45,6 +47,42 @@ export class CardService {
 
       // Yapilanlar ekleniyor (card kaydedildikten sonra)
       if (yapilanlar && yapilanlar.length > 0) {
+        // Stoktan düşme işlemleri (kart eklerken stoktan düşülür)
+        for (const dto of yapilanlar) {
+          // Debug: Stok bilgilerini kontrol et
+          console.log('CardService - yapilanlar DTO:', dto);
+          console.log('CardService - isFromStock:', dto.isFromStock, 'stockId:', dto.stockId);
+          
+          if (dto.isFromStock && dto.stockId) {
+            try {
+              // Stok kontrolü ve düşme
+              const stok = await this.stokService.findOne(dto.stockId, tenant_id);
+              if (!stok || stok.length === 0) {
+                throw new BadRequestException(`Stok bulunamadı (ID: ${dto.stockId})`);
+              }
+              const stokItem = stok[0];
+              console.log('CardService - Stok bulundu:', stokItem.stokAdi, 'Mevcut adet:', stokItem.adet, 'Talep edilen:', dto.birimAdedi);
+              
+              if (stokItem.adet < dto.birimAdedi) {
+                throw new BadRequestException(
+                  `Yetersiz stok: "${stokItem.stokAdi}" için stokta sadece ${stokItem.adet} adet var, ${dto.birimAdedi} adet talep edildi.`
+                );
+              }
+              // Birim adedi kadar stoktan düş
+              console.log('CardService - Stoktan düşülüyor:', dto.birimAdedi, 'adet');
+              for (let i = 0; i < dto.birimAdedi; i++) {
+                await this.stokService.updateAdet(dto.stockId, 'decrement', tenant_id);
+              }
+              console.log('CardService - Stoktan düşme tamamlandı');
+            } catch (error) {
+              console.error('Stoktan düşme hatası:', error);
+              throw error; // Hata durumunda kart eklemeyi durdur
+            }
+          } else {
+            console.log('CardService - Bu parça stoktan seçilmemiş, stoktan düşülmeyecek');
+          }
+        }
+
         const yapilanlarEntities = yapilanlar.map(dto => {
           const yapilan = new YapilanlarEntity();
           // id'yi çıkar çünkü auto-increment
@@ -54,6 +92,9 @@ export class CardService {
           yapilan.toplamFiyat = dto.toplamFiyat;
           yapilan.tenant_id = tenant_id;
           yapilan.card = savedCard; // İlişkiyi belirtmek için card referansı ekleniyor
+          // Stok bilgilerini kaydet
+          yapilan.stockId = dto.stockId || null;
+          yapilan.isFromStock = dto.isFromStock || false;
           return yapilan;
         });
 

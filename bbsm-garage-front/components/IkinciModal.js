@@ -1,22 +1,103 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, onTeklifEkle, yapilanlar, onYapilanlarEkle, onYapilanlarSil, onYapilanlarSil_index }) => {
+const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, onTeklifEkle, yapilanlar, onYapilanlarEkle, onYapilanlarSil, onYapilanlarSil_index, fetchWithAuth, API_URL }) => {
   const [birimAdedi, setBirimAdedi] = useState('');
   const [parcaAdi, setParcaAdi] = useState('');
   const [birimFiyati, setBirimFiyati] = useState('');
   const [localYapilanlar, setLocalYapilanlar] = useState([]);
+  const [stoklar, setStoklar] = useState([]);
+  const [stokArama, setStokArama] = useState('');
+  const [stokDropdownOpen, setStokDropdownOpen] = useState(false);
+  const [selectedStockId, setSelectedStockId] = useState(null);
+  const [stockWarning, setStockWarning] = useState('');
+  const stokInputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     setLocalYapilanlar(yapilanlar);
   }, [yapilanlar]);
 
+  // Stok listesini yükle
+  useEffect(() => {
+    const fetchStoklar = async () => {
+      if (!fetchWithAuth || !API_URL) return;
+      try {
+        const response = await fetchWithAuth(`${API_URL}/stok`, { method: 'GET' });
+        if (response && response.ok) {
+          const data = await response.json();
+          setStoklar(data || []);
+        }
+      } catch (error) {
+        console.error('Stoklar yüklenirken hata:', error);
+      }
+    };
+    fetchStoklar();
+  }, [fetchWithAuth, API_URL]);
+
+  // Dropdown dışına tıklanınca kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target) && 
+          stokInputRef.current && !stokInputRef.current.contains(event.target)) {
+        setStokDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filtrelenmiş stok listesi
+  const filtrelenmisStoklar = stoklar.filter(stok => 
+    stok.stokAdi.toLowerCase().includes(stokArama.toLowerCase())
+  );
+
+  // Stoktan seçim yapıldığında
+  const handleStokSec = (stok) => {
+    setParcaAdi(stok.stokAdi);
+    setSelectedStockId(stok.id);
+    setStokArama('');
+    setStokDropdownOpen(false);
+    setStockWarning('');
+    
+    // Stok yetersizse uyarı göster
+    if (stok.adet < (parseInt(birimAdedi) || 1)) {
+      setStockWarning(`Uyarı: Stokta sadece ${stok.adet} adet var!`);
+    } else {
+      setStockWarning('');
+    }
+  };
+
+  // Birim adedi değiştiğinde stok kontrolü
+  useEffect(() => {
+    if (selectedStockId && birimAdedi) {
+      const stok = stoklar.find(s => s.id === selectedStockId);
+      if (stok) {
+        const adet = parseInt(birimAdedi) || 1;
+        if (stok.adet < adet) {
+          setStockWarning(`Uyarı: Stokta sadece ${stok.adet} adet var!`);
+        } else {
+          setStockWarning('');
+        }
+      }
+    }
+  }, [birimAdedi, selectedStockId, stoklar]);
+
   const handleIkinciModalSubmit = () => {
     const parsedBirimAdedi = parseInt(birimAdedi, 10) || 1;
     const parsedBirimFiyati = parseFloat(birimFiyati) || 0;
 
-    if (!parcaAdi ) {
+    if (!parcaAdi) {
       alert("Lütfen tüm alanları doğru bir şekilde doldurun.");
       return;
+    }
+
+    // Stok yetersizse uyarı göster ama devam et
+    if (selectedStockId) {
+      const stok = stoklar.find(s => s.id === selectedStockId);
+      if (stok && stok.adet < parsedBirimAdedi) {
+        const devam = confirm(`Uyarı: Stokta sadece ${stok.adet} adet var. Yine de devam etmek istiyor musunuz?`);
+        if (!devam) return;
+      }
     }
 
     const ikinciModalBilgiler = {
@@ -24,11 +105,16 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
       parcaAdi,
       birimFiyati: parsedBirimFiyati,
       toplamFiyat: parsedBirimAdedi * parsedBirimFiyati,
+      stockId: selectedStockId || null, // Stoktan seçildiyse stockId ekle
+      isFromStock: !!selectedStockId, // Flag: stoktan mı seçildi
     };
     onYapilanlarEkle(ikinciModalBilgiler);
     setBirimAdedi('');
     setParcaAdi('');
     setBirimFiyati('');
+    setSelectedStockId(null);
+    setStokArama('');
+    setStockWarning('');
   };
 
   const handleSubmit = async () => {
@@ -93,14 +179,88 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
               placeholder="Birim Adedi"
               className="neumorphic-input p-2 rounded-md dark-text-primary font-medium"
             />
-            <input
-              type="text"
-              id="parcaAdi"
-              value={parcaAdi}
-              onChange={(e) => setParcaAdi(e.target.value)}
-              placeholder="Parça Adı"
-              className="neumorphic-input p-2 rounded-md dark-text-primary font-medium"
-            />
+            <div className="relative" ref={dropdownRef}>
+              <input
+                type="text"
+                id="parcaAdi"
+                value={parcaAdi}
+                onChange={(e) => {
+                  setParcaAdi(e.target.value);
+                  setSelectedStockId(null);
+                  setStockWarning('');
+                  setStokArama('');
+                }}
+                placeholder="Parça Adı"
+                className="neumorphic-input p-2 rounded-md dark-text-primary font-medium w-full"
+              />
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStokArama('');
+                    setStokDropdownOpen(!stokDropdownOpen);
+                  }}
+                  className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600"
+                  title="Stoktan Seç"
+                >
+                  📦
+                </button>
+                {selectedStockId && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStokArama('');
+                      setParcaAdi('');
+                      setSelectedStockId(null);
+                      setStockWarning('');
+                    }}
+                    className="px-2 py-1 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
+                    title="Temizle"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+              {stokDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-white dark-card-bg border dark-border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                  <div className="p-2 border-b dark-border">
+                    <input
+                      ref={stokInputRef}
+                      type="text"
+                      value={stokArama}
+                      onChange={(e) => {
+                        setStokArama(e.target.value);
+                        setSelectedStockId(null);
+                        setStockWarning('');
+                      }}
+                      placeholder="Stok ara..."
+                      className="neumorphic-input p-2 rounded-md dark-text-primary font-medium w-full text-sm"
+                      autoFocus
+                    />
+                  </div>
+                  {filtrelenmisStoklar.length > 0 ? (
+                    filtrelenmisStoklar.map((stok) => (
+                      <div
+                        key={stok.id}
+                        onClick={() => handleStokSec(stok)}
+                        className="px-4 py-2 hover:dark-bg-tertiary cursor-pointer border-b dark-border last:border-b-0"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="dark-text-primary font-medium">{stok.stokAdi}</span>
+                          <span className={`text-xs ${stok.adet > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            Stok: {stok.adet}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-2 text-center dark-text-muted text-sm">
+                      Stok bulunamadı
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
             <input
               type="number"
               id="birimFiyati"
@@ -110,6 +270,11 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
               className="neumorphic-input p-2 rounded-md dark-text-primary font-medium"
             />
           </div>
+          {stockWarning && (
+            <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-500/50 rounded-lg">
+              <p className="text-sm text-yellow-400">{stockWarning}</p>
+            </div>
+          )}
 
           <div className="flex justify-end mb-4">
             <button onClick={handleIkinciModalSubmit} className="bg-yellow-500 text-white font-semibold text-md rounded-full p-2 px-6 w-full md:w-auto neumorphic-inset">
@@ -135,7 +300,12 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                 {localYapilanlar.map((asd, index) => (
                   <tr key={index} className="hover:dark-bg-tertiary transition-colors">
                     <td className="px-4 md:px-6 py-1 dark-text-primary whitespace-nowrap">{asd.birimAdedi}</td>
-                    <td className="px-4 md:px-6 py-1 dark-text-primary whitespace-nowrap">{asd.parcaAdi}</td>
+                    <td className="px-4 md:px-6 py-1 dark-text-primary whitespace-nowrap">
+                      {asd.parcaAdi}
+                      {asd.isFromStock && (
+                        <span className="ml-2 text-xs text-blue-400" title="Stoktan seçildi">📦</span>
+                      )}
+                    </td>
                     <td className="px-4 md:px-6 py-1 dark-text-primary whitespace-nowrap">{asd.birimFiyati}</td>
                     <td className="px-4 md:px-6 py-1 dark-text-primary whitespace-nowrap">{asd.toplamFiyat}</td>
                     <td className="px-4 md:px-6 py-1 whitespace-nowrap text-center text-sm font-medium">

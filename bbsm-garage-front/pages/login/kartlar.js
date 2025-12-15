@@ -1192,6 +1192,8 @@ const secilenKartlariIndir = async (type) => {
               onKartEkle={handleKartEkle} 
               onTeklifEkle={handleTeklifEkle}
               isPeriyodikBakimMode={isPeriyodikBakimMode}
+              fetchWithAuth={fetchWithAuth}
+              API_URL={API_URL}
             />
           </div>
         </div>

@@ -28,4 +28,11 @@ export class CreateYapilanlarDto {
   
   @IsOptional()
   id?: any;
+
+  @IsOptional()
+  @IsNumber()
+  stockId?: number; // Stoktan seçildiyse stok ID'si
+
+  @IsOptional()
+  isFromStock?: boolean; // Stoktan mı seçildi flag'i
   }

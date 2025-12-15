@@ -30,6 +30,13 @@ export default function Home() {
       setUsername(rememberedUsername);
       setRememberMe(true);
     }
+    
+    // Idle logout mesajını kontrol et ve göster
+    const idleLogoutMessage = localStorage.getItem('idleLogoutMessage');
+    if (idleLogoutMessage === 'true') {
+      alert('Uzun süre işlem yapmadığınız için oturum sonlandırıldı.');
+      localStorage.removeItem('idleLogoutMessage');
+    }
   }, []);
 
   const handleUsernameChange = (e) => {

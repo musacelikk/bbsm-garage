@@ -29,4 +29,10 @@ export class YapilanlarEntity {
 
     @Column({ type: 'int', nullable: true })
     toplamFiyat: number;
+
+    @Column({ type: 'int', nullable: true })
+    stockId: number; // Stoktan seçildiyse stok ID'si
+
+    @Column({ type: 'boolean', nullable: true, default: false })
+    isFromStock: boolean; // Stoktan mı seçildi flag'i
 }

@@ -37,6 +37,9 @@ export class TeklifService {
           yapilan.toplamFiyat = dto.toplamFiyat;
           yapilan.tenant_id = tenant_id;
           yapilan.teklif = savedTeklif; // İlişkiyi belirtmek için teklif referansı ekleniyor
+          // Stok bilgilerini kaydet (teklif eklerken stoktan düşülmez ama bilgi saklanır)
+          yapilan.stockId = dto.stockId || null;
+          yapilan.isFromStock = dto.isFromStock || false;
           return yapilan;
         });
 

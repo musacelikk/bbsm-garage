@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import IlkModal from './IlkModal';
 import IkinciModal from './IkinciModal';
 
-const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle, isPeriyodikBakimMode = false }) => {
+const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle, isPeriyodikBakimMode = false, fetchWithAuth, API_URL }) => {
   const [ilkModalGorunur, setIlkModalGorunur] = useState(true);
   const [ikinciModalGorunur, setIkinciModalGorunur] = useState(false);
   const [girilenBilgi, setGirilenBilgi] = useState('');
@@ -76,9 +76,8 @@ const AnaBilesen = ({ onClose, onKartEkle, onTeklifEkle, isPeriyodikBakimMode = 
           onYapilanlarEkle={handleYapilanlarEkle}
           onYapilanlarSil={handleYapilanlarSil}
           onYapilanlarSil_index={handleYapilanlarSil_index}
-          
-          
-          
+          fetchWithAuth={fetchWithAuth}
+          API_URL={API_URL}
         />
       )}
     </div>

@@ -131,13 +131,19 @@ function Teklif() {
 
       for (const teklif of secilenTeklifObjesi) {
         try {
-          // yapilanlar array'ini DTO formatına dönüştür
+          // yapilanlar array'ini DTO formatına dönüştür (stok bilgilerini koru)
           const yapilanlarDTO = (teklif.yapilanlar || []).map(y => ({
             birimAdedi: y.birimAdedi || 0,
             parcaAdi: y.parcaAdi || "",
             birimFiyati: y.birimFiyati || 0,
             toplamFiyat: y.toplamFiyat || 0,
+            stockId: y.stockId || null, // Stok ID'sini koru
+            isFromStock: y.isFromStock || false, // Stok flag'ini koru
           }));
+          
+          // Debug: Stok bilgilerini kontrol et
+          console.log('Teklif yapilanlar:', teklif.yapilanlar);
+          console.log('Yapilanlar DTO (stok bilgileri ile):', yapilanlarDTO);
 
           // Sadece DTO'da olan alanları gönder (teklif_id, tenant_id gibi alanları çıkar)
           const updatedTeklif = {
@@ -234,13 +240,19 @@ function Teklif() {
 
   const handleTeklifEkle = async (teklif) => {
     setLoading(true);
-    // yapilanlar array'ini DTO formatına dönüştür
+    // yapilanlar array'ini DTO formatına dönüştür (stok bilgilerini koru)
     const yapilanlarDTO = (teklif.yapilanlar || []).map(y => ({
       birimAdedi: y.birimAdedi || 0,
       parcaAdi: y.parcaAdi || "",
       birimFiyati: y.birimFiyati || 0,
       toplamFiyat: y.toplamFiyat || 0,
+      stockId: y.stockId || null, // Stok ID'sini koru
+      isFromStock: y.isFromStock || false, // Stok flag'ini koru
     }));
+    
+    // Debug: Stok bilgilerini kontrol et
+    console.log('Teklif ekle - yapilanlar:', teklif.yapilanlar);
+    console.log('Teklif ekle - yapilanlarDTO:', yapilanlarDTO);
 
     // Sadece DTO'da olan alanları gönder (teklif_id, tenant_id gibi alanları çıkar)
     const updatedTeklif = {

@@ -7,11 +7,13 @@ import { YapilanlarController } from 'src/yapilanlar/yapilanlar.controller';
 import { YapilanlarEntity } from 'src/yapilanlar/entities/yapilanlar.entity';
 import { TeklifEntity } from 'src/teklif/entities/teklif.entity';
 import { LogModule } from '../log/log.module';
+import { StokModule } from '../stok/stok.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([CardEntity,TeklifEntity,YapilanlarEntity]),
-    LogModule
+    LogModule,
+    StokModule
   ],
   controllers: [CardController],
   providers: [CardService],
