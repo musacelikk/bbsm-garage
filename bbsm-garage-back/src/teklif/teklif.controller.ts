@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException, UseGuards, Request } from '@nestjs/common';
 import { TeklifService } from './teklif.service';
 import { CreateTeklifDto } from './dto/create-teklif.dto';
 import { UpdateTeklifDto } from './dto/update-teklif.dto';
@@ -12,14 +12,15 @@ export class TeklifController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createTeklifDto: CreateTeklifDto, @TenantId() tenant_id: number) {
+  create(@Body() createTeklifDto: CreateTeklifDto, @TenantId() tenant_id: number, @Request() req) {
     if (isNaN(createTeklifDto.km)) {
       throw new BadRequestException('km için geçersiz integer değeri');
     }
     if (isNaN(createTeklifDto.modelYili)) {
       throw new BadRequestException('model yılı için geçersiz integer değeri');
     }
-    return this.teklifService.create(createTeklifDto, tenant_id);
+    const username = req.user?.username;
+    return this.teklifService.create(createTeklifDto, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -48,7 +49,8 @@ export class TeklifController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @TenantId() tenant_id: number) {
-    return this.teklifService.remove(+id, tenant_id);
+  remove(@Param('id') id: string, @TenantId() tenant_id: number, @Request() req) {
+    const username = req.user?.username;
+    return this.teklifService.remove(+id, tenant_id, username);
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { StokService } from './stok.service';
 import { CreateStokDto } from './dto/create-stok.dto';
 import { UpdateStokDto } from './dto/update-stok.dto';
@@ -12,8 +12,9 @@ export class StokController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createStokDto: CreateStokDto, @TenantId() tenant_id: number) {
-    return this.stokService.create(createStokDto, tenant_id);
+  create(@Body() createStokDto: CreateStokDto, @TenantId() tenant_id: number, @Request() req) {
+    const username = req.user?.username;
+    return this.stokService.create(createStokDto, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -30,8 +31,9 @@ export class StokController {
 
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateStokDto: UpdateStokDto, @TenantId() tenant_id: number) {
-    return this.stokService.update(+id, updateStokDto, tenant_id);
+  update(@Param('id') id: string, @Body() updateStokDto: UpdateStokDto, @TenantId() tenant_id: number, @Request() req) {
+    const username = req.user?.username;
+    return this.stokService.update(+id, updateStokDto, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -42,8 +44,9 @@ export class StokController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  remove(@Param('id') id: string, @TenantId() tenant_id: number) {
-    return this.stokService.remove(+id, tenant_id);
+  remove(@Param('id') id: string, @TenantId() tenant_id: number, @Request() req) {
+    const username = req.user?.username;
+    return this.stokService.remove(+id, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)

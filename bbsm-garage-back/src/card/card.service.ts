@@ -128,6 +128,9 @@ export class CardService {
       throw new NotFoundException(`Card ID: ${card_id} bulunamadı.`);
     }
 
+    // Ödeme durumu güncelleniyor mu kontrol et
+    const isPaymentUpdate = updateCardDto.hasOwnProperty('odemeAlindi') && card.odemeAlindi !== updateCardDto.odemeAlindi;
+
     // Kart bilgilerini güncelleme
     for (let key in updateCardDto) {
       if (updateCardDto.hasOwnProperty(key) && updateCardDto[key] !== undefined) {
@@ -137,8 +140,15 @@ export class CardService {
 
     const savedCard = await this.databaseRepository.save(card);
 
-    // Düzenleme logunu kaydet
-    if (username) {
+    // Ödeme durumu güncellemesi için özel log
+    if (isPaymentUpdate && username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'payment_update');
+      } catch (error) {
+        console.error('Ödeme durumu güncelleme log kaydetme hatası:', error);
+      }
+    } else if (username && !isPaymentUpdate) {
+      // Diğer düzenlemeler için normal log
       try {
         const duzenleyen = updateCardDto.duzenleyen || null;
         await this.logService.createLog(tenant_id, username, 'card_edit', duzenleyen);

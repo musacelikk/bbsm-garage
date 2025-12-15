@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { OneriEntity } from './entities/oneri.entity';
 import { CreateOneriDto } from './dto/create-oneri.dto';
 import { NotificationEntity } from '../notification/entities/notification.entity';
+import { LogService } from '../log/log.service';
 
 @Injectable()
 export class OneriService {
@@ -12,9 +13,10 @@ export class OneriService {
     private oneriRepository: Repository<OneriEntity>,
     @InjectRepository(NotificationEntity)
     private notificationRepository: Repository<NotificationEntity>,
+    private readonly logService: LogService,
   ) {}
 
-  async create(createOneriDto: CreateOneriDto, tenant_id: number) {
+  async create(createOneriDto: CreateOneriDto, tenant_id: number, username?: string) {
     const oneriData: any = {
       ...createOneriDto,
       tenant_id,
@@ -27,7 +29,18 @@ export class OneriService {
     }
     
     const oneri = this.oneriRepository.create(oneriData);
-    return await this.oneriRepository.save(oneri);
+    const savedOneri = await this.oneriRepository.save(oneri);
+
+    // Log kaydı oluştur
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'oneri_send');
+      } catch (error) {
+        console.error('Öneri gönderme log kaydetme hatası:', error);
+      }
+    }
+
+    return savedOneri;
   }
 
   async findAll(tenant_id?: number) {
@@ -51,7 +64,7 @@ export class OneriService {
     return await this.oneriRepository.findOne({ where });
   }
 
-  async approve(id: number, adminResponse?: string) {
+  async approve(id: number, adminResponse?: string, adminUsername?: string) {
     const oneri = await this.oneriRepository.findOne({ where: { id } });
     if (!oneri) {
       throw new Error('Öneri bulunamadı');
@@ -74,10 +87,19 @@ export class OneriService {
     });
     await this.notificationRepository.save(notification);
 
+    // Log kaydı oluştur
+    if (adminUsername) {
+      try {
+        await this.logService.createLog(oneri.tenant_id, adminUsername, 'oneri_approve');
+      } catch (error) {
+        console.error('Öneri onaylama log kaydetme hatası:', error);
+      }
+    }
+
     return oneri;
   }
 
-  async reject(id: number, adminResponse?: string) {
+  async reject(id: number, adminResponse?: string, adminUsername?: string) {
     const oneri = await this.oneriRepository.findOne({ where: { id } });
     if (!oneri) {
       throw new Error('Öneri bulunamadı');
@@ -99,6 +121,15 @@ export class OneriService {
       type: 'oneri_rejected',
     });
     await this.notificationRepository.save(notification);
+
+    // Log kaydı oluştur
+    if (adminUsername) {
+      try {
+        await this.logService.createLog(oneri.tenant_id, adminUsername, 'oneri_reject');
+      } catch (error) {
+        console.error('Öneri reddetme log kaydetme hatası:', error);
+      }
+    }
 
     return oneri;
   }

@@ -4,14 +4,17 @@ import { CreateStokDto } from './dto/create-stok.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { StokEntity } from './entities/stok.entity';
 import { Repository } from 'typeorm';
+import { LogService } from '../log/log.service';
 
 
 @Injectable()
 export class StokService {
   constructor(
-    @InjectRepository(StokEntity) private databaseRepository: Repository<StokEntity>,) {}
+    @InjectRepository(StokEntity) private databaseRepository: Repository<StokEntity>,
+    private readonly logService: LogService,
+  ) {}
   
-  create(createStokDto: CreateStokDto, tenant_id: number) {
+  async create(createStokDto: CreateStokDto, tenant_id: number, username?: string) {
     const stokData: any = {
       ...createStokDto,
       tenant_id,
@@ -24,7 +27,18 @@ export class StokService {
       stokData.eklenisTarihi = new Date();
     }
     
-    return this.databaseRepository.save(stokData);
+    const savedStok = await this.databaseRepository.save(stokData);
+
+    // Log kaydı oluştur
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'stok_create');
+      } catch (error) {
+        console.error('Stok ekleme log kaydetme hatası:', error);
+      }
+    }
+
+    return savedStok;
   }
 
   findAll(tenant_id: number) {
@@ -42,16 +56,36 @@ export class StokService {
     return result;
   }
 
-  update(id: number, updateStokDto: UpdateStokDto, tenant_id: number) {
-    return this.databaseRepository.update({ id, tenant_id }, updateStokDto);
+  async update(id: number, updateStokDto: UpdateStokDto, tenant_id: number, username?: string) {
+    await this.databaseRepository.update({ id, tenant_id }, updateStokDto);
+
+    // Log kaydı oluştur
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'stok_update');
+      } catch (error) {
+        console.error('Stok güncelleme log kaydetme hatası:', error);
+      }
+    }
+
+    return this.databaseRepository.findOne({ where: { id, tenant_id } });
   }
   
   removeAll(tenant_id: number) {
     return this.databaseRepository.delete({ tenant_id });
   }
   
-  remove(id: number, tenant_id: number) {
-    return this.databaseRepository.delete({ id, tenant_id });
+  async remove(id: number, tenant_id: number, username?: string) {
+    await this.databaseRepository.delete({ id, tenant_id });
+
+    // Log kaydı oluştur
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'stok_delete');
+      } catch (error) {
+        console.error('Stok silme log kaydetme hatası:', error);
+      }
+    }
   }
 
   async updateAdet(id: number, operation: 'increment' | 'decrement', tenant_id: number) {

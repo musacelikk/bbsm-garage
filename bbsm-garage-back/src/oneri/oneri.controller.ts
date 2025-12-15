@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Patch, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { OneriService } from './oneri.service';
 import { CreateOneriDto } from './dto/create-oneri.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -10,8 +10,9 @@ export class OneriController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() createOneriDto: CreateOneriDto, @TenantId() tenant_id: number) {
-    return this.oneriService.create(createOneriDto, tenant_id);
+  create(@Body() createOneriDto: CreateOneriDto, @TenantId() tenant_id: number, @Request() req) {
+    const username = req.user?.username;
+    return this.oneriService.create(createOneriDto, tenant_id, username);
   }
 
   @UseGuards(JwtAuthGuard)

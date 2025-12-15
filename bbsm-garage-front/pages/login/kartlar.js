@@ -34,6 +34,102 @@ const Kartlar = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [isSilmeModalOpen, setIsSilmeModalOpen] = useState(false);
   const [silmeDuzenleyen, setSilmeDuzenleyen] = useState('');
+  const [showBorderPreview, setShowBorderPreview] = useState(false);
+  const defaultColumns = [
+    { id: 'adSoyad', label: 'Ad-Soyad', sortKey: 'adSoyad', width: '17%', minWidth: 110 },
+    { id: 'markaModel', label: 'Marka-Model', sortKey: 'markaModel', width: '17%', minWidth: 110 },
+    { id: 'plaka', label: 'Plaka', sortKey: 'plaka', width: '10%', minWidth: 90 },
+    { id: 'km', label: 'Km', sortKey: 'km', width: '9%', minWidth: 90 },
+    { id: 'telNo', label: 'Telefon No', sortKey: 'telNo', width: '14%', minWidth: 110 },
+    { id: 'girisTarihi', label: 'Giriş Tarihi', sortKey: 'girisTarihi', width: '12%', minWidth: 110 },
+    { id: 'periyodikBakim', label: 'Türü', sortKey: 'periyodikBakim', width: '10%', minWidth: 100 },
+    { id: 'odeme', label: 'Ödeme', width: '3%', minWidth: 60 },
+    { id: 'goruntule', label: 'Görüntüle', width: '3%', minWidth: 60 },
+    { id: 'indir', label: 'İndir', width: '5%', minWidth: 80 },
+  ];
+  const [columns, setColumns] = useState(defaultColumns);
+  const [draggedColumnId, setDraggedColumnId] = useState(null);
+  const [resizingInfo, setResizingInfo] = useState(null);
+  const [resizeGuideX, setResizeGuideX] = useState(null);
+  const tableWrapperRef = useRef(null);
+
+  // Kolon ayarlarını yerelde sakla
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const savedColumns = window.localStorage.getItem('kartlarTableColumns');
+    if (savedColumns) {
+      try {
+        setColumns(JSON.parse(savedColumns));
+      } catch (err) {
+        console.error('Kolonları yükleme hatası', err);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem('kartlarTableColumns', JSON.stringify(columns));
+  }, [columns]);
+
+  const handleColumnDragStart = (columnId) => {
+    setDraggedColumnId(columnId);
+  };
+
+  const handleColumnDrop = (targetColumnId) => {
+    if (!draggedColumnId || draggedColumnId === targetColumnId) return;
+    setColumns((prev) => {
+      const draggedIndex = prev.findIndex((col) => col.id === draggedColumnId);
+      const targetIndex = prev.findIndex((col) => col.id === targetColumnId);
+      if (draggedIndex === -1 || targetIndex === -1) return prev;
+      const updated = [...prev];
+      const [removed] = updated.splice(draggedIndex, 1);
+      updated.splice(targetIndex, 0, removed);
+      return updated;
+    });
+    setDraggedColumnId(null);
+  };
+
+  const handleResizeMouseDown = (e, columnId) => {
+    e.stopPropagation();
+    e.preventDefault();
+    const col = columns.find((c) => c.id === columnId);
+    if (!col) return;
+    setResizingInfo({
+      columnId,
+      startX: e.clientX,
+      startWidth: col.width || 120,
+    });
+  };
+
+  useEffect(() => {
+    if (!resizingInfo) return;
+    const handleMouseMove = (e) => {
+      const deltaX = e.clientX - resizingInfo.startX;
+      const nextWidth = Math.min(
+        420,
+        Math.max(90, (resizingInfo.startWidth || 120) + deltaX)
+      );
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.id === resizingInfo.columnId ? { ...col, width: nextWidth } : col
+        )
+      );
+      if (tableWrapperRef.current) {
+        const rect = tableWrapperRef.current.getBoundingClientRect();
+        setResizeGuideX(Math.max(0, Math.min(rect.width, e.clientX - rect.left)));
+      }
+    };
+    const handleMouseUp = () => {
+      setResizingInfo(null);
+      setResizeGuideX(null);
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [resizingInfo]);
 
 
   const DetailPage = (id) => {
@@ -78,6 +174,128 @@ const Kartlar = () => {
     setSilmeDuzenleyen('');
     setIsSilmeModalOpen(true);
   };
+
+  const getTdClass = (columnId) => {
+    switch (columnId) {
+      case 'adSoyad':
+        return 'px-6 py-4 font-medium dark-text-primary whitespace-nowrap';
+      case 'markaModel':
+      case 'km':
+        return 'px-6 py-4 dark-text-secondary';
+      case 'plaka':
+        return 'px-6 py-4 text-green-400';
+      case 'telNo':
+        return 'px-6 py-4';
+      case 'girisTarihi':
+        return 'px-6 py-4 text-blue-400';
+      case 'periyodikBakim':
+        return 'px-6 py-4';
+      case 'odeme':
+      case 'goruntule':
+        return 'px-2 py-3 text-center';
+      case 'indir':
+        return 'px-2 py-3 flex gap-1 justify-center';
+      default:
+        return 'px-6 py-4';
+    }
+  };
+
+  const renderCellContent = (column, kart) => {
+    switch (column.id) {
+      case 'adSoyad':
+        return capitalizeWords(kart.adSoyad || "Tanımsız");
+      case 'markaModel':
+        return capitalizeWords(kart.markaModel || "Tanımsız");
+      case 'plaka':
+        return toUpperCase(kart.plaka || "Tanımsız");
+      case 'km':
+        return kart.km !== undefined && kart.km !== null ? formatKm(kart.km) : "Tanımsız";
+      case 'telNo':
+        return kart.telNo && kart.telNo !== "Tanımsız" ? (
+          <a 
+            href={formatWhatsAppLink(kart.telNo)} 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
+            title="WhatsApp ile aç"
+          >
+            {kart.telNo}
+          </a>
+        ) : (
+          <span className="dark-text-secondary">Tanımsız</span>
+        );
+      case 'girisTarihi':
+        return kart.girisTarihi || "Tanımsız";
+      case 'periyodikBakim':
+        return (
+          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+            kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1'
+              ? 'bg-purple-500/20 text-purple-300' 
+              : 'dark-bg-tertiary dark-text-secondary'
+          }`}>
+            {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? 'Periyodik Bakım' : 'Normal'}
+          </span>
+        );
+      case 'odeme':
+        return (
+          <button
+            onClick={() => toggleOdemeDurumu(kart.card_id)}
+            className={`p-2 pl-4 pr-4 rounded-full font-medium transition-all neumorphic-inset ${
+              kart.odemeAlindi 
+                ? 'bg-green-500 text-white hover:bg-green-600' 
+                : 'dark-bg-tertiary dark-text-secondary hover:dark-bg-secondary'
+            }`}
+            title={kart.odemeAlindi ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
+          >
+            {kart.odemeAlindi ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            )}
+          </button>
+        );
+      case 'goruntule':
+        return (
+          <Link href={DetailPage(kart.card_id)} className="bg-yellow-500 p-2 pl-4 pr-4 rounded-full font-medium dark-text-primary hover:underline neumorphic-outset">
+            Detay
+          </Link>
+        );
+      case 'indir':
+        return (
+          <>
+            <button
+              onClick={() => handlePDFDownload(kart.card_id)}
+              className="bg-green-600 p-1.5 rounded-md text-white hover:bg-green-700 active:scale-95 transition-transform"
+              title="PDF indir"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+            </button>
+            <button
+              onClick={() => handlePrint(kart.card_id)}
+              className="bg-orange-600 p-1.5 rounded-md text-white hover:bg-orange-700 active:scale-95 transition-transform"
+              title="Yazdır"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+              </svg>
+            </button>
+          </>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const borderColorClass = showBorderPreview ? 'border-slate-500' : 'border-transparent';
+  const borderWeightTable = showBorderPreview ? 'border-2' : 'border-0';
+  const borderWeightHead = showBorderPreview ? 'border-b-2' : 'border-b-0';
+  const borderWeightCell = showBorderPreview ? 'border-r-2' : 'border-r-0';
 
   const handleConfirmDelete = async () => {
     // Düzenleyen alanı zorunlu kontrolü
@@ -420,6 +638,64 @@ const Kartlar = () => {
     setLoading(false);
 };
 
+const handlePrint = async (kartId) => {
+  setLoading(true);
+
+  const kart = kartlar.find(k => k.card_id === kartId);
+  if (!kart) {
+    console.error("Seçilen kart bulunamadı");
+    setLoading(false);
+    return;
+  }
+
+  const dataToSend = {
+    vehicleInfo: {
+      adSoyad: kart.adSoyad,
+      telNo: kart.telNo,
+      markaModel: kart.markaModel,
+      plaka: kart.plaka,
+      km: kart.km,
+      modelYili: kart.modelYili,
+      sasi: kart.sasi,
+      renk: kart.renk,
+      girisTarihi: kart.girisTarihi,
+      notlar: kart.notlar,
+      adres: kart.adres,
+    },
+    data: kart.yapilanlar.map(item => ({
+      birimAdedi: item.birimAdedi,
+      parcaAdi: item.parcaAdi,
+      birimFiyati: item.birimFiyati,
+      toplamFiyat: item.birimFiyati * item.birimAdedi,
+    })),
+    notes: kart.notlar
+  };
+
+  try {
+    const response = await fetchWithAuth(`${API_URL}/excel/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToSend)
+    });
+
+    if (!response.ok) throw new Error('Network response was not ok');
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+    }
+  } catch (error) {
+    console.error('PDF yazdırma hatası:', error);
+    showError('PDF yazdırma sırasında bir hata oluştu.');
+  }
+  setLoading(false);
+};
+
   const handlePDFDownload = async (kartId) => {
   setLoading(true);
 
@@ -610,46 +886,59 @@ const secilenKartlariIndir = async (type) => {
                     </div>
                   </div>
                 </div>
+                <div className="hidden md:flex items-center ml-4 gap-2 text-xs md:text-sm dark-text-secondary">
+                  <label className="flex items-center gap-2 select-none">
+                    <input
+                      type="checkbox"
+                      checked={showBorderPreview}
+                      onChange={() => setShowBorderPreview(!showBorderPreview)}
+                      className="w-4 h-4 dark-bg-tertiary dark-border rounded focus:ring-blue-500"
+                    />
+                    Kenar önizleme
+                  </label>
+                </div>
               </div>
             </div>
 
-            <div className="overflow-auto">
+            <div className="overflow-x-auto md:overflow-x-hidden">
               {/* Desktop Table */}
-              <div className="hidden md:block">
-                <table className="w-full text-sm text-left dark-text-secondary font-medium">
-                  <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
+              <div className="hidden md:block relative" ref={tableWrapperRef}>
+                {resizeGuideX !== null && (
+                  <div
+                    className="absolute top-0 bottom-0 w-px bg-slate-400 pointer-events-none"
+                    style={{ left: resizeGuideX }}
+                  />
+                )}
+                <table className={`w-full text-sm text-left dark-text-secondary font-medium ${borderWeightTable} ${borderColorClass} rounded-xl overflow-hidden`}>
+                  <thead className={`text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset ${borderWeightHead} ${borderColorClass}`}>
                     <tr>
-                      <th scope="col" className="p-4"></th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('adSoyad')}>
-                        Ad-Soyad {sortConfig.key === 'adSoyad' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('markaModel')}>
-                        Marka-Model {sortConfig.key === 'markaModel' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('plaka')}>
-                        Plaka {sortConfig.key === 'plaka' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('km')}>
-                        Km {sortConfig.key === 'km' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('telNo')}>
-                        Telefon No {sortConfig.key === 'telNo' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('girisTarihi')}>
-                        Giriş Tarihi {sortConfig.key === 'girisTarihi' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3 cursor-pointer" onClick={() => handleSort('periyodikBakim')}>
-                        Türü {sortConfig.key === 'periyodikBakim' && (sortConfig.direction === 'asc' ? '▲' : '▼')}
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Ödeme
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        Görüntüle
-                      </th>
-                      <th scope="col" className="px-6 py-3">
-                        İndİr
-                      </th>
+                      <th scope="col" className={`p-3 ${borderWeightCell} ${borderColorClass} w-10`}></th>
+                      {columns.map((column) => (
+                        <th
+                          key={column.id}
+                          scope="col"
+                          draggable
+                          onDragStart={() => handleColumnDragStart(column.id)}
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={() => handleColumnDrop(column.id)}
+                          onClick={() => column.sortKey && handleSort(column.sortKey)}
+                          className={`px-6 py-3 select-none ${borderWeightCell} ${borderColorClass} ${
+                            column.sortKey ? 'cursor-pointer' : 'cursor-move'
+                          } relative`}
+                          style={{ width: column.width || 'auto', minWidth: column.minWidth || 90 }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span>{column.label}</span>
+                            {column.sortKey && sortConfig.key === column.sortKey && (
+                              <span>{sortConfig.direction === 'asc' ? '▲' : '▼'}</span>
+                            )}
+                          </div>
+                          <span
+                            className="absolute right-0 top-0 h-full w-2 cursor-col-resize"
+                            onMouseDown={(e) => handleResizeMouseDown(e, column.id)}
+                          />
+                        </th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="dark-card-bg divide-y dark-border">
@@ -662,7 +951,7 @@ const secilenKartlariIndir = async (type) => {
                       kart.girisTarihi?.toString().includes(aramaTerimi)
                     ).map((kart) => (
                       <tr key={kart.card_id}>
-                        <td className="w-4 p-4">
+                        <td className={`w-10 p-3 ${borderWeightCell} ${borderColorClass}`}>
                           <div className="flex items-center">
                             <input
                               type="checkbox"
@@ -673,81 +962,15 @@ const secilenKartlariIndir = async (type) => {
                             <label htmlFor={`checkbox-table-${kart.card_id}`} className="sr-only">checkbox</label>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium dark-text-primary whitespace-nowrap">
-                          {capitalizeWords(kart.adSoyad || "Tanımsız")}
-                        </td>
-                        <td className="px-6 py-4 dark-text-secondary">
-                          {capitalizeWords(kart.markaModel || "Tanımsız")}
-                        </td>
-                        <td className="px-6 py-4 text-green-400">
-                          {toUpperCase(kart.plaka || "Tanımsız")}
-                        </td>
-                        <td className="px-6 py-4 dark-text-secondary">
-                          {kart.km !== undefined && kart.km !== null ? formatKm(kart.km) : "Tanımsız"}
-                        </td>
-                        <td className="px-6 py-4">
-                          {kart.telNo && kart.telNo !== "Tanımsız" ? (
-                            <a 
-                              href={formatWhatsAppLink(kart.telNo)} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300 hover:underline cursor-pointer"
-                              title="WhatsApp ile aç"
-                            >
-                              {kart.telNo}
-                            </a>
-                          ) : (
-                            <span className="dark-text-secondary">Tanımsız</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 text-blue-400">
-                          {kart.girisTarihi || "Tanımsız"}
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                            kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1'
-                              ? 'bg-purple-500/20 text-purple-300' 
-                              : 'dark-bg-tertiary dark-text-secondary'
-                          }`}>
-                            {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? 'Periyodik Bakım' : 'Normal'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <button
-                            onClick={() => toggleOdemeDurumu(kart.card_id)}
-                            className={`p-2 pl-4 pr-4 rounded-full font-medium transition-all neumorphic-inset ${
-                              kart.odemeAlindi 
-                                ? 'bg-green-500 text-white hover:bg-green-600' 
-                                : 'dark-bg-tertiary dark-text-secondary hover:dark-bg-secondary'
-                            }`}
-                            title={kart.odemeAlindi ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
+                        {columns.map((column) => (
+                          <td
+                            key={`${kart.card_id}-${column.id}`}
+                            className={`${getTdClass(column.id)} ${borderWeightCell} ${borderColorClass}`}
+                            style={{ width: column.width || 'auto', minWidth: column.minWidth || 90 }}
                           >
-                            {kart.odemeAlindi ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            )}
-                          </button>
-                        </td>
-                        <td className="px-6 py-4">
-                          <Link href={DetailPage(kart.card_id)} className="bg-yellow-500 p-2 pl-4 pr-4 rounded-full font-medium dark-text-primary hover:underline neumorphic-outset">Detay</Link>
-                        </td>
-                        <td className="px-6 py-4 flex gap-2">
-                          <button onClick={() => handleExcelDownload(kart.card_id)} className="bg-green-500 p-2 pl-4 pr-4 rounded-full font-medium text-my-beyaz hover:underline">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                            </svg>
-                          </button>
-                          <button onClick={() => handlePDFDownload(kart.card_id)} className="bg-orange-600 p-2 pl-4 pr-4 rounded-full font-medium text-my-beyaz hover:underline">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                          </button>
-                        </td>
+                            {renderCellContent(column, kart)}
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>

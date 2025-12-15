@@ -833,7 +833,7 @@ export class AuthService {
         throw new UnauthorizedException('Admin yetkisi gerekli');
       }
 
-      return await this.oneriService.approve(oneriId, adminResponse);
+      return await this.oneriService.approve(oneriId, adminResponse, payload.username);
     } catch (error) {
       console.error('approveOneri error:', error);
       if (error instanceof UnauthorizedException) {
@@ -857,7 +857,7 @@ export class AuthService {
         throw new UnauthorizedException('Admin yetkisi gerekli');
       }
 
-      return await this.oneriService.reject(oneriId, adminResponse);
+      return await this.oneriService.reject(oneriId, adminResponse, payload.username);
     } catch (error) {
       console.error('rejectOneri error:', error);
       if (error instanceof UnauthorizedException) {

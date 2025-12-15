@@ -6,6 +6,7 @@ import { TeklifEntity } from "./entities/teklif.entity";
 import { YapilanlarEntity } from "../yapilanlar/entities/yapilanlar.entity";
 import { Repository } from "typeorm";
 import { InjectRepository } from '@nestjs/typeorm';
+import { LogService } from '../log/log.service';
 
 @Injectable()
 export class TeklifService {
@@ -14,9 +15,10 @@ export class TeklifService {
     private databaseRepository: Repository<TeklifEntity>,
     @InjectRepository(YapilanlarEntity)
     private yapilanlarRepository: Repository<YapilanlarEntity>,
+    private readonly logService: LogService,
   ) {}
 
-  async create(createTeklifDto: CreateTeklifDto, tenant_id: number): Promise<TeklifEntity> {
+  async create(createTeklifDto: CreateTeklifDto, tenant_id: number, username?: string): Promise<TeklifEntity> {
     try {
       // teklif_id, yapilanlar ve Entity'de olmayan alanları çıkar
       const { teklif_id, yapilanlar, odemeAlindi, periyodikBakim, duzenleyen, ...teklifDataWithoutId } = createTeklifDto;
@@ -40,6 +42,15 @@ export class TeklifService {
 
         // Yapilanlar'ı direkt kaydet (tenant_id'nin kaybolmaması için)
         await this.yapilanlarRepository.save(yapilanlarEntities);
+      }
+
+      // Log kaydı oluştur
+      if (username) {
+        try {
+          await this.logService.createLog(tenant_id, username, 'teklif_create');
+        } catch (error) {
+          console.error('Teklif oluşturma log kaydetme hatası:', error);
+        }
       }
 
       return this.databaseRepository.findOne({ where: { teklif_id: savedTeklif.teklif_id }, relations: ["yapilanlar"] });
@@ -93,8 +104,17 @@ export class TeklifService {
     return this.findOne(id, tenant_id);
   }
 
-  async remove(id: number, tenant_id: number): Promise<void> {
+  async remove(id: number, tenant_id: number, username?: string): Promise<void> {
     await this.databaseRepository.delete({ teklif_id: id, tenant_id });
+    
+    // Log kaydı oluştur
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'teklif_delete');
+      } catch (error) {
+        console.error('Teklif silme log kaydetme hatası:', error);
+      }
+    }
   }
 
   async removeAll(tenant_id: number): Promise<void> {
