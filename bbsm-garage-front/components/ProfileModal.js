@@ -11,6 +11,9 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [emailChanged, setEmailChanged] = useState(false);
 
   useEffect(() => {
     if (profileData) {
@@ -22,6 +25,8 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
         adres: profileData.adres || '',
         vergiNo: profileData.vergiNo || ''
       });
+      setEmailVerified(profileData.emailVerified || false);
+      setEmailChanged(false);
     }
   }, [profileData]);
 
@@ -31,6 +36,12 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
       ...prev,
       [name]: value
     }));
+    
+    // E-posta değiştiğinde doğrulama durumunu sıfırla
+    if (name === 'email' && value !== profileData?.email) {
+      setEmailChanged(true);
+      setEmailVerified(false);
+    }
   };
 
   const handleSave = async () => {
@@ -50,8 +61,10 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
       if (response.ok) {
         const updatedData = await response.json();
         setProfileData(updatedData);
+        setEmailVerified(updatedData.emailVerified || false);
         setSuccess(true);
         setIsEditing(false);
+        setEmailChanged(false);
         setTimeout(() => setSuccess(false), 3000);
       } else {
         const errorData = await response.json();
@@ -62,6 +75,34 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
       setError('Profil güncellenirken bir hata oluştu');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendVerificationEmail = async () => {
+    setIsSendingVerification(true);
+    setError('');
+    setSuccess(false);
+    
+    try {
+      const response = await fetchWithAuth(`${API_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 5000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Doğrulama email\'i gönderilemedi');
+      }
+    } catch (error) {
+      console.error('Doğrulama email gönderme hatası:', error);
+      setError('Doğrulama email\'i gönderilirken bir hata oluştu');
+    } finally {
+      setIsSendingVerification(false);
     }
   };
 
@@ -98,13 +139,60 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
 
           {success && (
             <div className="mb-4 p-3 bg-green-500/20 border dark-border rounded-lg neumorphic-inset">
-              <p className="text-sm text-green-400">Profil başarıyla güncellendi!</p>
+              <p className="text-sm text-green-400">
+                {emailChanged && !emailVerified 
+                  ? 'Profil güncellendi! Doğrulama email\'i gönderildi. Lütfen email\'inizi kontrol edin.' 
+                  : !isSendingVerification && !emailChanged && formData.email && !emailVerified
+                  ? 'Doğrulama email\'i gönderildi. Lütfen email\'inizi kontrol edin.'
+                  : 'Profil başarıyla güncellendi!'}
+              </p>
             </div>
           )}
 
           {error && (
             <div className="mb-4 p-3 bg-red-500/20 border dark-border rounded-lg neumorphic-inset">
               <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
+          {/* E-posta Doğrulama Uyarısı */}
+          {!isEditing && formData.email && !emailVerified && (
+            <div className="mb-4 p-4 bg-yellow-500/20 border border-yellow-500/50 dark-border rounded-lg neumorphic-inset">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-3 flex-1">
+                  <svg className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <div className="flex-1">
+                    <h3 className="text-sm font-semibold text-yellow-400 mb-1">E-posta Doğrulanmadı</h3>
+                    <p className="text-xs text-yellow-300/80">
+                      E-posta adresinizi doğrulamak için lütfen e-posta kutunuzu kontrol edin veya yeni bir doğrulama email'i gönderin.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleSendVerificationEmail}
+                  disabled={isSendingVerification}
+                  className="px-4 py-2 text-sm font-semibold bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors neumorphic-inset flex items-center gap-2 flex-shrink-0"
+                >
+                  {isSendingVerification ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Gönderiliyor...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Doğrula
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           )}
 
@@ -208,19 +296,71 @@ const ProfileModal = ({ isOpen, onClose, profileData, setProfileData, isEditing,
                   )}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="block text-sm font-semibold dark-text-primary mb-1">E-posta</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-semibold dark-text-primary">E-posta</label>
+                    {!isEditing && formData.email && (
+                      <div className="flex items-center gap-2">
+                        {emailVerified ? (
+                          <span className="flex items-center gap-1 text-xs text-green-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Doğrulandı
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs text-yellow-400">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Doğrulanmadı
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
                   {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
-                      placeholder="ornek@firma.com"
-                    />
+                    <div className="space-y-2">
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
+                        placeholder="ornek@firma.com"
+                      />
+                      {emailChanged && (
+                        <p className="text-xs text-yellow-400">
+                          E-posta değiştirildi. Kaydettikten sonra doğrulama email'i gönderilecek.
+                        </p>
+                      )}
+                    </div>
                   ) : (
-                    <div className="p-3 dark-bg-tertiary neumorphic-inset rounded-lg border dark-border">
+                    <div className="p-3 dark-bg-tertiary neumorphic-inset rounded-lg border dark-border flex items-center justify-between">
                       <p className="dark-text-primary">{formData.email || 'Belirtilmemiş'}</p>
+                      {formData.email && !emailVerified && (
+                        <button
+                          onClick={handleSendVerificationEmail}
+                          disabled={isSendingVerification}
+                          className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors neumorphic-inset flex items-center gap-1"
+                        >
+                          {isSendingVerification ? (
+                            <>
+                              <svg className="animate-spin h-3 w-3" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Gönderiliyor...
+                            </>
+                          ) : (
+                            <>
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              Doğrulama Gönder
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

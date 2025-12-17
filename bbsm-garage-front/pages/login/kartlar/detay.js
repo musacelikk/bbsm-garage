@@ -42,6 +42,9 @@ function Detay() {
   const [yapilanlar, setYapilanlar] = useState([]);
   const [toplamFiyat, setToplamFiyat] = useState(0);
   const [mevcutModeller, setMevcutModeller] = useState([]);
+  const [stoklar, setStoklar] = useState([]);
+  const [aktifStokSatiri, setAktifStokSatiri] = useState(null);
+  const [stokArama, setStokArama] = useState('');
 
   // Marka değiştiğinde model listesini güncelle
   useEffect(() => {
@@ -180,13 +183,60 @@ function Detay() {
     setLoading(false);
   };
 
+  // Stok listesini yükle (detay sayfasında da stoktan seçim için)
+  useEffect(() => {
+    const fetchStoklar = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_URL}/stok`, { method: 'GET' });
+        if (response && response.ok) {
+          const data = await response.json();
+          setStoklar(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Stoklar yüklenirken hata:', error);
+      }
+    };
+    fetchStoklar();
+  }, [fetchWithAuth]);
+
   const handleChange2 = (event, index) => {
     setLoading(true);
     const { name, value } = event.target;
     const updatedYapilanlar = [...yapilanlar];
     updatedYapilanlar[index] = { ...updatedYapilanlar[index], [name]: value };
+    // Parça adı manuel değişirse, stoktan bağımsız kabul et
+    if (name === 'parcaAdi') {
+      updatedYapilanlar[index].isFromStock = false;
+      updatedYapilanlar[index].stockId = null;
+    }
     setYapilanlar(updatedYapilanlar);
     setLoading(false);
+  };
+
+  const handleStokDropdownToggle = (index) => {
+    if (aktifStokSatiri === index) {
+      setAktifStokSatiri(null);
+      setStokArama('');
+    } else {
+      const mevcutParcaAdi = yapilanlar[index]?.parcaAdi || '';
+      setAktifStokSatiri(index);
+      setStokArama(mevcutParcaAdi);
+    }
+  };
+
+  const handleStokSec = (index, stok) => {
+    const updated = [...yapilanlar];
+    const mevcut = updated[index] || {};
+    updated[index] = {
+      ...mevcut,
+      parcaAdi: stok.stokAdi,
+      birimFiyati: stok.fiyat || mevcut.birimFiyati || 0,
+      stockId: stok.id,
+      isFromStock: true,
+    };
+    setYapilanlar(updated);
+    setAktifStokSatiri(null);
+    setStokArama('');
   };
 
   const handleDelete = async (id) => {
@@ -310,6 +360,8 @@ function Detay() {
         birimFiyati: parseFloat(yapilan.birimFiyati) || null,
         parcaAdi: yapilan.parcaAdi,
         toplamFiyat: yapilan.toplamFiyat,
+        stockId: yapilan.stockId || null,
+        isFromStock: yapilan.isFromStock || false,
       }));
 
       const yapilanlarResponse = await fetchWithAuth(`${API_URL}/card/${detay_id}/yapilanlar`, {
@@ -349,6 +401,8 @@ function Detay() {
       birimFiyati: parseFloat(yapilan.birimFiyati) || null,
       parcaAdi: yapilan.parcaAdi,
       toplamFiyat: yapilan.toplamFiyat,
+      stockId: yapilan.stockId || null,
+      isFromStock: yapilan.isFromStock || false,
     }));
 
     try {
@@ -607,15 +661,44 @@ function Detay() {
                         />
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <input
-                          onChange={(event) => handleChange2(event, index)}
-                          placeholder="Parça Adı"
-                          value={yapilan.parcaAdi || ''}
-                          type="text"
-                          name="parcaAdi"
-                          className="neumorphic-input p-2 rounded-md w-full truncate dark-text-primary"
-                          title={yapilan.parcaAdi || ''}
-                        />
+                        <div className="relative">
+                          <input
+                            onChange={(event) => {
+                              handleChange2(event, index);
+                              if (aktifStokSatiri === index) {
+                                setStokArama(event.target.value);
+                              }
+                            }}
+                            placeholder="Parça Adı (Manuel veya Stoktan)"
+                            value={yapilan.parcaAdi || ''}
+                            type="text"
+                            name="parcaAdi"
+                            className="neumorphic-input p-2 rounded-md w-full truncate dark-text-primary pr-16"
+                            title={yapilan.parcaAdi || ''}
+                          />
+                          <div className="absolute inset-y-0 right-0 flex items-center space-x-1 pr-1">
+                          {yapilan.isFromStock && (
+                            <img 
+                              src="/images/envanterikon.png" 
+                              alt="Stoktan seçildi" 
+                              className="w-4 h-4 ml-1" 
+                              title="Stoktan seçildi"
+                            />
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleStokDropdownToggle(index)}
+                            className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 flex items-center justify-center"
+                            title="Stoktan Seç"
+                          >
+                            <img 
+                              src="/images/envanterikon.png" 
+                              alt="Envanter" 
+                              className="w-3 h-3"
+                            />
+                          </button>
+                        </div>
+                        </div>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <input
@@ -644,6 +727,64 @@ function Detay() {
           <h2 className="text-xl text-end font-bold dark-text-primary p-4 sm:p-8 m-4 mt-8">Toplam Fiyat : {toplamFiyat} </h2>
         </div>
       </div>
+
+      {/* Stok / Envanter Modal */}
+      {aktifStokSatiri !== null && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9998]">
+          <div className="dark-card-bg neumorphic-card rounded-3xl max-w-lg w-full mx-4 p-4 md:p-6 border dark-border">
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-lg font-semibold dark-text-primary">Envanterden Seç</h4>
+              <button
+                onClick={() => {
+                  setAktifStokSatiri(null);
+                  setStokArama('');
+                }}
+                className="dark-text-muted hover:dark-text-primary"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="mb-3">
+              <input
+                type="text"
+                value={stokArama}
+                onChange={(e) => setStokArama(e.target.value)}
+                placeholder="Stok ara..."
+                className="neumorphic-input p-2 rounded-md dark-text-primary font-medium w-full text-sm"
+                autoFocus
+              />
+            </div>
+            <div className="max-h-64 overflow-y-auto border dark-border rounded-lg">
+              {stoklar
+                .filter(stok =>
+                  (stok.stokAdi || '').toLowerCase().includes((stokArama || '').toLowerCase())
+                )
+                .map(stok => (
+                  <button
+                    key={stok.id}
+                    type="button"
+                    onClick={() => handleStokSec(aktifStokSatiri, stok)}
+                    className="w-full text-left px-4 py-2 hover:dark-bg-tertiary cursor-pointer border-b dark-border last:border-b-0 flex justify-between items-center"
+                  >
+                    <span className="dark-text-primary text-sm font-medium truncate">
+                      {stok.stokAdi}
+                    </span>
+                    <span className={`text-xs ${stok.adet > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      Stok: {stok.adet}
+                    </span>
+                  </button>
+                ))}
+              {stoklar.length === 0 && (
+                <div className="px-4 py-3 text-center dark-text-muted text-sm">
+                  Stok bulunamadı
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Düzenleyen Modal */}
       {isDuzenleyenModalOpen && (

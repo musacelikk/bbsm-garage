@@ -192,31 +192,33 @@ export const AuthProvider = ({ children }) => {
       {children}
       {/* Idle Warning Modal */}
       {showIdleWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] backdrop-blur-sm">
-          <div className="dark-card-bg neumorphic-card rounded-3xl max-w-md w-full mx-4 p-6 md:p-8">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] backdrop-blur-sm p-4">
+          <div className="dark-card-bg neumorphic-card rounded-2xl md:rounded-3xl max-w-md w-full mx-auto p-4 sm:p-6 md:p-8">
             <div className="text-center">
-              <div className="mb-4">
-                <svg className="w-16 h-16 mx-auto text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="mb-3 sm:mb-4">
+                <svg className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h2 className="text-2xl font-bold dark-text-primary mb-4">Oturum Sonlandırılıyor</h2>
-              <p className="dark-text-secondary mb-6">
+              <h2 className="text-xl sm:text-2xl font-bold dark-text-primary mb-3 sm:mb-4">Oturum Sonlandırılıyor</h2>
+              <p className="text-sm sm:text-base dark-text-secondary mb-4 sm:mb-6 leading-relaxed">
                 Uzun süredir işlem yapılmadığı için oturumunuz 5 dakika içinde sonlandırılacak.
-                <br />
-                <br />
+                <br className="hidden sm:block" />
+                <span className="block sm:hidden mt-2"></span>
+                <br className="hidden sm:block" />
+                <span className="block sm:hidden mt-2"></span>
                 Devam etmek istiyor musunuz?
               </p>
-              <div className="flex gap-4 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
                 <button
                   onClick={handleContinueSession}
-                  className="bg-blue-500 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-600 transition-colors neumorphic-inset"
+                  className="w-full sm:w-auto bg-blue-500 text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-blue-600 active:bg-blue-700 transition-colors neumorphic-inset"
                 >
                   Devam Et
                 </button>
                 <button
                   onClick={logout}
-                  className="bg-red-500 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-600 transition-colors neumorphic-inset"
+                  className="w-full sm:w-auto bg-red-500 text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg hover:bg-red-600 active:bg-red-700 transition-colors neumorphic-inset"
                 >
                   Çıkış Yap
                 </button>

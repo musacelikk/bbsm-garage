@@ -71,6 +71,28 @@ function Gelir() {
     fetchTeklifler();
   }, []);
 
+  // Sayfa/sekme yeniden öne geldiğinde verileri tazele
+  useEffect(() => {
+    const handleVisibilityOrFocus = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        fetchKartlar();
+        fetchTeklifler();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleVisibilityOrFocus);
+      document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleVisibilityOrFocus);
+        document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      }
+    };
+  }, []);
+
   // Tarih formatını düzelt (YYYY-MM-DD formatına çevir)
   const formatTarih = (tarih) => {
     if (!tarih) return null;
@@ -96,15 +118,10 @@ function Gelir() {
     return tarihFormatted >= baslangicFormatted && tarihFormatted <= bitisFormatted;
   };
 
-  // Yapılanlar toplam fiyatını hesapla
+  // Yapılanlar toplam fiyatını hesapla (dashboard ile birebir aynı mantık)
   const hesaplaToplamFiyat = (yapilanlar) => {
     if (!yapilanlar || !Array.isArray(yapilanlar)) return 0;
     return yapilanlar.reduce((toplam, item) => {
-      // Önce toplamFiyat alanını kontrol et, yoksa hesapla
-      if (item.toplamFiyat !== undefined && item.toplamFiyat !== null) {
-        return toplam + (parseFloat(item.toplamFiyat) || 0);
-      }
-      // toplamFiyat yoksa birimFiyati * birimAdedi ile hesapla
       const birimFiyati = parseFloat(item.birimFiyati) || 0;
       const birimAdedi = parseInt(item.birimAdedi, 10) || 0;
       return toplam + (birimFiyati * birimAdedi);
@@ -128,6 +145,9 @@ function Gelir() {
       filtrelenmisKartlar = kartlar;
       filtrelenmisTeklifler = teklifler;
     }
+
+    // Gelir hesaplamasında sadece ödemesi alınmış kartları kullan
+    filtrelenmisKartlar = filtrelenmisKartlar.filter(kart => kart.odemeAlindi);
 
     // Marka/Model filtresi
     if (filtreMarkaModel && filtreMarkaModel.trim() !== '') {
@@ -166,20 +186,17 @@ function Gelir() {
     if (filtreTip === 'kartlar') {
       filtrelenmisTeklifler = [];
     } else if (filtreTip === 'teklifler') {
+      // Ciro hesaplarında teklifleri kullanmıyoruz ama listelemede filtre açısından kalsın
       filtrelenmisKartlar = [];
     }
 
-    // Toplam gelir hesapla
+    // Toplam gelir hesapla (SADECE KARTLAR, teklifler hariç)
     const kartlarToplam = filtrelenmisKartlar.reduce((toplam, kart) => {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
-    const tekliflerToplam = filtrelenmisTeklifler.reduce((toplam, teklif) => {
-      return toplam + hesaplaToplamFiyat(teklif.yapilanlar);
-    }, 0);
-
-    const toplamGelir = kartlarToplam + tekliflerToplam;
-    const toplamIslemSayisi = filtrelenmisKartlar.length + filtrelenmisTeklifler.length;
+    const toplamGelir = kartlarToplam;
+    const toplamIslemSayisi = filtrelenmisKartlar.length;
     
     // Son 7 günlük ciro hesapla
     let son7GunlukCiro = 0;
@@ -190,25 +207,18 @@ function Gelir() {
     const bugunStr = bugun.toISOString().split('T')[0];
     
     const son7GunKartlar = kartlar.filter(kart => 
-      tarihAraligindaMi(kart.girisTarihi, yediGunOnceStr, bugunStr)
+      kart.odemeAlindi && tarihAraligindaMi(kart.girisTarihi, yediGunOnceStr, bugunStr)
     );
-    const son7GunTeklifler = teklifler.filter(teklif => 
-      tarihAraligindaMi(teklif.girisTarihi, yediGunOnceStr, bugunStr)
-    );
-    
     const son7GunKartlarToplam = son7GunKartlar.reduce((toplam, kart) => {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
-    
-    const son7GunTekliflerToplam = son7GunTeklifler.reduce((toplam, teklif) => {
-      return toplam + hesaplaToplamFiyat(teklif.yapilanlar);
-    }, 0);
-    
-    son7GunlukCiro = son7GunKartlarToplam + son7GunTekliflerToplam;
 
-    // Günlük gelir hesapla
+    // Son 7 günlük ciro da sadece kartlardan
+    son7GunlukCiro = son7GunKartlarToplam;
+
+    // Günlük gelir hesapla (sadece kartlar)
     const gunlukGelir = {};
-    [...filtrelenmisKartlar, ...filtrelenmisTeklifler].forEach(item => {
+    filtrelenmisKartlar.forEach(item => {
       const tarih = formatTarih(item.girisTarihi);
       if (tarih) {
         if (!gunlukGelir[tarih]) {

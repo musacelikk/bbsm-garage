@@ -114,6 +114,10 @@ function Dashboard() {
       return kartTarihi >= birOncekiAyBaslangic && kartTarihi <= birOncekiAyBitis;
     });
 
+    // Gelir hesaplamalarında sadece ödemesi alınmış kartları kullan
+    const buAykiOdemesiAlinmisKartlar = buAykiKartlar.filter(kart => kart.odemeAlindi);
+    const birOncekiAykiOdemesiAlinmisKartlar = birOncekiAykiKartlar.filter(kart => kart.odemeAlindi);
+
     // Bu ayki gelir hesapla
     const hesaplaToplamFiyat = (yapilanlar) => {
       if (!yapilanlar || !Array.isArray(yapilanlar)) return 0;
@@ -124,11 +128,11 @@ function Dashboard() {
       }, 0);
     };
 
-    const buAykiGelir = buAykiKartlar.reduce((toplam, kart) => {
+    const buAykiGelir = buAykiOdemesiAlinmisKartlar.reduce((toplam, kart) => {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
-    const birOncekiAykiGelir = birOncekiAykiKartlar.reduce((toplam, kart) => {
+    const birOncekiAykiGelir = birOncekiAykiOdemesiAlinmisKartlar.reduce((toplam, kart) => {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
@@ -143,7 +147,7 @@ function Dashboard() {
       if (!kart.girisTarihi) return false;
       const kartTarihi = new Date(kart.girisTarihi);
       // Tarih aralığı kontrolü: yediGunOnce <= kartTarihi <= bugunSonu
-      return kartTarihi >= yediGunOnce && kartTarihi <= bugunSonu;
+      return kart.odemeAlindi && kartTarihi >= yediGunOnce && kartTarihi <= bugunSonu;
     });
 
     const son7GunlukCiro = son7GunKartlar.reduce((toplam, kart) => {
@@ -182,14 +186,16 @@ function Dashboard() {
           return kartTarihi >= ayBaslangicKontrol && kartTarihi <= ayBitisKontrol;
         });
 
-        const oAyGelir = oAyKartlar.reduce((toplam, kart) => {
+        const oAyOdemesiAlinmisKartlar = oAyKartlar.filter(kart => kart.odemeAlindi);
+
+        const oAyGelir = oAyOdemesiAlinmisKartlar.reduce((toplam, kart) => {
           return toplam + hesaplaToplamFiyat(kart.yapilanlar);
         }, 0);
 
         gelirVerileri.push({
           tarih: `${mevcutYil}-${String(mevcutAy + 1).padStart(2, '0')}-01`,
           gelir: oAyGelir,
-          islemSayisi: oAyKartlar.length,
+          islemSayisi: oAyOdemesiAlinmisKartlar.length,
           tip: 'ay'
         });
         
@@ -210,7 +216,7 @@ function Dashboard() {
           if (!kart.girisTarihi) return false;
           const kartTarihi = new Date(kart.girisTarihi);
           kartTarihi.setHours(0, 0, 0, 0);
-          return kartTarihi.getTime() === tarih.getTime();
+          return kart.odemeAlindi && kartTarihi.getTime() === tarih.getTime();
         });
 
         const oGunGelir = oGunKartlar.reduce((toplam, kart) => {

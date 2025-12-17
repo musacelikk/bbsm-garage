@@ -14,6 +14,9 @@ function AdminPanel() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [isMembershipModalOpen, setIsMembershipModalOpen] = useState(false);
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deletePasswordError, setDeletePasswordError] = useState('');
   const [membershipRequests, setMembershipRequests] = useState([]);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [oneriler, setOneriler] = useState([]);
@@ -144,6 +147,47 @@ function AdminPanel() {
     } catch (error) {
       console.error('Kullanıcı durumu güncelleme hatası:', error);
       alert('Kullanıcı durumu güncellenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletePassword) {
+      setDeletePasswordError('Lütfen şifrenizi girin');
+      return;
+    }
+
+    if (!selectedUser) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setDeletePasswordError('');
+      
+      const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password: deletePassword }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(data.message || 'Kullanıcı başarıyla silindi');
+        setIsDeleteUserModalOpen(false);
+        setDeletePassword('');
+        setSelectedUser(null);
+        await fetchUsers();
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Kullanıcı silinemedi' }));
+        setDeletePasswordError(errorData.message || 'Kullanıcı silinemedi');
+      }
+    } catch (error) {
+      console.error('Kullanıcı silme hatası:', error);
+      setDeletePasswordError('Kullanıcı silinirken bir hata oluştu');
     } finally {
       setLoading(false);
     }
@@ -1137,6 +1181,18 @@ function AdminPanel() {
                               >
                                 Süre Ver
                               </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedUser(user);
+                                  setIsDeleteUserModalOpen(true);
+                                  setDeletePassword('');
+                                  setDeletePasswordError('');
+                                }}
+                                disabled={loading}
+                                className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Sil
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1174,6 +1230,94 @@ function AdminPanel() {
           onAdd={addMembership}
           loading={loading}
         />
+      )}
+
+      {/* Kullanıcı Silme Modal */}
+      {isDeleteUserModalOpen && selectedUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Kullanıcı Sil</h2>
+              <button
+                onClick={() => {
+                  setIsDeleteUserModalOpen(false);
+                  setSelectedUser(null);
+                  setDeletePassword('');
+                  setDeletePasswordError('');
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-red-800 mb-1">Dikkat!</p>
+                  <p className="text-sm text-red-700">
+                    <strong>{selectedUser.username}</strong> kullanıcısını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Admin Şifresi
+              </label>
+              <input
+                type="password"
+                value={deletePassword}
+                onChange={(e) => {
+                  setDeletePassword(e.target.value);
+                  setDeletePasswordError('');
+                }}
+                className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                  deletePasswordError
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                }`}
+                placeholder="Şifrenizi girin"
+                autoFocus
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleDeleteUser();
+                  }
+                }}
+              />
+              {deletePasswordError && (
+                <p className="mt-1 text-sm text-red-600">{deletePasswordError}</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setIsDeleteUserModalOpen(false);
+                  setSelectedUser(null);
+                  setDeletePassword('');
+                  setDeletePasswordError('');
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleDeleteUser}
+                disabled={loading || !deletePassword}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Siliniyor...' : 'Sil'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Bildirim kutusu dışına tıklanınca kapat */}

@@ -219,7 +219,7 @@ export class AuthService {
     };
   }
 
-  async updateProfile(username: string, profileData: Partial<AuthEntity>) {
+  async updateProfile(username: string, profileData: Partial<AuthEntity>, tenantId?: number) {
     const user = await this.databaseRepository.findOne({
       where: { username }
     });
@@ -228,13 +228,41 @@ export class AuthService {
       throw new Error('Kullanıcı bulunamadı');
     }
 
-    // Güncellenebilir alanlar
-    if (profileData.firmaAdi !== undefined) user.firmaAdi = profileData.firmaAdi;
-    if (profileData.yetkiliKisi !== undefined) user.yetkiliKisi = profileData.yetkiliKisi;
-    if (profileData.telefon !== undefined) user.telefon = profileData.telefon;
-    if (profileData.email !== undefined) user.email = profileData.email;
-    if (profileData.adres !== undefined) user.adres = profileData.adres;
-    if (profileData.vergiNo !== undefined) user.vergiNo = profileData.vergiNo;
+    // E-posta değiştiyse doğrulama durumunu sıfırla ve yeni token oluştur
+    if (profileData.email !== undefined && profileData.email !== user.email) {
+      user.email = profileData.email;
+      user.emailVerified = false;
+      user.verificationToken = null;
+      user.verificationTokenExpiry = null;
+      
+      // Yeni doğrulama token'ı oluştur
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationTokenExpiry = new Date();
+      verificationTokenExpiry.setHours(verificationTokenExpiry.getHours() + 24);
+      
+      user.verificationToken = verificationToken;
+      user.verificationTokenExpiry = verificationTokenExpiry;
+      
+      // Yeni e-posta adresine doğrulama email'i gönder
+      try {
+        await this.emailService.sendVerificationEmail(
+          user.email,
+          verificationToken,
+          user.username
+        );
+      } catch (error) {
+        console.error('Doğrulama email gönderme hatası:', error);
+        // Email gönderme hatası profil güncellemeyi engellemez
+      }
+    } else {
+      // E-posta değişmediyse sadece diğer alanları güncelle
+      if (profileData.firmaAdi !== undefined) user.firmaAdi = profileData.firmaAdi;
+      if (profileData.yetkiliKisi !== undefined) user.yetkiliKisi = profileData.yetkiliKisi;
+      if (profileData.telefon !== undefined) user.telefon = profileData.telefon;
+      if (profileData.email !== undefined) user.email = profileData.email;
+      if (profileData.adres !== undefined) user.adres = profileData.adres;
+      if (profileData.vergiNo !== undefined) user.vergiNo = profileData.vergiNo;
+    }
 
     await this.databaseRepository.save(user);
 
@@ -247,7 +275,8 @@ export class AuthService {
       telefon: user.telefon,
       email: user.email,
       adres: user.adres,
-      vergiNo: user.vergiNo
+      vergiNo: user.vergiNo,
+      emailVerified: user.emailVerified
     };
   }
 
@@ -512,6 +541,67 @@ export class AuthService {
         throw error;
       }
       throw new Error(error.message || 'Kullanıcı durumu güncellenemedi');
+    }
+  }
+
+  async deleteUser(authorization: string, userId: number, adminPassword: string) {
+    if (!authorization) {
+      throw new UnauthorizedException('Token gerekli');
+    }
+
+    try {
+      const token = authorization.replace('Bearer ', '');
+      const payload = this.jwtService.verify(token);
+      
+      // Admin kontrolü
+      if (!payload.isAdmin || payload.username !== 'musacelik') {
+        throw new UnauthorizedException('Admin yetkisi gerekli');
+      }
+
+      // Admin şifre kontrolü
+      const ADMIN_PASSWORD = '123456789';
+      if (adminPassword !== ADMIN_PASSWORD) {
+        throw new UnauthorizedException('Şifre yanlış');
+      }
+
+      // Silinecek kullanıcıyı bul
+      const userToDelete = await this.databaseRepository.findOne({
+        where: { id: userId }
+      });
+
+      if (!userToDelete) {
+        throw new Error('Kullanıcı bulunamadı');
+      }
+
+      // Admin kendisini silemez
+      if (userToDelete.username === 'musacelik') {
+        throw new Error('Admin kullanıcısı silinemez');
+      }
+
+      // Kullanıcıyı sil
+      await this.databaseRepository.remove(userToDelete);
+
+      // Log kaydı oluştur
+      try {
+        await this.logService.createLog(
+          userToDelete.tenant_id, 
+          payload.username, 
+          'user_deleted', 
+          `Kullanıcı silindi: ${userToDelete.username} (ID: ${userId})`
+        );
+      } catch (error) {
+        console.error('Kullanıcı silme log kaydetme hatası:', error);
+      }
+
+      return { 
+        success: true, 
+        message: `Kullanıcı başarıyla silindi: ${userToDelete.username}`
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new Error(error.message || 'Kullanıcı silinemedi');
     }
   }
 

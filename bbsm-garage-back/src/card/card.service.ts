@@ -121,22 +121,152 @@ export class CardService {
   }
 
   async updateCardYapilanlar(createYapilanlarDtoArray: CreateYapilanlarDto[], card_id: number, tenant_id: number) {
-
-    let card = await this.databaseRepository.findOne({ where: { card_id, tenant_id }, relations: ['yapilanlar'] });
+    // Kartı ve mevcut yapılanları çek
+    const card = await this.databaseRepository.findOne({ 
+      where: { card_id, tenant_id }, 
+      relations: ['yapilanlar'] 
+    });
 
     if (!card) {
       throw new NotFoundException(`Card ID: ${card_id} bulunamadı.`);
     }
 
-    // Create YapilanlarEntity array
+    const eskiYapilanlar = card.yapilanlar || [];
+
+    // Eski yapılanları id üzerinden map'le (stok bilgisini okuyabilmek için)
+    const eskiYapilanMap = new Map<number, YapilanlarEntity>();
+    for (const eski of eskiYapilanlar) {
+      if (eski.id) {
+        eskiYapilanMap.set(eski.id, eski);
+      }
+    }
+
+    // Yardımcı: DTO için stok bilgisini çözümlüyoruz
+    const resolveStockInfo = (dto: any) => {
+      let stockId: number | null | undefined = dto.stockId;
+      let isFromStock: boolean | undefined = dto.isFromStock;
+
+      // DTO stok bilgisi taşımıyorsa, eski kayıttan al
+      if ((stockId === undefined || stockId === null || isFromStock === undefined) && dto.id) {
+        const eski = eskiYapilanMap.get(dto.id);
+        if (eski) {
+          if (stockId === undefined || stockId === null) {
+            stockId = (eski as any).stockId;
+          }
+          if (isFromStock === undefined) {
+            isFromStock = (eski as any).isFromStock;
+          }
+        }
+      }
+
+      return {
+        stockId: stockId ?? null,
+        isFromStock: !!isFromStock,
+      };
+    };
+
+    // Verilen listeye göre stok kullanımı hesapla (stockId bazlı toplam adet)
+    const hesaplaStokKullanim = (
+      items: { id?: number; stockId?: number | null; isFromStock?: boolean; birimAdedi?: number }[],
+      fromDtos: boolean,
+    ) => {
+      const map = new Map<number, number>();
+
+      for (const item of items) {
+        let stockId = item.stockId;
+        let isFromStock = item.isFromStock;
+
+        if (fromDtos) {
+          const info = resolveStockInfo(item);
+          stockId = info.stockId;
+          isFromStock = info.isFromStock;
+        }
+
+        if (isFromStock && stockId) {
+          const mevcut = map.get(stockId) || 0;
+          const adet = item.birimAdedi || 0;
+          map.set(stockId, mevcut + adet);
+        }
+      }
+
+      return map;
+    };
+
+    // Eski ve yeni stok kullanımlarını hazırla
+    const eskiKullanim = hesaplaStokKullanim(
+      eskiYapilanlar.map(y => ({
+        id: y.id,
+        stockId: (y as any).stockId,
+        isFromStock: (y as any).isFromStock,
+        birimAdedi: y.birimAdedi,
+      })),
+      false,
+    );
+
+    const yeniKullanim = hesaplaStokKullanim(
+      createYapilanlarDtoArray.map(dto => ({
+        id: (dto as any).id,
+        stockId: (dto as any).stockId,
+        isFromStock: (dto as any).isFromStock,
+        birimAdedi: dto.birimAdedi,
+      })),
+      true,
+    );
+
+    // 1) Ortak stockId'ler için delta uygula
+    for (const [stockId, yeniAdet] of yeniKullanim.entries()) {
+      const eskiAdet = eskiKullanim.get(stockId) || 0;
+      const delta = yeniAdet - eskiAdet;
+
+      if (delta > 0) {
+        // Fazladan kullanılan adet kadar stoktan düş (stok kontrolü ile)
+        const stokKaydi = await this.stokService.findOne(stockId, tenant_id);
+        if (!stokKaydi || stokKaydi.length === 0) {
+          throw new BadRequestException(`Stok bulunamadı (ID: ${stockId})`);
+        }
+        const stokItem = stokKaydi[0];
+        if (stokItem.adet < delta) {
+          throw new BadRequestException(
+            `Yetersiz stok: "${stokItem.stokAdi}" için stokta sadece ${stokItem.adet} adet var, ${delta} adet ek kullanım talep edildi.`,
+          );
+        }
+        for (let i = 0; i < delta; i++) {
+          await this.stokService.updateAdet(stockId, 'decrement', tenant_id);
+        }
+      } else if (delta < 0) {
+        // Daha az kullanılmış, fark kadar stoğa iade et (kontrol yok)
+        const iadeAdet = -delta;
+        for (let i = 0; i < iadeAdet; i++) {
+          await this.stokService.updateAdet(stockId, 'increment', tenant_id);
+        }
+      }
+
+      // Bu stockId işlendi, eskiKullanim'dan çıkar
+      eskiKullanim.delete(stockId);
+    }
+
+    // 2) Sadece eskide olup yenide hiç olmayan stockId'ler (tamamen silinen parçalar)
+    for (const [stockId, eskiAdet] of eskiKullanim.entries()) {
+      if (eskiAdet > 0) {
+        for (let i = 0; i < eskiAdet; i++) {
+          await this.stokService.updateAdet(stockId, 'increment', tenant_id);
+        }
+      }
+    }
+
+    // 3) Yeni yapılanlar listesini oluştur ve stok bilgilerini de kaydet
     const yapilanlarEntities: YapilanlarEntity[] = createYapilanlarDtoArray.map(dto => {
       const yapilan = new YapilanlarEntity();
+      const { stockId, isFromStock } = resolveStockInfo(dto as any);
+
       yapilan.birimAdedi = dto.birimAdedi;
       yapilan.parcaAdi = dto.parcaAdi;
       yapilan.birimFiyati = dto.birimFiyati;
       yapilan.toplamFiyat = dto.toplamFiyat;
       yapilan.tenant_id = tenant_id;
       yapilan.card = card; // İlişkiyi belirtmek için card referansı ekleniyor
+      (yapilan as any).stockId = stockId;
+      (yapilan as any).isFromStock = isFromStock;
       return yapilan;
     });
 
@@ -224,20 +354,45 @@ export class CardService {
       where: { card_id, tenant_id }, 
       relations: ['yapilanlar'] 
     });
-    if (card) {
-      await this.databaseRepository.remove(card);
-      
-      // Silme logunu kaydet
-      if (username) {
-        try {
-          await this.logService.createLog(tenant_id, username, 'card_delete', duzenleyen);
-        } catch (error) {
-          console.error('Silme log kaydetme hatası:', error);
-          // Log hatası silmeyi engellemez
-        }
-      }
-    } else {
+
+    if (!card) {
       throw new NotFoundException(`Card with ID ${card_id} not found.`);
+    }
+
+    const yapilanlar = card.yapilanlar || [];
+
+    // Bu kart silinirken kullanılan stokları iade et (delta = -eskiKullanim)
+    const stokKullanimMap = new Map<number, number>();
+    for (const y of yapilanlar) {
+      const anyY = y as any;
+      const stockId: number | null | undefined = anyY.stockId;
+      const isFromStock: boolean = !!anyY.isFromStock;
+      const adet = y.birimAdedi || 0;
+
+      if (isFromStock && stockId && adet > 0) {
+        const mevcut = stokKullanimMap.get(stockId) || 0;
+        stokKullanimMap.set(stockId, mevcut + adet);
+      }
+    }
+
+    // Her stok için toplam kullanılan adet kadar stoğa geri ekle
+    for (const [stockId, toplamAdet] of stokKullanimMap.entries()) {
+      for (let i = 0; i < toplamAdet; i++) {
+        await this.stokService.updateAdet(stockId, 'increment', tenant_id);
+      }
+    }
+
+    // Kartı ve ilişkili yapılanları sil
+    await this.databaseRepository.remove(card);
+    
+    // Silme logunu kaydet
+    if (username) {
+      try {
+        await this.logService.createLog(tenant_id, username, 'card_delete', duzenleyen);
+      } catch (error) {
+        console.error('Silme log kaydetme hatası:', error);
+        // Log hatası silmeyi engellemez
+      }
     }
   }
 }

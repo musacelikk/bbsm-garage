@@ -34,6 +34,7 @@ function Ayarlar() {
   });
   const [profileError, setProfileError] = useState('');
   const [profileSuccess, setProfileSuccess] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
 
   // Şifre form state
   const [oldPassword, setOldPassword] = useState('');
@@ -108,6 +109,7 @@ function Ayarlar() {
       });
 
       if (response.ok) {
+        const updatedData = await response.json();
         await refreshProfile();
         setProfileSuccess(true);
         setIsEditingProfile(false);
@@ -125,6 +127,38 @@ function Ayarlar() {
       showError(errorMessage);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendVerificationEmail = async () => {
+    setIsSendingVerification(true);
+    setProfileError('');
+    setProfileSuccess(false);
+    
+    try {
+      const response = await fetchWithAuth(`${API_URL}/auth/resend-verification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        setProfileSuccess(true);
+        success('Doğrulama email\'i gönderildi. Lütfen email\'inizi kontrol edin.');
+        setTimeout(() => setProfileSuccess(false), 5000);
+      } else {
+        const errorData = await response.json();
+        setProfileError(errorData.message || 'Doğrulama email\'i gönderilemedi');
+        showError(errorData.message || 'Doğrulama email\'i gönderilemedi');
+      }
+    } catch (error) {
+      console.error('Doğrulama email gönderme hatası:', error);
+      const errorMessage = 'Doğrulama email\'i gönderilirken bir hata oluştu';
+      setProfileError(errorMessage);
+      showError(errorMessage);
+    } finally {
+      setIsSendingVerification(false);
     }
   };
 
@@ -447,18 +481,61 @@ function Ayarlar() {
                   <div className="dark-card-bg neumorphic-inset rounded-lg p-4 md:p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-lg font-medium dark-text-primary">Profil Bilgileri</h2>
-                      {!isEditingProfile && (
-                        <button
-                          onClick={() => setIsEditingProfile(true)}
-                          className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors flex items-center gap-2"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                          Düzenle
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {!isEditingProfile && profileData?.email && !profileData?.emailVerified && (
+                          <button
+                            onClick={handleSendVerificationEmail}
+                            disabled={isSendingVerification}
+                            className="px-4 py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors neumorphic-inset flex items-center gap-2"
+                          >
+                            {isSendingVerification ? (
+                              <>
+                                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Gönderiliyor...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                E-posta Doğrula
+                              </>
+                            )}
+                          </button>
+                        )}
+                        {!isEditingProfile && (
+                          <button
+                            onClick={() => setIsEditingProfile(true)}
+                            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors flex items-center gap-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Düzenle
+                          </button>
+                        )}
+                      </div>
                     </div>
+
+                    {/* E-posta Doğrulama Uyarısı */}
+                    {!isEditingProfile && profileData?.email && !profileData?.emailVerified && (
+                      <div className="mb-4 p-4 bg-yellow-500/20 border border-yellow-500/50 dark-border rounded-lg neumorphic-inset">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-5 h-5 text-yellow-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-yellow-400 mb-1">E-posta Doğrulanmadı</h3>
+                            <p className="text-xs text-yellow-300/80">
+                              E-posta adresinizi doğrulamak için lütfen e-posta kutunuzu kontrol edin veya yeni bir doğrulama email'i gönderin.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {profileSuccess && (
                       <div className="mb-4 p-3 bg-green-500/20 border dark-border rounded-lg neumorphic-inset">

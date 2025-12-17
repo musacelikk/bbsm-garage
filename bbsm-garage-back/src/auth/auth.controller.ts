@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Put, Patch, UseGuards, Headers, Request, Query, Param } from '@nestjs/common';
+import { Body, Controller, Get, Post, Put, Patch, Delete, UseGuards, Headers, Request, Query, Param } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthDto } from './auth.dto';
 import { ChangePasswordDto } from './change-password.dto';
@@ -7,6 +7,7 @@ import { ResetPasswordDto } from './reset-password.dto';
 import { SelectMembershipPlanDto } from './dto/select-membership-plan.dto';
 import { ToggleUserActiveDto } from './dto/toggle-user-active.dto';
 import { AddMembershipDto } from './dto/add-membership.dto';
+import { DeleteUserDto } from './dto/delete-user.dto';
 import { AdminResponseDto } from './dto/admin-response.dto';
 import { MembershipRequestResponseDto } from './dto/membership-request-response.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -148,6 +149,16 @@ export class AuthController {
     const userId = parseInt(id);
     const customDate = addMembershipDto.customDate ? new Date(addMembershipDto.customDate) : undefined;
     return this.authService.addMembership(authorization, userId, addMembershipDto.months, customDate);
+  }
+
+  @Delete('admin/users/:id')
+  async deleteUser(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Body() deleteUserDto: DeleteUserDto
+  ) {
+    const userId = parseInt(id);
+    return this.authService.deleteUser(authorization, userId, deleteUserDto.password);
   }
 
   @UseGuards(JwtAuthGuard)

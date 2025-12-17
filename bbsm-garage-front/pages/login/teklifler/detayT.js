@@ -502,5 +502,9 @@ function Detay() {
           <h2 className="text-xl text-end font-bold dark-text-primary p-4 sm:p-8 m-4 mt-8">Toplam Fiyat : {toplamFiyat} </h2>
         </div>
       </div>
+    </>
+  );
+}
 
+export default withAuth(Detay);
 
