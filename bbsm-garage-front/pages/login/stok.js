@@ -11,11 +11,13 @@ import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function Stok() {
     const { fetchWithAuth, getUsername, logout } = useAuth();
     const { loading, setLoading } = useLoading();
     const { profileData, refreshProfile } = useProfile();
+    const { activeTheme } = useTheme();
     const username = getUsername() || 'Kullanıcı';
     const [isOpen, setIsOpen] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -260,7 +262,7 @@ function Stok() {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                      <button type="submit" className="text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Ekle</button>
+                      <button type="submit" className={`bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
                   </div>
               </form>
               </div>
@@ -327,7 +329,7 @@ function Stok() {
                   </div>
                   <div className="flex items-center">
                     <div className="items-center bg-red-600 p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4">
-                      <button onClick={handleClearItems} href="" className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Seçilenleri Sil</button>
+                      <button onClick={handleClearItems} href="" className={`font-semibold text-xs md:text-sm lg:text-md whitespace-nowrap ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Seçilenleri Sil</button>
                     </div>
                     <div className="pr-4 items-center pl-4">
                       <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between">
@@ -453,7 +455,7 @@ function Stok() {
                   <label htmlFor="info" className="block mb-1 text-sm font-medium dark-text-primary">Açıklama</label>
                   <input type="text" id="info" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-3 touch-manipulation min-h-[44px]" placeholder="Açıklama Giriniz ..." value={info} onChange={(e) => handleChange(e, setInfo)} required/>
                 </div>
-                <button type="submit" className="w-full text-white bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-3 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Ekle</button>
+                <button type="submit" className={`w-full bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-3 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
               </form>
             </div>
             {/* Search bar at the top */}
@@ -469,7 +471,7 @@ function Stok() {
             </div>
             {/* Action button full width */}
             <div className="flex flex-col gap-2 w-full mb-4">
-              <button onClick={handleClearItems} className="w-full bg-red-600 text-white font-semibold py-3 rounded-full neumorphic-inset touch-manipulation min-h-[44px] active:scale-95">Seçilenleri Sil</button>
+              <button onClick={handleClearItems} className={`w-full bg-red-600 font-semibold py-3 rounded-full neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Seçilenleri Sil</button>
             </div>
             {/* Stok list as cards */}
             <div className="w-full dark-card-bg neumorphic-card rounded-xl overflow-hidden">

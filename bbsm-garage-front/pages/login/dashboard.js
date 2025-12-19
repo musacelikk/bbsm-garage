@@ -1169,7 +1169,7 @@ function Dashboard() {
                             return (
                               <div key={kart.card_id} className="flex items-center justify-between p-2 hover:dark-bg-tertiary rounded-lg transition-all neumorphic-inset group">
                                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <div className="w-8 h-8 bg-amber-500/30 rounded-lg flex items-center justify-center text-white font-bold text-xs transition-all group-hover:scale-105">
+                                  <div className="w-8 h-8 bg-amber-500/30 rounded-lg flex items-center justify-center text-amber-700 dark:text-white font-bold text-xs transition-all group-hover:scale-105">
                                     {kart.plaka ? kart.plaka.substring(0, 2).toUpperCase() : '??'}
                                   </div>
                                   <div className="flex-1 min-w-0">

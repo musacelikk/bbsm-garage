@@ -10,11 +10,13 @@ import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
 import { useToast } from '../../contexts/ToastContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function BildirimTercihleri() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const { success, error: showError } = useToast();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -198,7 +200,7 @@ function BildirimTercihleri() {
                   <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="px-6 py-3 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 disabled:opacity-50"
+                    className={`px-6 py-3 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                   >
                     {loading ? 'Kaydediliyor...' : 'Kaydet'}
                   </button>

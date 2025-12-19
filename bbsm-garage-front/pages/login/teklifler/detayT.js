@@ -9,11 +9,14 @@ import { API_URL } from '../../../config';
 import Sidebar from '../../../components/Sidebar';
 import Navbar from '../../../components/Navbar';
 import { useProfile } from '../../../contexts/ProfileContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 function Detay() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
+  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -409,13 +412,13 @@ function Detay() {
             <h2 className="text-2xl font-bold dark-text-primary mb-4">Kart Bilgileri</h2>
             <div className="flex items-center flex-wrap gap-2 sm:gap-0">
               <div className="items-center bg-green-500 p-2 px-4 sm:px-8 rounded-full neumorphic-inset">
-                <button onClick={handleExcelDownload} className="font-semibold text-white text-md">Excel</button>
+                <button onClick={handleExcelDownload} className={`font-semibold text-md ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Excel</button>
               </div>
               <div className="items-center bg-orange-600 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4 neumorphic-inset">
-                <button onClick={handlePDFDownload} className="font-semibold text-white text-md">PDF</button>
+                <button onClick={handlePDFDownload} className={`font-semibold text-md ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>PDF</button>
               </div>
               <div className="items-center bg-yellow-500 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4 neumorphic-inset">
-                <button onClick={handleSaveCardInfo} className="font-semibold text-white text-md">Kaydet</button>
+                <button onClick={handleSaveCardInfo} className={`font-semibold text-md ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Kaydet</button>
               </div>
             </div>
           </div>
@@ -435,8 +438,8 @@ function Detay() {
           <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 mt-8'>
             <h2 className="text-2xl font-bold dark-text-primary">Yapılanlar</h2>
             <div className="flex flex-wrap gap-2">
-              <button onClick={handleEkleYapilanlar} className="p-2 px-4 sm:px-8 rounded-full font-semibold bg-blue-500 text-white text-md neumorphic-inset">Ekle</button>
-              <button onClick={handleSaveYapilanlar} className="p-2 px-4 sm:px-8 rounded-full font-semibold bg-yellow-500 text-white text-md neumorphic-inset">Kaydet</button>
+              <button onClick={handleEkleYapilanlar} className={`p-2 px-4 sm:px-8 rounded-full font-semibold bg-blue-500 text-md neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
+              <button onClick={handleSaveYapilanlar} className={`p-2 px-4 sm:px-8 rounded-full font-semibold bg-yellow-500 text-md neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Kaydet</button>
             </div>
           </div>
           <div className="overflow-x-auto -mx-6 sm:mx-0">

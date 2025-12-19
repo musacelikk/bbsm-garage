@@ -9,8 +9,8 @@ import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
-import { useToast } from '../../contexts/ToastContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useToast } from '../../contexts/ToastContext';
 
 function Ayarlar() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
@@ -486,7 +486,7 @@ function Ayarlar() {
                           <button
                             onClick={handleSendVerificationEmail}
                             disabled={isSendingVerification}
-                            className="px-4 py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors neumorphic-inset flex items-center gap-2"
+                            className={`px-4 py-2 text-sm bg-yellow-500 rounded-lg hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors neumorphic-inset flex items-center gap-2 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                           >
                             {isSendingVerification ? (
                               <>
@@ -509,7 +509,7 @@ function Ayarlar() {
                         {!isEditingProfile && (
                           <button
                             onClick={() => setIsEditingProfile(true)}
-                            className="px-4 py-2 text-sm bg-blue-500 text-white rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors flex items-center gap-2"
+                            className={`px-4 py-2 text-sm bg-blue-500 rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors flex items-center gap-2 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -712,7 +712,7 @@ function Ayarlar() {
                           <button
                             onClick={handleProfileSave}
                             disabled={loading}
-                            className="px-6 py-2 bg-blue-500 text-white rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className={`px-6 py-2 bg-blue-500 rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                           >
                             {loading ? 'Kaydediliyor...' : 'Kaydet'}
                           </button>
@@ -847,7 +847,7 @@ function Ayarlar() {
                         <button
                           onClick={handleTestNotification}
                           disabled={loading}
-                          className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+                          className={`w-full px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                         >
                           Test Bildirimi Gönder
                         </button>
@@ -859,7 +859,7 @@ function Ayarlar() {
                       <button
                         onClick={handleSavePreferences}
                         disabled={loading}
-                        className="px-6 py-3 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 disabled:opacity-50"
+                        className={`px-6 py-3 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                       >
                         {loading ? 'Kaydediliyor...' : 'Bildirim Ayarlarını Kaydet'}
                       </button>
@@ -942,7 +942,7 @@ function Ayarlar() {
                           <button
                             type="submit"
                             disabled={loading}
-                            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors disabled:opacity-50"
+                            className={`flex-1 px-4 py-2 bg-blue-500 rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                           >
                             {loading ? 'Değiştiriliyor...' : 'Değiştir'}
                           </button>
@@ -1046,7 +1046,7 @@ function Ayarlar() {
                         <button
                           onClick={handleDataBackup}
                           disabled={loading}
-                          className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50"
+                          className={`px-6 py-2 bg-green-500 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                         >
                           {loading ? 'Yedekleniyor...' : 'Verileri Yedekle ve İndir'}
                         </button>
@@ -1061,7 +1061,7 @@ function Ayarlar() {
                           className="w-full p-2 border dark-border rounded-lg dark-bg-tertiary dark-text-primary"
                         />
                         <button
-                          className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          className={`mt-4 px-6 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                         >
                           İçe Aktar
                         </button>
@@ -1071,7 +1071,7 @@ function Ayarlar() {
                         <h3 className="text-base font-medium dark-text-primary mb-3 text-red-400">Tehlikeli İşlemler</h3>
                         <p className="text-sm dark-text-muted mb-4">Tüm verilerinizi kalıcı olarak silin</p>
                         <button
-                          className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          className={`px-6 py-2 bg-red-500 rounded-lg hover:bg-red-600 transition-colors ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                           onClick={() => {
                             if (confirm('Tüm verilerinizi silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!')) {
                               // Silme işlemi
@@ -1138,7 +1138,7 @@ function Ayarlar() {
                       <div className="flex justify-end pt-4 border-t dark-border">
                         <button
                           onClick={savePrivacySettings}
-                          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                          className={`px-6 py-2 bg-blue-500 rounded-lg hover:bg-blue-600 transition-colors ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                         >
                           Kaydet
                         </button>

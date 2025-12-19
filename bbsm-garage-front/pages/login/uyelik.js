@@ -8,11 +8,13 @@ import Sidebar from '../../components/Sidebar';
 import Navbar from '../../components/Navbar';
 import { useSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function Uyelik() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -128,8 +130,8 @@ function Uyelik() {
         'Sınırsız kullanım',
         '7 gün tam deneme'
       ],
-      color: 'from-purple-500 to-purple-600',
-      buttonColor: 'bg-purple-600 hover:bg-purple-700'
+      color: 'from-red-500 to-red-600',
+      buttonColor: 'bg-red-600 hover:bg-red-700'
     },
     {
       id: '6months',
@@ -279,11 +281,11 @@ function Uyelik() {
                     }`}
                   >
                     {plan.popular && (
-                      <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-1.5 text-xs font-bold rounded-bl-lg shadow-md z-10">
+                      <div className={`absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-1.5 text-xs font-bold rounded-bl-lg shadow-md z-10 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
                         ⭐ Popüler
                       </div>
                     )}
-                    <div className={`bg-gradient-to-br ${plan.color} text-white p-6 text-center relative overflow-hidden`}>
+                    <div className={`bg-gradient-to-br ${plan.color} p-6 text-center relative overflow-hidden ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
                       <div className="absolute inset-0 opacity-10">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -mr-16 -mt-16"></div>
                         <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full -ml-12 -mb-12"></div>
@@ -314,7 +316,7 @@ function Uyelik() {
                       <button
                         onClick={() => selectMembershipPlan(plan.months)}
                         disabled={selectingPlan}
-                        className={`w-full ${plan.buttonColor} text-white font-semibold py-3 px-6 rounded-lg neumorphic-inset transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95`}
+                        className={`w-full ${plan.buttonColor} font-semibold py-3 px-6 rounded-lg neumorphic-inset transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                       >
                         {selectingPlan ? (
                           <span className="flex items-center justify-center gap-2">

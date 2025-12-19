@@ -31,6 +31,7 @@ export const ThemeProvider = ({ children }) => {
 
     if (activeTheme === 'modern') {
       // Modern (light) tema - screenshot'a yakın değerler
+      root.setAttribute('data-theme', 'modern');
       root.style.setProperty('--dark-bg-primary', '#f3f4f6');      // body/bg (arka fonda hafif gri)
       root.style.setProperty('--dark-bg-secondary', '#f3f4f6');    // eski class'lar için
       root.style.setProperty('--dark-bg-tertiary', '#ffffff');     // içerik zeminleri
@@ -44,6 +45,7 @@ export const ThemeProvider = ({ children }) => {
       root.style.setProperty('--accent-primary', '#2563eb');       // mavi aksan
     } else {
       // Classic (mevcut dark) tema - globals.css başlangıç değerleri
+      root.setAttribute('data-theme', 'classic');
       root.style.setProperty('--dark-bg-primary', '#0f172a');
       root.style.setProperty('--dark-bg-secondary', '#111827');
       root.style.setProperty('--dark-bg-tertiary', '#1f2937');

@@ -78,12 +78,13 @@ function CurrencyBar() {
   const eurChange = getChangeIndicator(rates.eur, previousRates.eur);
   const altinChange = getChangeIndicator(rates.altin, previousRates.altin);
 
-  // Değer arka plan rengi belirleme
+  // Değer arka plan rengi belirleme - arka plan yok
   const getValueBgColor = (change) => {
-    if (change.isUp === true) return 'bg-green-500';
-    if (change.isUp === false) return 'bg-red-500';
-    if (change.isUp === null && change.percentage) return 'bg-yellow-500';
-    return 'bg-gray-700';
+    return '';
+  };
+  
+  const getValueBgStyle = (change) => {
+    return {};
   };
 
   return (
@@ -92,7 +93,7 @@ function CurrencyBar() {
         <>
           <div className="flex flex-col min-w-[120px]">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-cyan-400 font-semibold text-[10px]">DOLAR</span>
+              <span className="text-white font-semibold text-[10px]">DOLAR</span>
               {usdChange.percentage && (
                 <div className={`flex items-center gap-0.5 ${usdChange.textColor || 'text-yellow-400'}`}>
                   {usdChange.icon}
@@ -100,7 +101,7 @@ function CurrencyBar() {
                 </div>
               )}
             </div>
-            <span className={`${getValueBgColor(usdChange)} text-white text-base font-bold px-2.5 py-1.5 rounded neumorphic-outset`}>{rates.usd}</span>
+            <span className={`${getValueBgColor(usdChange)} text-white text-base font-bold px-2.5 py-1.5`} style={{...getValueBgStyle(usdChange), color: '#ffffff'}}>{rates.usd}</span>
           </div>
           <div className="h-8 w-px dark-border opacity-30"></div>
         </>
@@ -109,7 +110,7 @@ function CurrencyBar() {
         <>
           <div className="flex flex-col min-w-[120px]">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-cyan-400 font-semibold text-[10px]">EURO</span>
+              <span className="text-white font-semibold text-[10px]">EURO</span>
               {eurChange.percentage && (
                 <div className={`flex items-center gap-0.5 ${eurChange.textColor || 'text-yellow-400'}`}>
                   {eurChange.icon}
@@ -117,7 +118,7 @@ function CurrencyBar() {
                 </div>
               )}
             </div>
-            <span className={`${getValueBgColor(eurChange)} text-white text-base font-bold px-2.5 py-1.5 rounded neumorphic-outset`}>{rates.eur}</span>
+            <span className={`${getValueBgColor(eurChange)} text-white text-base font-bold px-2.5 py-1.5`} style={{...getValueBgStyle(eurChange), color: '#ffffff'}}>{rates.eur}</span>
           </div>
           <div className="h-8 w-px dark-border opacity-30"></div>
         </>
@@ -125,7 +126,7 @@ function CurrencyBar() {
       {rates.altin && (
         <div className="flex flex-col min-w-[140px]">
           <div className="flex items-center justify-between mb-1">
-            <span className="text-cyan-400 font-semibold text-[10px]">GRAM ALTIN</span>
+            <span className="text-white font-semibold text-[10px]">GRAM ALTIN</span>
             {altinChange.percentage && (
               <div className={`flex items-center gap-0.5 ${altinChange.textColor || 'text-yellow-400'}`}>
                 {altinChange.icon}
@@ -133,7 +134,7 @@ function CurrencyBar() {
               </div>
             )}
           </div>
-          <span className={`${getValueBgColor(altinChange)} text-white text-base font-bold px-2.5 py-1.5 rounded neumorphic-outset`}>{rates.altin}</span>
+          <span className={`${getValueBgColor(altinChange)} text-white text-base font-bold px-2.5 py-1.5`} style={{...getValueBgStyle(altinChange), color: '#ffffff'}}>{rates.altin}</span>
         </div>
       )}
     </div>

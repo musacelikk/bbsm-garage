@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useProfile } from '../contexts/ProfileContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { API_URL } from '../config';
 
 const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChangePasswordModalOpen, logout }) => {
   const { profileData, firmaAdi, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   
   // Kilitli sayfalar (üyelik sayfası hariç)
   const lockedPages = ['dashboard', 'kartlar', 'teklif', 'stok', 'gelir', 'son-hareketler', 'bizeulasin'];
@@ -125,7 +127,8 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
     }
     
     if (isActive) {
-      return `flex items-center gap-3 p-3 text-md font-semibold text-white sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg`;
+      const textColor = activeTheme === 'modern' ? 'text-blue-700' : 'text-white';
+      return `flex items-center gap-3 p-3 text-md font-semibold ${textColor} sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg`;
     }
     
     return `flex items-center gap-3 p-3 font-medium text-md dark-text-secondary rounded-xl hover:dark-text-primary hover:dark-bg-tertiary group transition-all`;

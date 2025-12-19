@@ -3,9 +3,11 @@ import Head from "next/head";
 import { useRouter } from 'next/router';
 import { useLoading } from '../_app';
 import { API_URL } from '../../config';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function AdminPanel() {
   const { loading, setLoading } = useLoading();
+  const { activeTheme } = useTheme();
   const router = useRouter();
   const [isPageLoaded, setIsPageLoaded] = useState(false);
   const [adminUser, setAdminUser] = useState(null);
@@ -29,6 +31,58 @@ function AdminPanel() {
     maxUsers: 100,
     emailNotifications: true,
     smsNotifications: false,
+  });
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    activeUsers: 0,
+    activeMemberships: 0,
+    pendingRequests: 0,
+    pendingOneriler: 0,
+    unreadNotifications: 0,
+    todayActivities: 0,
+  });
+  // Log Görüntüleme State'leri
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [logFilters, setLogFilters] = useState({
+    action: 'all',
+    dateRange: { start: '', end: '' },
+  });
+  // Klavye Kısayolları State
+  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+  // Filtreleme ve Sayfalama State'leri
+  const [userFilters, setUserFilters] = useState({
+    status: 'all', // 'all', 'active', 'inactive'
+    membershipStatus: 'all', // 'all', 'active', 'expired', 'undefined'
+    emailVerified: 'all', // 'all', 'verified', 'unverified'
+    dateRange: { start: '', end: '' },
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [requestFilters, setRequestFilters] = useState({
+    status: 'all', // 'all', 'pending', 'approved', 'rejected'
+  });
+  const [oneriFilters, setOneriFilters] = useState({
+    status: 'all', // 'all', 'pending', 'approved', 'rejected'
+  });
+  // Kullanıcı Detay State'leri
+  const [isUserDetailModalOpen, setIsUserDetailModalOpen] = useState(false);
+  const [selectedUserDetail, setSelectedUserDetail] = useState(null);
+  const [userCards, setUserCards] = useState([]);
+  const [userTeklifler, setUserTeklifler] = useState([]);
+  const [userLogs, setUserLogs] = useState([]);
+  const [userDetailTab, setUserDetailTab] = useState('cards');
+  // Toplu İşlemler State'leri
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  // Email Gönderme State'leri
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [emailData, setEmailData] = useState({
+    recipients: [], // 'all', 'selected', 'custom'
+    customEmails: '',
+    subject: '',
+    message: '',
+    template: 'custom', // 'custom', 'welcome', 'notification'
   });
 
   // Admin kontrolü - sayfa yüklenmeden önce kontrol et
@@ -73,6 +127,59 @@ function AdminPanel() {
     }
   }, [isAuthenticated]);
 
+  // Klavye Kısayolları
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const handleKeyPress = (e) => {
+      // Ctrl/Cmd + K ile kısayolları göster/gizle
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowKeyboardShortcuts(!showKeyboardShortcuts);
+      }
+      // Ctrl/Cmd + 1-5 ile tab'lar arası geçiş
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '5') {
+        e.preventDefault();
+        const tabIndex = parseInt(e.key) - 1;
+        const tabs = ['dashboard', 'users', 'requests', 'oneriler', 'settings'];
+        if (tabs[tabIndex]) {
+          setActiveTab(tabs[tabIndex]);
+        }
+      }
+      // Escape ile modalları kapat
+      if (e.key === 'Escape') {
+        if (isEmailModalOpen) {
+          setIsEmailModalOpen(false);
+        }
+        if (isUserDetailModalOpen) {
+          setIsUserDetailModalOpen(false);
+        }
+        if (isOneriModalOpen) {
+          setIsOneriModalOpen(false);
+        }
+        if (isMembershipModalOpen) {
+          setIsMembershipModalOpen(false);
+        }
+        if (isDeleteUserModalOpen) {
+          setIsDeleteUserModalOpen(false);
+        }
+        if (showKeyboardShortcuts) {
+          setShowKeyboardShortcuts(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isAuthenticated, showKeyboardShortcuts, isEmailModalOpen, isUserDetailModalOpen, isOneriModalOpen, isMembershipModalOpen, isDeleteUserModalOpen]);
+
+  // Sistem ayarlarını yükle
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadSystemSettings();
+    }
+  }, [isAuthenticated]);
+
   // Kullanıcıları ve teklifleri yükle
   useEffect(() => {
     if (isAuthenticated) {
@@ -80,15 +187,105 @@ function AdminPanel() {
       fetchMembershipRequests();
       fetchOneriler();
       fetchNotifications();
+      fetchSystemLogs();
       // Her 30 saniyede bir teklifleri yenile
       const interval = setInterval(() => {
         fetchMembershipRequests();
         fetchOneriler();
         fetchNotifications();
+        fetchSystemLogs();
       }, 30000);
       return () => clearInterval(interval);
     }
   }, [isAuthenticated]);
+
+  const fetchSystemLogs = async () => {
+    try {
+      // Admin için tüm logları çek (tenant_id: 0 veya tüm tenant'lar)
+      // TODO: Backend'de admin için özel log endpoint'i eklendiğinde buraya entegre edilecek
+      // Şimdilik tüm kullanıcıların loglarını birleştiriyoruz
+      const allLogs = [];
+      for (const user of users) {
+        try {
+          const response = await fetchWithAdminAuth(`${API_URL}/log/son-hareketler?limit=10&tenant_id=${user.tenant_id}`);
+          if (response.ok) {
+            const logs = await response.json();
+            allLogs.push(...(logs || []));
+          }
+        } catch (error) {
+          console.error(`Kullanıcı ${user.tenant_id} logları yüklenirken hata:`, error);
+        }
+      }
+      // Tarihe göre sırala (en yeni önce)
+      allLogs.sort((a, b) => {
+        const dateA = new Date(a.created_at || 0);
+        const dateB = new Date(b.created_at || 0);
+        return dateB - dateA;
+      });
+      setSystemLogs(allLogs.slice(0, 50)); // Son 50 log
+    } catch (error) {
+      console.error('Sistem logları yüklenirken hata:', error);
+    }
+  };
+
+  const loadSystemSettings = async () => {
+    try {
+      // Backend endpoint'i yoksa localStorage'dan yükle
+      const savedSettings = localStorage.getItem('adminSystemSettings');
+      if (savedSettings) {
+        setSystemSettings(JSON.parse(savedSettings));
+      }
+      // TODO: Backend endpoint'i eklendiğinde buraya entegre edilecek
+      // const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/settings`);
+      // if (response.ok) {
+      //   const data = await response.json();
+      //   setSystemSettings(data);
+      // }
+    } catch (error) {
+      console.error('Sistem ayarları yüklenirken hata:', error);
+    }
+  };
+
+  const saveSystemSettings = async () => {
+    try {
+      setLoading(true);
+      // Backend endpoint'i yoksa localStorage'a kaydet
+      localStorage.setItem('adminSystemSettings', JSON.stringify(systemSettings));
+      alert('Sistem ayarları kaydedildi');
+      // TODO: Backend endpoint'i eklendiğinde buraya entegre edilecek
+      // const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/settings`, {
+      //   method: 'PUT',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(systemSettings),
+      // });
+      // if (response.ok) {
+      //   alert('Sistem ayarları kaydedildi');
+      // } else {
+      //   throw new Error('Ayarlar kaydedilemedi');
+      // }
+    } catch (error) {
+      console.error('Sistem ayarları kaydedilirken hata:', error);
+      alert('Sistem ayarları kaydedilirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Dashboard istatistiklerini hesapla
+  useEffect(() => {
+    if (users.length > 0 || membershipRequests.length > 0 || oneriler.length > 0 || notifications.length > 0) {
+      const stats = {
+        totalUsers: users.length,
+        activeUsers: users.filter(u => u.isActive).length,
+        activeMemberships: users.filter(u => u.membership_status === 'active').length,
+        pendingRequests: membershipRequests.filter(r => r.status === 'pending').length,
+        pendingOneriler: oneriler.filter(o => o.status === 'pending').length,
+        unreadNotifications: notifications.filter(n => !n.isRead && n.type === 'contact_message').length,
+        todayActivities: 0, // Bu backend'den gelecek
+      };
+      setDashboardStats(stats);
+    }
+  }, [users, membershipRequests, oneriler, notifications]);
 
   const fetchUsers = async () => {
     try {
@@ -272,13 +469,16 @@ function AdminPanel() {
 
       if (response.ok) {
         const data = await response.json();
-        alert(data.message || 'Üyelik eklendi');
+        const message = months < 0 
+          ? `${Math.abs(months)} ay üyelik süresi kısıldı` 
+          : data.message || 'Üyelik eklendi';
+        alert(message);
         setIsMembershipModalOpen(false);
         setSelectedUser(null);
         await fetchUsers();
       } else {
         const errorData = await response.json();
-        alert(errorData.message || 'Üyelik eklenemedi');
+        alert(errorData.message || (months < 0 ? 'Üyelik süresi kısılamadı' : 'Üyelik eklenemedi'));
       }
     } catch (error) {
       console.error('Üyelik ekleme hatası:', error);
@@ -366,6 +566,178 @@ function AdminPanel() {
     }
   };
 
+  const fetchUserDetails = async (user) => {
+    try {
+      setLoading(true);
+      setSelectedUserDetail(user);
+      setIsUserDetailModalOpen(true);
+
+      // Kullanıcının kartlarını çek
+      const cardsResponse = await fetchWithAdminAuth(`${API_URL}/card?tenant_id=${user.tenant_id}`);
+      if (cardsResponse.ok) {
+        const cardsData = await cardsResponse.json();
+        setUserCards(cardsData || []);
+      }
+
+      // Kullanıcının tekliflerini çek
+      const tekliflerResponse = await fetchWithAdminAuth(`${API_URL}/teklif?tenant_id=${user.tenant_id}`);
+      if (tekliflerResponse.ok) {
+        const tekliflerData = await tekliflerResponse.json();
+        setUserTeklifler(tekliflerData || []);
+      }
+
+      // Kullanıcının loglarını çek
+      const logsResponse = await fetchWithAdminAuth(`${API_URL}/log/son-hareketler?limit=50&tenant_id=${user.tenant_id}`);
+      if (logsResponse.ok) {
+        const logsData = await logsResponse.json();
+        setUserLogs(logsData || []);
+      }
+    } catch (error) {
+      console.error('Kullanıcı detayları yüklenirken hata:', error);
+      alert('Kullanıcı detayları yüklenirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toplu İşlemler Fonksiyonları
+  const toggleUserSelection = (userId) => {
+    setSelectedUsers(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const selectAllUsers = () => {
+    if (selectedUsers.length === paginatedUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(paginatedUsers.map(u => u.id));
+    }
+  };
+
+  const bulkToggleActive = async (isActive) => {
+    if (selectedUsers.length === 0) {
+      alert('Lütfen en az bir kullanıcı seçin');
+      return;
+    }
+
+    if (!confirm(`${selectedUsers.length} kullanıcıyı ${isActive ? 'aktif' : 'pasif'} etmek istediğinizden emin misiniz?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const userId of selectedUsers) {
+        try {
+          await toggleUserActive(userId, isActive);
+          successCount++;
+        } catch (error) {
+          failCount++;
+          console.error(`Kullanıcı ${userId} güncellenirken hata:`, error);
+        }
+      }
+
+      alert(`${successCount} kullanıcı başarıyla güncellendi${failCount > 0 ? `, ${failCount} kullanıcı güncellenemedi` : ''}`);
+      setSelectedUsers([]);
+      setIsSelectMode(false);
+      await fetchUsers();
+    } catch (error) {
+      console.error('Toplu işlem hatası:', error);
+      alert('Toplu işlem sırasında bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Email Gönderme Fonksiyonları
+  const sendBulkEmail = async () => {
+    if (!emailData.subject || !emailData.message) {
+      alert('Lütfen konu ve mesaj alanlarını doldurun');
+      return;
+    }
+
+    let recipients = [];
+    if (emailData.recipients === 'all') {
+      recipients = users.filter(u => u.email).map(u => u.email);
+    } else if (emailData.recipients === 'selected') {
+      recipients = users.filter(u => selectedUsers.includes(u.id) && u.email).map(u => u.email);
+    } else if (emailData.recipients === 'custom') {
+      recipients = emailData.customEmails.split(',').map(e => e.trim()).filter(e => e);
+    }
+
+    if (recipients.length === 0) {
+      alert('Alıcı bulunamadı');
+      return;
+    }
+
+    if (!confirm(`${recipients.length} kullanıcıya email göndermek istediğinizden emin misiniz?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // TODO: Backend endpoint'i eklendiğinde buraya entegre edilecek
+      // const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/send-email`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     recipients,
+      //     subject: emailData.subject,
+      //     message: emailData.message,
+      //   }),
+      // });
+      // if (response.ok) {
+      //   alert('Email başarıyla gönderildi');
+      //   setIsEmailModalOpen(false);
+      //   setEmailData({
+      //     recipients: [],
+      //     customEmails: '',
+      //     subject: '',
+      //     message: '',
+      //     template: 'custom',
+      //   });
+      // } else {
+      //   throw new Error('Email gönderilemedi');
+      // }
+      alert(`Email gönderme özelliği backend endpoint'i eklendiğinde aktif olacak. ${recipients.length} alıcı seçildi.`);
+      setIsEmailModalOpen(false);
+      setEmailData({
+        recipients: [],
+        customEmails: '',
+        subject: '',
+        message: '',
+        template: 'custom',
+      });
+    } catch (error) {
+      console.error('Email gönderme hatası:', error);
+      alert('Email gönderilirken bir hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyEmailTemplate = (template) => {
+    const templates = {
+      welcome: {
+        subject: 'BBSM Garage\'a Hoş Geldiniz!',
+        message: 'Merhaba,\n\nBBSM Garage sistemine hoş geldiniz. Sistemimizi kullanmaya başlayabilirsiniz.\n\nİyi çalışmalar,\nBBSM Garage Ekibi',
+      },
+      notification: {
+        subject: 'Önemli Duyuru',
+        message: 'Merhaba,\n\nSize önemli bir duyuru iletmek istiyoruz.\n\nSaygılarımızla,\nBBSM Garage Ekibi',
+      },
+      custom: {
+        subject: '',
+        message: '',
+      },
+    };
+    const selectedTemplate = templates[template] || templates.custom;
+    setEmailData({ ...emailData, subject: selectedTemplate.subject, message: selectedTemplate.message, template });
+  };
+
   const markNotificationAsRead = async (notificationId) => {
     try {
       const response = await fetchWithAdminAuth(`${API_URL}/notification/${notificationId}/read`, {
@@ -384,6 +756,86 @@ function AdminPanel() {
   const pendingRequestsCount = membershipRequests.filter(r => r.status === 'pending').length;
   const unreadNotificationsCount = notifications.filter(n => !n.isRead && n.type === 'contact_message').length;
   const totalNotificationCount = pendingRequestsCount + unreadNotificationsCount;
+
+  // Filtreleme Fonksiyonları
+  const filterUsers = (userList) => {
+    return userList.filter(user => {
+      // Arama terimi filtresi
+      if (searchTerm) {
+        const search = searchTerm.toLowerCase();
+        const matchesSearch = (
+          user.username?.toLowerCase().includes(search) ||
+          user.firmaAdi?.toLowerCase().includes(search) ||
+          user.email?.toLowerCase().includes(search) ||
+          user.tenant_id?.toString().includes(search)
+        );
+        if (!matchesSearch) return false;
+      }
+
+      // Durum filtresi
+      if (userFilters.status !== 'all') {
+        if (userFilters.status === 'active' && !user.isActive) return false;
+        if (userFilters.status === 'inactive' && user.isActive) return false;
+      }
+
+      // Üyelik durumu filtresi
+      if (userFilters.membershipStatus !== 'all') {
+        if (userFilters.membershipStatus === 'active' && user.membership_status !== 'active') return false;
+        if (userFilters.membershipStatus === 'expired' && user.membership_status !== 'expired') return false;
+        if (userFilters.membershipStatus === 'undefined' && user.membership_status && user.membership_status !== 'undefined') return false;
+      }
+
+      // Email doğrulama filtresi
+      if (userFilters.emailVerified !== 'all') {
+        if (userFilters.emailVerified === 'verified' && !user.emailVerified) return false;
+        if (userFilters.emailVerified === 'unverified' && user.emailVerified) return false;
+      }
+
+      // Tarih aralığı filtresi (üyelik başlangıç tarihine göre)
+      if (userFilters.dateRange.start && user.membership_start_date) {
+        const startDate = new Date(userFilters.dateRange.start);
+        const userDate = new Date(user.membership_start_date);
+        if (userDate < startDate) return false;
+      }
+      if (userFilters.dateRange.end && user.membership_start_date) {
+        const endDate = new Date(userFilters.dateRange.end);
+        endDate.setHours(23, 59, 59, 999);
+        const userDate = new Date(user.membership_start_date);
+        if (userDate > endDate) return false;
+      }
+
+      return true;
+    });
+  };
+
+  const filterRequests = (requestList) => {
+    if (requestFilters.status === 'all') return requestList;
+    return requestList.filter(r => r.status === requestFilters.status);
+  };
+
+  const filterOneriler = (oneriList) => {
+    if (oneriFilters.status === 'all') return oneriList;
+    return oneriList.filter(o => o.status === oneriFilters.status);
+  };
+
+  // Sayfalama Fonksiyonları
+  const paginate = (array, page, perPage) => {
+    const startIndex = (page - 1) * perPage;
+    const endIndex = startIndex + perPage;
+    return array.slice(startIndex, endIndex);
+  };
+
+  const getTotalPages = (array, perPage) => {
+    return Math.ceil(array.length / perPage) || 1;
+  };
+
+  // Filtrelenmiş ve sayfalanmış veriler
+  const filteredUsers = filterUsers(users);
+  const paginatedUsers = paginate(filteredUsers, currentPage, itemsPerPage);
+  const totalUserPages = getTotalPages(filteredUsers, itemsPerPage);
+
+  const filteredRequests = filterRequests(membershipRequests);
+  const filteredOneriler = filterOneriler(oneriler);
 
   // Eğer authenticate değilse hiçbir şey render etme
   if (!isAuthenticated) {
@@ -598,6 +1050,16 @@ function AdminPanel() {
                 )}
               </div>
               <button
+                onClick={() => setShowKeyboardShortcuts(!showKeyboardShortcuts)}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
+                title="Klavye Kısayolları (Ctrl+K)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+                Kısayollar
+              </button>
+              <button
                 onClick={handleLogout}
                 className="flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
@@ -619,6 +1081,705 @@ function AdminPanel() {
             <p className="text-gray-600 mt-1 text-sm md:text-base">Sistem yönetim paneli</p>
           </div>
 
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-200 mb-6">
+            <nav className="flex space-x-8" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('dashboard')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'dashboard'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Dashboard
+              </button>
+              <button
+                onClick={() => setActiveTab('users')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'users'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Kullanıcılar
+              </button>
+              <button
+                onClick={() => setActiveTab('requests')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'requests'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Üyelik Teklifleri
+              </button>
+              <button
+                onClick={() => setActiveTab('oneriler')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'oneriler'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Öneriler
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'settings'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Ayarlar
+              </button>
+            </nav>
+          </div>
+
+          {/* Dashboard Tab */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              {/* İstatistik Kartları */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-br from-blue-400 to-blue-500 text-white p-6 rounded-xl shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium opacity-90">Toplam Kullanıcı</p>
+                      <p className="text-3xl font-bold mt-2">{dashboardStats.totalUsers}</p>
+                    </div>
+                    <svg className="w-12 h-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-green-400 to-green-500 text-white p-6 rounded-xl shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium opacity-90">Aktif Kullanıcılar</p>
+                      <p className="text-3xl font-bold mt-2">{dashboardStats.activeUsers}</p>
+                    </div>
+                    <svg className="w-12 h-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-purple-400 to-purple-500 text-white p-6 rounded-xl shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium opacity-90">Aktif Üyelikler</p>
+                      <p className="text-3xl font-bold mt-2">{dashboardStats.activeMemberships}</p>
+                    </div>
+                    <svg className="w-12 h-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 text-white p-6 rounded-xl shadow-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium opacity-90">Bekleyen İşlemler</p>
+                      <p className="text-3xl font-bold mt-2">{dashboardStats.pendingRequests + dashboardStats.pendingOneriler}</p>
+                    </div>
+                    <svg className="w-12 h-12 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Detaylı İstatistikler */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-bold text-my-siyah mb-4">Üyelik Durumları</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Aktif Üyelikler</span>
+                      <span className="font-bold text-green-600">{dashboardStats.activeMemberships}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Süresi Dolmuş</span>
+                      <span className="font-bold text-red-600">{users.filter(u => u.membership_status === 'expired').length}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Üyeliksiz</span>
+                      <span className="font-bold text-gray-600">{users.filter(u => !u.membership_status || u.membership_status === 'undefined').length}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-bold text-my-siyah mb-4">Bekleyen İşlemler</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Üyelik Teklifleri</span>
+                      <span className="font-bold text-yellow-600">{dashboardStats.pendingRequests}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Öneriler</span>
+                      <span className="font-bold text-purple-600">{dashboardStats.pendingOneriler}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600">Okunmamış Mesajlar</span>
+                      <span className="font-bold text-blue-600">{dashboardStats.unreadNotifications}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grafikler */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                {/* Aylık Kullanıcı Artışı */}
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-bold text-my-siyah mb-4">Aylık Kullanıcı Artışı</h3>
+                  <div className="space-y-3">
+                    {(() => {
+                      const monthlyData = {};
+                      users.forEach(user => {
+                        if (user.membership_start_date) {
+                          const date = new Date(user.membership_start_date);
+                          const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                          monthlyData[monthKey] = (monthlyData[monthKey] || 0) + 1;
+                        }
+                      });
+                      const sortedMonths = Object.keys(monthlyData).sort().slice(-6);
+                      const maxCount = Math.max(...Object.values(monthlyData), 1);
+                      return sortedMonths.map(month => {
+                        const count = monthlyData[month];
+                        const percentage = (count / maxCount) * 100;
+                        return (
+                          <div key={month} className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600 w-20">{month}</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                              <div
+                                className="bg-blue-500 h-6 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: `${percentage}%` }}
+                              >
+                                <span className="text-xs text-white font-medium">{count}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                </div>
+
+                {/* Üyelik Durumları Grafiği */}
+                <div className="bg-white rounded-xl shadow-md p-6">
+                  <h3 className="text-lg font-bold text-my-siyah mb-4">Üyelik Durumları</h3>
+                  <div className="space-y-4">
+                    {(() => {
+                      const activeCount = users.filter(u => u.membership_status === 'active').length;
+                      const expiredCount = users.filter(u => u.membership_status === 'expired').length;
+                      const undefinedCount = users.filter(u => !u.membership_status || u.membership_status === 'undefined').length;
+                      const total = users.length || 1;
+                      return (
+                        <>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600 w-24">Aktif</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                              <div
+                                className="bg-green-500 h-6 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: `${(activeCount / total) * 100}%` }}
+                              >
+                                <span className="text-xs text-white font-medium">{activeCount}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600 w-24">Süresi Dolmuş</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                              <div
+                                className="bg-red-500 h-6 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: `${(expiredCount / total) * 100}%` }}
+                              >
+                                <span className="text-xs text-white font-medium">{expiredCount}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm text-gray-600 w-24">Üyeliksiz</span>
+                            <div className="flex-1 bg-gray-200 rounded-full h-6 relative">
+                              <div
+                                className="bg-gray-500 h-6 rounded-full flex items-center justify-end pr-2"
+                                style={{ width: `${(undefinedCount / total) * 100}%` }}
+                              >
+                                <span className="text-xs text-white font-medium">{undefinedCount}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+
+              {/* Son Aktiviteler / Loglar */}
+              <div className="bg-white rounded-xl shadow-md p-6 mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-my-siyah">Son Aktiviteler</h3>
+                  <button
+                    onClick={fetchSystemLogs}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Yenile
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Tarih</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Kullanıcı</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Aksiyon</th>
+                        <th className="text-left py-2 px-3 font-semibold text-gray-700">Detay</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {systemLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan="4" className="text-center py-8 text-gray-500">
+                            Henüz aktivite bulunmamaktadır
+                          </td>
+                        </tr>
+                      ) : (
+                        systemLogs.slice(0, 10).map((log, index) => (
+                          <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-2 px-3 text-gray-700">
+                              {log.created_at ? new Date(log.created_at).toLocaleString('tr-TR') : '-'}
+                            </td>
+                            <td className="py-2 px-3 text-gray-700">{log.username || '-'}</td>
+                            <td className="py-2 px-3 text-gray-700">{log.action || '-'}</td>
+                            <td className="py-2 px-3 text-gray-700">{log.details || '-'}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Kullanıcılar Tab */}
+          {activeTab === 'users' && (
+            <div>
+              {/* Kullanıcılar Listesi */}
+              <div className="bg-white rounded-xl shadow-md p-5 md:p-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                  <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Kullanıcılar</h2>
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {isSelectMode && selectedUsers.length > 0 && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-700">{selectedUsers.length} seçili</span>
+                        <button
+                          onClick={() => bulkToggleActive(true)}
+                          disabled={loading}
+                          className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm transition-colors disabled:opacity-50"
+                        >
+                          Toplu Aktif Et
+                        </button>
+                        <button
+                          onClick={() => bulkToggleActive(false)}
+                          disabled={loading}
+                          className="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm transition-colors disabled:opacity-50"
+                        >
+                          Toplu Pasif Et
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedUsers([]);
+                            setIsSelectMode(false);
+                          }}
+                          className="px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm transition-colors"
+                        >
+                          İptal
+                        </button>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setIsSelectMode(!isSelectMode);
+                        if (isSelectMode) setSelectedUsers([]);
+                      }}
+                      className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                        isSelectMode
+                          ? 'bg-gray-600 text-white hover:bg-gray-700'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                      {isSelectMode ? 'Seçimi İptal Et' : 'Toplu İşlem'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEmailData({
+                          recipients: selectedUsers.length > 0 ? 'selected' : 'all',
+                          customEmails: '',
+                          subject: '',
+                          message: '',
+                          template: 'custom',
+                        });
+                        setIsEmailModalOpen(true);
+                      }}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                      Email Gönder
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Kullanıcı ara..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
+                    />
+                    <button
+                      onClick={fetchUsers}
+                      className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Yenile
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filtreleme Kontrolleri */}
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Durum</label>
+                      <select
+                        value={userFilters.status}
+                        onChange={(e) => {
+                          setUserFilters({ ...userFilters, status: e.target.value });
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="all">Tümü</option>
+                        <option value="active">Aktif</option>
+                        <option value="inactive">Pasif</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Üyelik Durumu</label>
+                      <select
+                        value={userFilters.membershipStatus}
+                        onChange={(e) => {
+                          setUserFilters({ ...userFilters, membershipStatus: e.target.value });
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="all">Tümü</option>
+                        <option value="active">Aktif</option>
+                        <option value="expired">Süresi Dolmuş</option>
+                        <option value="undefined">Üyeliksiz</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Email Doğrulama</label>
+                      <select
+                        value={userFilters.emailVerified}
+                        onChange={(e) => {
+                          setUserFilters({ ...userFilters, emailVerified: e.target.value });
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="all">Tümü</option>
+                        <option value="verified">Doğrulanmış</option>
+                        <option value="unverified">Doğrulanmamış</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Sayfa Başına</label>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(parseInt(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="10">10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Başlangıç Tarihi</label>
+                      <input
+                        type="date"
+                        value={userFilters.dateRange.start}
+                        onChange={(e) => {
+                          setUserFilters({ ...userFilters, dateRange: { ...userFilters.dateRange, start: e.target.value } });
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Bitiş Tarihi</label>
+                      <input
+                        type="date"
+                        value={userFilters.dateRange.end}
+                        onChange={(e) => {
+                          setUserFilters({ ...userFilters, dateRange: { ...userFilters.dateRange, end: e.target.value } });
+                          setCurrentPage(1);
+                        }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex justify-end">
+                    <button
+                      onClick={() => {
+                        setUserFilters({
+                          status: 'all',
+                          membershipStatus: 'all',
+                          emailVerified: 'all',
+                          dateRange: { start: '', end: '' },
+                        });
+                        setSearchTerm('');
+                        setCurrentPage(1);
+                      }}
+                      className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Filtreleri Temizle
+                    </button>
+                  </div>
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          {isSelectMode && (
+                            <th className="text-left py-3 px-4 font-semibold text-gray-700 w-12">
+                              <input
+                                type="checkbox"
+                                checked={selectedUsers.length === paginatedUsers.length && paginatedUsers.length > 0}
+                                onChange={selectAllUsers}
+                                className="w-4 h-4"
+                              />
+                            </th>
+                          )}
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Kullanıcı Adı</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Şifre</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Firma Adı</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Yetkili Kişi</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Telefon</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Tenant ID</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Email Doğrulandı</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Durum</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Başlangıç</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Bitiş</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Durum</th>
+                          <th className="text-left py-3 px-4 font-semibold text-gray-700">İşlem</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paginatedUsers.length === 0 ? (
+                          <tr>
+                            <td colSpan={isSelectMode ? 15 : 14} className="text-center py-12 text-gray-500">
+                              Kullanıcı bulunamadı
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedUsers.map((user) => (
+                            <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                              {isSelectMode && (
+                                <td className="py-3 px-4">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedUsers.includes(user.id)}
+                                    onChange={() => toggleUserSelection(user.id)}
+                                    className="w-4 h-4"
+                                  />
+                                </td>
+                              )}
+                              <td className="py-3 px-4 text-gray-700">{user.id}</td>
+                              <td className="py-3 px-4 text-gray-700 font-medium">{user.username || '-'}</td>
+                              <td className="py-3 px-4 text-gray-700 font-mono text-sm">{user.password || '-'}</td>
+                              <td className="py-3 px-4 text-gray-700">{user.firmaAdi || '-'}</td>
+                              <td className="py-3 px-4 text-gray-700">{user.yetkiliKisi || '-'}</td>
+                              <td className="py-3 px-4 text-gray-700">{user.email || '-'}</td>
+                              <td className="py-3 px-4 text-gray-700">{user.telefon || '-'}</td>
+                              <td className="py-3 px-4 text-gray-700">{user.tenant_id || '-'}</td>
+                              <td className="py-3 px-4">
+                                {user.emailVerified ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Doğrulandı
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    ✗ Doğrulanmadı
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                {user.isActive ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Aktif
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    ⏸ Pasif
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-gray-700">
+                                {user.membership_start_date 
+                                  ? new Date(user.membership_start_date).toLocaleDateString('tr-TR')
+                                  : '-'}
+                              </td>
+                              <td className="py-3 px-4 text-gray-700">
+                                {user.membership_end_date 
+                                  ? new Date(user.membership_end_date).toLocaleDateString('tr-TR')
+                                  : '-'}
+                              </td>
+                              <td className="py-3 px-4">
+                                {user.membership_status === 'active' ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    ✓ Aktif
+                                  </span>
+                                ) : user.membership_status === 'expired' ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                    ✗ Süresi Dolmuş
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                    ⏸ Tanımsız
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4">
+                                <div className="flex flex-col gap-2">
+                                  <button
+                                    onClick={() => fetchUserDetails(user)}
+                                    disabled={loading}
+                                    className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-purple-100 text-purple-700 hover:bg-purple-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Detay
+                                  </button>
+                                  <button
+                                    onClick={() => toggleUserActive(user.id, user.isActive)}
+                                    disabled={loading}
+                                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                      user.isActive
+                                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                  >
+                                    {user.isActive ? 'Pasif Et' : 'Aktif Et'}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setIsMembershipModalOpen(true);
+                                    }}
+                                    disabled={loading}
+                                    className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Süre Ver
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setSelectedUser(user);
+                                      setIsDeleteUserModalOpen(true);
+                                      setDeletePassword('');
+                                      setDeletePasswordError('');
+                                    }}
+                                    disabled={loading}
+                                    className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    Sil
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                    
+                    {/* Sayfalama Kontrolleri */}
+                    <div className="mt-6 flex flex-col md:flex-row items-center justify-between gap-4">
+                      <div className="text-sm text-gray-600">
+                        Toplam {filteredUsers.length} kullanıcıdan {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredUsers.length)} arası gösteriliyor
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Önceki
+                        </button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: Math.min(5, totalUserPages) }, (_, i) => {
+                            let pageNum;
+                            if (totalUserPages <= 5) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 3) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalUserPages - 2) {
+                              pageNum = totalUserPages - 4 + i;
+                            } else {
+                              pageNum = currentPage - 2 + i;
+                            }
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`px-3 py-2 border rounded-lg transition-colors ${
+                                  currentPage === pageNum
+                                    ? 'bg-blue-600 text-white border-blue-600'
+                                    : 'border-gray-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button
+                          onClick={() => setCurrentPage(prev => Math.min(totalUserPages, prev + 1))}
+                          disabled={currentPage === totalUserPages}
+                          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Sonraki
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Üyelik Teklifleri Tab */}
+          {activeTab === 'requests' && (
+            <div>
           {/* Üyelik Teklifleri Listesi */}
           <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -632,6 +1793,29 @@ function AdminPanel() {
                 </svg>
                 Yenile
               </button>
+            </div>
+
+            {/* Filtreleme Kontrolleri */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-4">
+                <label className="block text-sm font-medium text-gray-700">Durum:</label>
+                <select
+                  value={requestFilters.status}
+                  onChange={(e) => setRequestFilters({ ...requestFilters, status: e.target.value })}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">Tümü</option>
+                  <option value="pending">Bekleyen</option>
+                  <option value="approved">Onaylanan</option>
+                  <option value="rejected">Reddedilen</option>
+                </select>
+                <button
+                  onClick={() => setRequestFilters({ status: 'all' })}
+                  className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              </div>
             </div>
 
             {loading ? (
@@ -653,14 +1837,14 @@ function AdminPanel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {membershipRequests.length === 0 ? (
+                    {filteredRequests.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="text-center py-12 text-gray-500">
                           Henüz teklif bulunmamaktadır
                         </td>
                       </tr>
                     ) : (
-                      membershipRequests.map((request) => (
+                      filteredRequests.map((request) => (
                         <tr key={request.id} className={`border-b border-gray-100 hover:bg-gray-50 ${request.status === 'pending' ? 'bg-yellow-50' : ''}`}>
                           <td className="py-3 px-4 text-gray-700">{request.id}</td>
                           <td className="py-3 px-4 text-gray-700 font-medium">
@@ -745,7 +1929,12 @@ function AdminPanel() {
               </div>
             )}
           </div>
+            </div>
+          )}
 
+          {/* Öneriler Tab */}
+          {activeTab === 'oneriler' && (
+            <div>
           {/* Öneriler Listesi */}
           <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
@@ -759,6 +1948,29 @@ function AdminPanel() {
                 </svg>
                 Yenile
               </button>
+            </div>
+
+            {/* Filtreleme Kontrolleri */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-4">
+                <label className="block text-sm font-medium text-gray-700">Durum:</label>
+                <select
+                  value={oneriFilters.status}
+                  onChange={(e) => setOneriFilters({ ...oneriFilters, status: e.target.value })}
+                  className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="all">Tümü</option>
+                  <option value="pending">Bekleyen</option>
+                  <option value="approved">Onaylanan</option>
+                  <option value="rejected">Reddedilen</option>
+                </select>
+                <button
+                  onClick={() => setOneriFilters({ status: 'all' })}
+                  className="px-4 py-2 text-sm text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  Filtreleri Temizle
+                </button>
+              </div>
             </div>
 
             {/* Öneri İstatistikleri */}
@@ -800,14 +2012,14 @@ function AdminPanel() {
                     </tr>
                   </thead>
                   <tbody>
-                    {oneriler.length === 0 ? (
+                    {filteredOneriler.length === 0 ? (
                       <tr>
                         <td colSpan="7" className="py-8 text-center text-gray-500">
                           Henüz öneri bulunmamaktadır
                         </td>
                       </tr>
                     ) : (
-                      oneriler.map((oneri) => (
+                      filteredOneriler.map((oneri) => (
                         <tr key={oneri.id} className="border-b border-gray-100 hover:bg-gray-50">
                           <td className="py-3 px-4 text-gray-700 text-sm">{oneri.id}</td>
                           <td className="py-3 px-4 text-gray-700 text-sm">{oneri.username || '-'}</td>
@@ -871,6 +2083,89 @@ function AdminPanel() {
               </div>
             )}
           </div>
+            </div>
+          )}
+
+          {/* Ayarlar Tab */}
+          {activeTab === 'settings' && (
+            <div>
+              {/* Sistem Ayarları */}
+              <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+                  <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Sistem Ayarları</h2>
+                  <button
+                    onClick={() => setIsSystemSettingsOpen(!isSystemSettingsOpen)}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {isSystemSettingsOpen ? 'Gizle' : 'Göster'}
+                  </button>
+                </div>
+
+                {isSystemSettingsOpen && (
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-gray-700 font-medium">Bakım Modu</span>
+                          <input
+                            type="checkbox"
+                            checked={systemSettings.maintenanceMode}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, maintenanceMode: e.target.checked })}
+                            className="w-5 h-5 rounded"
+                          />
+                        </label>
+                        <p className="text-xs text-gray-500 mt-1">Sistem bakım moduna alınır</p>
+                      </div>
+                      <div>
+                        <label className="block text-gray-700 font-medium mb-2">Maksimum Kullanıcı Sayısı</label>
+                        <input
+                          type="number"
+                          value={systemSettings.maxUsers}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, maxUsers: parseInt(e.target.value, 10) || 100 })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-gray-700 font-medium">E-posta Bildirimleri</span>
+                          <input
+                            type="checkbox"
+                            checked={systemSettings.emailNotifications}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, emailNotifications: e.target.checked })}
+                            className="w-5 h-5 rounded"
+                          />
+                        </label>
+                      </div>
+                      <div>
+                        <label className="flex items-center justify-between cursor-pointer">
+                          <span className="text-gray-700 font-medium">SMS Bildirimleri</span>
+                          <input
+                            type="checkbox"
+                            checked={systemSettings.smsNotifications}
+                            onChange={(e) => setSystemSettings({ ...systemSettings, smsNotifications: e.target.checked })}
+                            className="w-5 h-5 rounded"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        onClick={saveSystemSettings}
+                        disabled={loading}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {loading ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Öneri Detay Modal */}
           {isOneriModalOpen && selectedOneri && (
@@ -962,260 +2257,377 @@ function AdminPanel() {
             </div>
           )}
 
-          {/* Sistem Ayarları */}
-          <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Sistem Ayarları</h2>
+          {/* Kullanıcı Detay Modal */}
+          {isUserDetailModalOpen && selectedUserDetail && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-my-siyah">Kullanıcı Detayları</h2>
               <button
-                onClick={() => setIsSystemSettingsOpen(!isSystemSettingsOpen)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
+                      onClick={() => {
+                        setIsUserDetailModalOpen(false);
+                        setSelectedUserDetail(null);
+                        setUserCards([]);
+                        setUserTeklifler([]);
+                        setUserLogs([]);
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                {isSystemSettingsOpen ? 'Gizle' : 'Göster'}
               </button>
             </div>
 
-            {isSystemSettingsOpen && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Kullanıcı Bilgileri */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <div>
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-gray-700 font-medium">Bakım Modu</span>
-                      <input
-                        type="checkbox"
-                        checked={systemSettings.maintenanceMode}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, maintenanceMode: e.target.checked })}
-                        className="w-5 h-5 rounded"
-                      />
-                    </label>
-                    <p className="text-xs text-gray-500 mt-1">Sistem bakım moduna alınır</p>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Kullanıcı Adı</label>
+                      <p className="text-gray-900">{selectedUserDetail.username || '-'}</p>
                   </div>
                   <div>
-                    <label className="block text-gray-700 font-medium mb-2">Maksimum Kullanıcı Sayısı</label>
-                    <input
-                      type="number"
-                      value={systemSettings.maxUsers}
-                      onChange={(e) => setSystemSettings({ ...systemSettings, maxUsers: parseInt(e.target.value, 10) || 100 })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Firma Adı</label>
+                      <p className="text-gray-900">{selectedUserDetail.firmaAdi || '-'}</p>
                   </div>
                   <div>
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-gray-700 font-medium">E-posta Bildirimleri</span>
-                      <input
-                        type="checkbox"
-                        checked={systemSettings.emailNotifications}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, emailNotifications: e.target.checked })}
-                        className="w-5 h-5 rounded"
-                      />
-                    </label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Yetkili Kişi</label>
+                      <p className="text-gray-900">{selectedUserDetail.yetkiliKisi || '-'}</p>
                   </div>
                   <div>
-                    <label className="flex items-center justify-between cursor-pointer">
-                      <span className="text-gray-700 font-medium">SMS Bildirimleri</span>
-                      <input
-                        type="checkbox"
-                        checked={systemSettings.smsNotifications}
-                        onChange={(e) => setSystemSettings({ ...systemSettings, smsNotifications: e.target.checked })}
-                        className="w-5 h-5 rounded"
-                      />
-                    </label>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Email</label>
+                      <p className="text-gray-900">{selectedUserDetail.email || '-'}</p>
                   </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Telefon</label>
+                      <p className="text-gray-900">{selectedUserDetail.telefon || '-'}</p>
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => {
-                      // Sistem ayarlarını kaydet (backend endpoint'i eklenebilir)
-                      alert('Sistem ayarları kaydedildi (Backend endpoint gerekli)');
-                    }}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Ayarları Kaydet
-                  </button>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Tenant ID</label>
+                      <p className="text-gray-900">{selectedUserDetail.tenant_id || '-'}</p>
                 </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Email Doğrulandı</label>
+                      <p className="text-gray-900">
+                        {selectedUserDetail.emailVerified ? (
+                          <span className="text-green-600">✓ Doğrulandı</span>
+                        ) : (
+                          <span className="text-red-600">✗ Doğrulanmadı</span>
+                        )}
+                      </p>
               </div>
-            )}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Durum</label>
+                      <p className="text-gray-900">
+                        {selectedUserDetail.isActive ? (
+                          <span className="text-green-600">✓ Aktif</span>
+                        ) : (
+                          <span className="text-gray-600">⏸ Pasif</span>
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Üyelik Başlangıç</label>
+                      <p className="text-gray-900">
+                        {selectedUserDetail.membership_start_date
+                          ? new Date(selectedUserDetail.membership_start_date).toLocaleDateString('tr-TR')
+                          : '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Üyelik Bitiş</label>
+                      <p className="text-gray-900">
+                        {selectedUserDetail.membership_end_date
+                          ? new Date(selectedUserDetail.membership_end_date).toLocaleDateString('tr-TR')
+                          : '-'}
+                      </p>
+                    </div>
           </div>
 
-          {/* Kullanıcılar Listesi */}
-          <div className="bg-white rounded-xl shadow-md p-5 md:p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-              <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Kullanıcılar</h2>
-              <div className="flex items-center gap-4">
-                <input
-                  type="text"
-                  placeholder="Kullanıcı ara..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400"
-                />
+                  {/* Tab Navigation */}
+                  <div className="border-b border-gray-200 mb-4">
+                    <nav className="flex space-x-4" aria-label="Tabs">
                 <button
-                  onClick={fetchUsers}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Yenile
+                        onClick={() => setUserDetailTab('cards')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                          userDetailTab === 'cards'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Kartlar ({userCards.length})
                 </button>
-              </div>
+                      <button
+                        onClick={() => setUserDetailTab('teklifler')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                          userDetailTab === 'teklifler'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Teklifler ({userTeklifler.length})
+                      </button>
+                      <button
+                        onClick={() => setUserDetailTab('logs')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                          userDetailTab === 'logs'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Loglar ({userLogs.length})
+                      </button>
+                    </nav>
             </div>
 
-            {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-              </div>
-            ) : (
+                  {/* Kartlar Tab */}
+                  {userDetailTab === 'cards' && (
               <div className="overflow-x-auto">
-                <table className="w-full">
+                      <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Kullanıcı Adı</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Şifre</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Firma Adı</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Yetkili Kişi</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Telefon</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Tenant ID</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Email Doğrulandı</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Durum</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Başlangıç</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Bitiş</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">Üyelik Durum</th>
-                      <th className="text-left py-3 px-4 font-semibold text-gray-700">İşlem</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">ID</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Plaka</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Marka/Model</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Müşteri</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Giriş Tarihi</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Ödeme</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users
-                      .filter(user => {
-                        if (!searchTerm) return true;
-                        const search = searchTerm.toLowerCase();
-                        return (
-                          user.username?.toLowerCase().includes(search) ||
-                          user.firmaAdi?.toLowerCase().includes(search) ||
-                          user.email?.toLowerCase().includes(search) ||
-                          user.tenant_id?.toString().includes(search)
-                        );
-                      })
-                      .map((user) => (
-                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="py-3 px-4 text-gray-700">{user.id}</td>
-                          <td className="py-3 px-4 text-gray-700 font-medium">{user.username || '-'}</td>
-                          <td className="py-3 px-4 text-gray-700 font-mono text-sm">{user.password || '-'}</td>
-                          <td className="py-3 px-4 text-gray-700">{user.firmaAdi || '-'}</td>
-                          <td className="py-3 px-4 text-gray-700">{user.yetkiliKisi || '-'}</td>
-                          <td className="py-3 px-4 text-gray-700">{user.email || '-'}</td>
-                          <td className="py-3 px-4 text-gray-700">{user.telefon || '-'}</td>
-                          <td className="py-3 px-4 text-gray-700">{user.tenant_id || '-'}</td>
-                          <td className="py-3 px-4">
-                            {user.emailVerified ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✓ Doğrulandı
-                              </span>
+                          {userCards.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" className="text-center py-8 text-gray-500">
+                                Henüz kart bulunmamaktadır
+                              </td>
+                            </tr>
+                          ) : (
+                            userCards.slice(0, 10).map((card) => (
+                              <tr key={card.card_id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="py-2 px-3 text-gray-700">{card.card_id}</td>
+                                <td className="py-2 px-3 text-gray-700">{card.plaka || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">{card.markaModel || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">{card.musteriAdi || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">
+                                  {card.girisTarihi ? new Date(card.girisTarihi).toLocaleDateString('tr-TR') : '-'}
+                          </td>
+                                <td className="py-2 px-3">
+                                  {card.odemeAlindi ? (
+                                    <span className="text-green-600">✓ Alındı</span>
                             ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                ✗ Doğrulanmadı
-                              </span>
+                                    <span className="text-red-600">✗ Alınmadı</span>
                             )}
                           </td>
-                          <td className="py-3 px-4">
-                            {user.isActive ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✓ Aktif
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                ⏸ Pasif
-                              </span>
-                            )}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                      {userCards.length > 10 && (
+                        <p className="text-sm text-gray-500 mt-2">Toplam {userCards.length} karttan ilk 10'u gösteriliyor</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Teklifler Tab */}
+                  {userDetailTab === 'teklifler' && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">ID</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Plaka</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Marka/Model</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Müşteri</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Giriş Tarihi</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {userTeklifler.length === 0 ? (
+                            <tr>
+                              <td colSpan="5" className="text-center py-8 text-gray-500">
+                                Henüz teklif bulunmamaktadır
                           </td>
-                          <td className="py-3 px-4 text-gray-700">
-                            {user.membership_start_date 
-                              ? new Date(user.membership_start_date).toLocaleDateString('tr-TR')
-                              : '-'}
+                            </tr>
+                          ) : (
+                            userTeklifler.slice(0, 10).map((teklif) => (
+                              <tr key={teklif.teklif_id} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="py-2 px-3 text-gray-700">{teklif.teklif_id}</td>
+                                <td className="py-2 px-3 text-gray-700">{teklif.plaka || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">{teklif.markaModel || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">{teklif.musteriAdi || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">
+                                  {teklif.girisTarihi ? new Date(teklif.girisTarihi).toLocaleDateString('tr-TR') : '-'}
                           </td>
-                          <td className="py-3 px-4 text-gray-700">
-                            {user.membership_end_date 
-                              ? new Date(user.membership_end_date).toLocaleDateString('tr-TR')
-                              : '-'}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                      {userTeklifler.length > 10 && (
+                        <p className="text-sm text-gray-500 mt-2">Toplam {userTeklifler.length} tekliften ilk 10'u gösteriliyor</p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Loglar Tab */}
+                  {userDetailTab === 'logs' && (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-gray-200">
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Tarih</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Aksiyon</th>
+                            <th className="text-left py-2 px-3 font-semibold text-gray-700">Detay</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {userLogs.length === 0 ? (
+                            <tr>
+                              <td colSpan="3" className="text-center py-8 text-gray-500">
+                                Henüz log bulunmamaktadır
                           </td>
-                          <td className="py-3 px-4">
-                            {user.membership_status === 'active' ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                ✓ Aktif
-                              </span>
-                            ) : user.membership_status === 'expired' ? (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                ✗ Süresi Dolmuş
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                ⏸ Tanımsız
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <div className="flex flex-col gap-2">
+                            </tr>
+                          ) : (
+                            userLogs.slice(0, 20).map((log, index) => (
+                              <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
+                                <td className="py-2 px-3 text-gray-700">
+                                  {log.created_at ? new Date(log.created_at).toLocaleString('tr-TR') : '-'}
+                                </td>
+                                <td className="py-2 px-3 text-gray-700">{log.action || '-'}</td>
+                                <td className="py-2 px-3 text-gray-700">{log.details || '-'}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                      {userLogs.length > 20 && (
+                        <p className="text-sm text-gray-500 mt-2">Toplam {userLogs.length} logtan ilk 20'si gösteriliyor</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Email Gönderme Modal */}
+          {isEmailModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-my-siyah">Toplu Email Gönder</h2>
                               <button
-                                onClick={() => toggleUserActive(user.id, user.isActive)}
-                                disabled={loading}
-                                className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                                  user.isActive
-                                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                                    : 'bg-green-100 text-green-700 hover:bg-green-200'
-                                } disabled:opacity-50 disabled:cursor-not-allowed`}
-                              >
-                                {user.isActive ? 'Pasif Et' : 'Aktif Et'}
+                      onClick={() => {
+                        setIsEmailModalOpen(false);
+                        setEmailData({
+                          recipients: [],
+                          customEmails: '',
+                          subject: '',
+                          message: '',
+                          template: 'custom',
+                        });
+                      }}
+                      className="text-gray-500 hover:text-gray-700"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                               </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Alıcılar</label>
+                      <select
+                        value={emailData.recipients}
+                        onChange={(e) => setEmailData({ ...emailData, recipients: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="all">Tüm Kullanıcılar ({users.filter(u => u.email).length})</option>
+                        <option value="selected">Seçili Kullanıcılar ({selectedUsers.length})</option>
+                        <option value="custom">Özel Email Adresleri</option>
+                      </select>
+                    </div>
+
+                    {emailData.recipients === 'custom' && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Adresleri (virgülle ayırın)</label>
+                        <textarea
+                          value={emailData.customEmails}
+                          onChange={(e) => setEmailData({ ...emailData, customEmails: e.target.value })}
+                          placeholder="email1@example.com, email2@example.com"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          rows="3"
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Şablon</label>
+                      <select
+                        value={emailData.template}
+                        onChange={(e) => applyEmailTemplate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="custom">Özel</option>
+                        <option value="welcome">Hoş Geldiniz</option>
+                        <option value="notification">Duyuru</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Konu</label>
+                      <input
+                        type="text"
+                        value={emailData.subject}
+                        onChange={(e) => setEmailData({ ...emailData, subject: e.target.value })}
+                        placeholder="Email konusu"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Mesaj</label>
+                      <textarea
+                        value={emailData.message}
+                        onChange={(e) => setEmailData({ ...emailData, message: e.target.value })}
+                        placeholder="Email mesajı"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        rows="8"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                               <button
                                 onClick={() => {
-                                  setSelectedUser(user);
-                                  setIsMembershipModalOpen(true);
+                          setIsEmailModalOpen(false);
+                          setEmailData({
+                            recipients: [],
+                            customEmails: '',
+                            subject: '',
+                            message: '',
+                            template: 'custom',
+                          });
                                 }}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+                      >
+                        İptal
+                      </button>
+                      <button
+                        onClick={sendBulkEmail}
                                 disabled={loading}
-                                className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-blue-100 text-blue-700 hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                Süre Ver
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setSelectedUser(user);
-                                  setIsDeleteUserModalOpen(true);
-                                  setDeletePassword('');
-                                  setDeletePasswordError('');
-                                }}
-                                disabled={loading}
-                                className="px-3 py-1 rounded-lg text-sm font-medium transition-colors bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                Sil
+                        {loading ? 'Gönderiliyor...' : 'Gönder'}
                               </button>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-                {users.filter(user => {
-                  if (!searchTerm) return true;
-                  const search = searchTerm.toLowerCase();
-                  return (
-                    user.username?.toLowerCase().includes(search) ||
-                    user.firmaAdi?.toLowerCase().includes(search) ||
-                    user.email?.toLowerCase().includes(search) ||
-                    user.tenant_id?.toString().includes(search)
-                  );
-                }).length === 0 && (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500">Kullanıcı bulunamadı</p>
                   </div>
-                )}
               </div>
-            )}
           </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1327,6 +2739,58 @@ function AdminPanel() {
           onClick={() => setIsNotificationOpen(false)}
         ></div>
       )}
+
+      {/* Klavye Kısayolları Modal */}
+      {showKeyboardShortcuts && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-my-siyah">Klavye Kısayolları</h2>
+                <button
+                  onClick={() => setShowKeyboardShortcuts(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-700">Kısayolları Göster/Gizle</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+K</kbd>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-700">Dashboard</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+1</kbd>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-700">Kullanıcılar</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+2</kbd>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-700">Üyelik Teklifleri</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+3</kbd>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-700">Öneriler</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+4</kbd>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                  <span className="text-gray-700">Ayarlar</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+5</kbd>
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <span className="text-gray-700">Modal Kapat</span>
+                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Esc</kbd>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1343,13 +2807,13 @@ function MembershipModal({ user, onClose, onAdd, loading }) {
         alert('Lütfen özel tarih seçin');
         return;
       }
-      if (!customMonths || customMonths < 1) {
-        alert('Lütfen geçerli bir ay sayısı girin');
+      if (!customMonths || customMonths === 0) {
+        alert('Lütfen geçerli bir ay sayısı girin (0\'dan farklı)');
         return;
       }
       onAdd(customMonths, customDate);
     } else {
-      if (!selectedMonths) {
+      if (!selectedMonths || selectedMonths === 0) {
         alert('Lütfen süre seçin');
         return;
       }
@@ -1366,7 +2830,7 @@ function MembershipModal({ user, onClose, onAdd, loading }) {
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-my-siyah">Üyelik Süresi Ver</h2>
+            <h2 className="text-2xl font-bold text-my-siyah">Üyelik Süresi Ver/Kıs</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -1390,8 +2854,8 @@ function MembershipModal({ user, onClose, onAdd, loading }) {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Kullanım Süresi</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Süre Ekle</label>
+              <div className="grid grid-cols-3 gap-2 mb-3">
                 {[1, 2, 3, 6, 12].map(month => (
                   <button
                     key={month}
@@ -1400,8 +2864,30 @@ function MembershipModal({ user, onClose, onAdd, loading }) {
                       setUseCustomDate(false);
                     }}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      selectedMonths === month && !useCustomDate
+                      selectedMonths === month && !useCustomDate && selectedMonths > 0
                         ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    +{month} Ay
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Süre Kıs</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[-1, -2, -3, -6, -12].map(month => (
+                  <button
+                    key={month}
+                    onClick={() => {
+                      setSelectedMonths(month);
+                      setUseCustomDate(false);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedMonths === month && !useCustomDate && selectedMonths < 0
+                        ? 'bg-red-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -1436,12 +2922,17 @@ function MembershipModal({ user, onClose, onAdd, loading }) {
                   />
                   <input
                     type="number"
-                    min="1"
                     value={customMonths}
-                    onChange={(e) => setCustomMonths(parseInt(e.target.value) || 1)}
-                    placeholder="Ay sayısı"
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value) || 0;
+                      setCustomMonths(value);
+                    }}
+                    placeholder="Ay sayısı (pozitif: ekle, negatif: kıs)"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Pozitif değer: Süre ekler, Negatif değer: Süre kısar
+                  </p>
                 </div>
               )}
             </div>
@@ -1456,10 +2947,18 @@ function MembershipModal({ user, onClose, onAdd, loading }) {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || (!selectedMonths && !useCustomDate)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={loading || (!selectedMonths && !useCustomDate) || (selectedMonths === 0) || (useCustomDate && customMonths === 0)}
+              className={`px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                (selectedMonths && selectedMonths < 0) || (useCustomDate && customMonths < 0)
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              {loading ? 'Ekleniyor...' : 'Ekle'}
+              {loading 
+                ? 'İşleniyor...' 
+                : (selectedMonths && selectedMonths < 0) || (useCustomDate && customMonths < 0)
+                  ? 'Süre Kıs'
+                  : 'Süre Ekle'}
             </button>
           </div>
         </div>

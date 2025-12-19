@@ -351,7 +351,7 @@ function SonHareketler() {
                       setFiltreBaslangicTarihi('');
                       setFiltreBitisTarihi('');
                     }}
-                    className="px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-gray-500 text-white hover:bg-gray-600 transition-all touch-manipulation min-h-[36px] active:scale-95"
+                    className={`px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-gray-500 hover:bg-gray-600 transition-all touch-manipulation min-h-[36px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                   >
                     Filtreleri Temizle
                   </button>

@@ -10,11 +10,13 @@ import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function Gelir() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -403,7 +405,7 @@ function Gelir() {
                   <div className="flex items-end">
                     <button
                       onClick={handleGunlukCiro}
-                      className="w-full md:w-auto px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-blue-500 text-white hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 neumorphic-inset text-xs md:text-sm"
+                      className="w-full md:w-auto px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 text-xs md:text-sm text-white"
                     >
                       Bugün
                     </button>
@@ -467,7 +469,7 @@ function Gelir() {
                       setFiltreMusteri('');
                       setFiltreTip('hepsi');
                     }}
-                    className="px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-gray-500 text-white hover:bg-gray-600 transition-all touch-manipulation min-h-[36px] active:scale-95"
+                    className="px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[36px] active:scale-95 text-white"
                   >
                     Filtreleri Temizle
                   </button>
@@ -477,19 +479,19 @@ function Gelir() {
 
             {/* Özet Kartlar */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className={`bg-gradient-to-br from-blue-500 to-blue-600 p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
                 <h3 className="text-base md:text-lg font-medium mb-2">Toplam Gelir</h3>
                 <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.toplamGelir)}</p>
               </div>
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className={`bg-gradient-to-br from-green-500 to-green-600 p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
                 <h3 className="text-base md:text-lg font-medium mb-2">Toplam İşlem Sayısı</h3>
                 <p className="text-2xl md:text-3xl font-bold">{gelirVerileri.toplamIslemSayisi}</p>
               </div>
-              <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 md:p-6 rounded-xl shadow-lg">
+              <div className={`bg-gradient-to-br from-red-500 to-red-600 p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
                 <h3 className="text-base md:text-lg font-medium mb-2">Son 7 Günlük Ciro</h3>
                 <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.son7GunlukCiro)}</p>
               </div>
-              <div className={`bg-gradient-to-br ${gelirVerileri.karsilastirma.fark >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} text-white p-4 md:p-6 rounded-xl shadow-lg`}>
+              <div className={`bg-gradient-to-br ${gelirVerileri.karsilastirma.fark >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
                 <h3 className="text-base md:text-lg font-medium mb-2">Önceki Dönem Karşılaştırma</h3>
                 <p className="text-lg md:text-xl font-bold break-words">
                   {gelirVerileri.karsilastirma.fark >= 0 ? '+' : ''}{formatPara(gelirVerileri.karsilastirma.fark)}
@@ -552,7 +554,7 @@ function Gelir() {
                   }
                   setLoading(false);
                 }}
-                className="px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-all touch-manipulation min-h-[44px] active:scale-95"
+                className="px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 text-white"
               >
                 PDF Rapor İndir
               </button>
@@ -562,7 +564,7 @@ function Gelir() {
             <div className="mb-6">
               <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Günlük Gelir Detayları</h2>
               <div className="overflow-x-auto -mx-4 md:mx-0">
-                <table className="min-w-full dark-card-bg neumorphic-card border dark-border rounded-lg">
+                <table className="min-w-full text-xs dark-card-bg neumorphic-card border dark-border rounded-lg">
                   <thead className="dark-bg-tertiary neumorphic-inset">
                     <tr>
                       <th className="px-3 md:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">Tarih</th>
@@ -576,17 +578,17 @@ function Gelir() {
                       .sort((a, b) => new Date(b[0]) - new Date(a[0]))
                       .map(([tarih, data]) => (
                         <tr key={tarih} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm font-medium dark-text-primary">
+                          <td className="px-3 md:px-6 py-4 text-xs font-medium dark-text-primary whitespace-nowrap">
                             <div className="md:hidden">{new Date(tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</div>
                             <div className="hidden md:block">{formatTarihGuzel(tarih)}</div>
                           </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm dark-text-primary font-semibold">
+                          <td className="px-3 md:px-6 py-4 text-xs dark-text-primary font-semibold">
                             {formatPara(data.gelir)}
                           </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm dark-text-secondary">
+                          <td className="px-3 md:px-6 py-4 text-xs dark-text-secondary">
                             {data.islemSayisi}
                           </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm dark-text-secondary hidden md:table-cell">
+                          <td className="px-3 md:px-6 py-4 text-xs dark-text-secondary hidden md:table-cell">
                             {formatPara(data.gelir / data.islemSayisi)}
                           </td>
                         </tr>
@@ -607,7 +609,7 @@ function Gelir() {
             <div className="mb-6">
               <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Aylık Gelir Özeti</h2>
               <div className="overflow-x-auto -mx-4 md:mx-0">
-                <table className="min-w-full dark-card-bg neumorphic-card border dark-border rounded-lg">
+                <table className="min-w-full text-xs dark-card-bg neumorphic-card border dark-border rounded-lg">
                   <thead className="dark-bg-tertiary neumorphic-inset">
                     <tr>
                       <th className="px-3 md:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">Ay</th>
@@ -625,17 +627,17 @@ function Gelir() {
                         const ayAdiKisa = new Date(yil, parseInt(ayNumarasi) - 1).toLocaleDateString('tr-TR', { month: 'short', year: '2-digit' });
                         return (
                           <tr key={ay} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
-                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm font-medium dark-text-primary capitalize">
+                            <td className="px-3 md:px-6 py-4 text-xs font-medium dark-text-primary capitalize whitespace-nowrap">
                               <div className="md:hidden">{ayAdiKisa}</div>
                               <div className="hidden md:block">{ayAdi}</div>
                             </td>
-                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm dark-text-primary font-semibold">
+                            <td className="px-3 md:px-6 py-4 text-xs dark-text-primary font-semibold">
                               {formatPara(data.gelir)}
                             </td>
-                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm dark-text-secondary">
+                            <td className="px-3 md:px-6 py-4 text-xs dark-text-secondary">
                               {data.islemSayisi}
                             </td>
-                            <td className="px-3 md:px-6 py-4 text-xs md:text-sm dark-text-secondary hidden md:table-cell">
+                            <td className="px-3 md:px-6 py-4 text-xs dark-text-secondary hidden md:table-cell">
                               {formatPara(data.gelir / data.islemSayisi)}
                             </td>
                           </tr>
@@ -658,29 +660,29 @@ function Gelir() {
               <div className="mb-6">
                 <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">En Çok Gelir Getiren Günler (Top 10)</h2>
                 <div className="overflow-x-auto -mx-4 md:mx-0">
-                  <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full text-xs dark-card-bg neumorphic-card border dark-border rounded-lg">
+                    <thead className="dark-bg-tertiary neumorphic-inset">
                       <tr>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sıra</th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tarih</th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gelir</th>
-                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem</th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">Sıra</th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">Tarih</th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">Gelir</th>
+                        <th className="px-3 md:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">İşlem</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y dark-border">
                       {gelirVerileri.enCokGelirGunler.map((item, index) => (
-                        <tr key={item.tarih} className="hover:bg-gray-50 active:bg-gray-100">
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm font-medium text-gray-900">
+                        <tr key={item.tarih} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
+                          <td className="px-3 md:px-6 py-4 text-xs font-medium dark-text-primary">
                             {index + 1}
                           </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900">
+                          <td className="px-3 md:px-6 py-4 text-xs dark-text-primary whitespace-nowrap">
                             <div className="md:hidden">{new Date(item.tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })}</div>
                             <div className="hidden md:block">{formatTarihGuzel(item.tarih)}</div>
                           </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900 font-semibold">
+                          <td className="px-3 md:px-6 py-4 text-xs dark-text-primary font-semibold">
                             {formatPara(item.gelir)}
                           </td>
-                          <td className="px-3 md:px-6 py-4 text-xs md:text-sm text-gray-900">
+                          <td className="px-3 md:px-6 py-4 text-xs dark-text-secondary">
                             {item.islemSayisi}
                           </td>
                         </tr>

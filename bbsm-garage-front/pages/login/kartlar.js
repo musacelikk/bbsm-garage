@@ -14,12 +14,14 @@ import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
 import { useToast } from '../../contexts/ToastContext';
 import { useProfile } from '../../contexts/ProfileContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Kartlar = () => {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { success, error: showError, warning } = useToast();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isYeniKartEkleModalOpen, setIsYeniKartEkleModalOpen] = useState(false);
@@ -34,7 +36,8 @@ const Kartlar = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [isSilmeModalOpen, setIsSilmeModalOpen] = useState(false);
   const [silmeDuzenleyen, setSilmeDuzenleyen] = useState('');
-  const [showBorderPreview, setShowBorderPreview] = useState(false);
+  const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
+  const actionDropdownRef = useRef(null);
   const defaultColumns = [
     { id: 'adSoyad', label: 'Ad-Soyad', sortKey: 'adSoyad', width: '17%', minWidth: 110 },
     { id: 'markaModel', label: 'Marka-Model', sortKey: 'markaModel', width: '17%', minWidth: 110 },
@@ -44,7 +47,7 @@ const Kartlar = () => {
     { id: 'girisTarihi', label: 'Giriş Tarihi', sortKey: 'girisTarihi', width: '12%', minWidth: 110 },
     { id: 'periyodikBakim', label: 'Türü', sortKey: 'periyodikBakim', width: '10%', minWidth: 100 },
     { id: 'odeme', label: 'Ödeme', width: '3%', minWidth: 60 },
-    { id: 'goruntule', label: 'Görüntüle', width: '3%', minWidth: 60 },
+    { id: 'goruntule', label: 'Detay', width: '2%', minWidth: 45 },
     { id: 'indir', label: 'İndir', width: '5%', minWidth: 80 },
   ];
   const [columns, setColumns] = useState(defaultColumns);
@@ -187,14 +190,13 @@ const Kartlar = () => {
       case 'telNo':
         return 'px-6 py-4';
       case 'girisTarihi':
-        return 'px-6 py-4 text-blue-400';
+        return 'px-6 py-4 text-blue-400 whitespace-nowrap text-xs';
       case 'periyodikBakim':
         return 'px-6 py-4';
       case 'odeme':
       case 'goruntule':
-        return 'px-2 py-3 text-center';
       case 'indir':
-        return 'px-2 py-3 flex gap-1 justify-center';
+        return 'px-2 py-3 text-center';
       default:
         return 'px-6 py-4';
     }
@@ -228,12 +230,17 @@ const Kartlar = () => {
         return kart.girisTarihi || "Tanımsız";
       case 'periyodikBakim':
         return (
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+          <span className={`px-3 py-1 rounded-full text-sm font-medium flex flex-col items-center justify-center leading-tight ${
             kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1'
-              ? 'bg-purple-500/20 text-purple-300' 
+              ? 'bg-red-500/20 text-red-300' 
               : 'dark-bg-tertiary dark-text-secondary'
           }`}>
-            {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? 'Periyodik Bakım' : 'Normal'}
+            {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? (
+              <>
+                <span>Periyodik</span>
+                <span>Bakım</span>
+              </>
+            ) : 'Normal'}
           </span>
         );
       case 'odeme':
@@ -242,7 +249,7 @@ const Kartlar = () => {
             onClick={() => toggleOdemeDurumu(kart.card_id)}
             className={`p-2 pl-4 pr-4 rounded-full font-medium transition-all neumorphic-inset ${
               kart.odemeAlindi 
-                ? 'bg-green-500 text-white hover:bg-green-600' 
+                ? `bg-green-500 hover:bg-green-600 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}` 
                 : 'dark-bg-tertiary dark-text-secondary hover:dark-bg-secondary'
             }`}
             title={kart.odemeAlindi ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
@@ -260,16 +267,18 @@ const Kartlar = () => {
         );
       case 'goruntule':
         return (
-          <Link href={DetailPage(kart.card_id)} className="bg-yellow-500 p-2 pl-4 pr-4 rounded-full font-medium dark-text-primary hover:underline neumorphic-outset">
-            Detay
+          <Link href={DetailPage(kart.card_id)} className="bg-yellow-500 p-1.5 rounded-md hover:bg-yellow-600 active:scale-95 transition-transform inline-flex items-center justify-center" title="Detay">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
           </Link>
         );
       case 'indir':
         return (
-          <>
+          <div className="flex gap-1 justify-center items-center">
             <button
               onClick={() => handlePDFDownload(kart.card_id)}
-              className="bg-green-600 p-1.5 rounded-md text-white hover:bg-green-700 active:scale-95 transition-transform"
+              className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center"
               title="PDF indir"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -278,24 +287,19 @@ const Kartlar = () => {
             </button>
             <button
               onClick={() => handlePrint(kart.card_id)}
-              className="bg-orange-600 p-1.5 rounded-md text-white hover:bg-orange-700 active:scale-95 transition-transform"
+              className="p-1.5 rounded-md active:scale-95 transition-transform text-white bg-blue-500 hover:bg-blue-600 inline-flex items-center justify-center"
               title="Yazdır"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
               </svg>
             </button>
-          </>
+          </div>
         );
       default:
         return null;
     }
   };
-
-  const borderColorClass = showBorderPreview ? 'border-slate-500' : 'border-transparent';
-  const borderWeightTable = showBorderPreview ? 'border-2' : 'border-0';
-  const borderWeightHead = showBorderPreview ? 'border-b-2' : 'border-b-0';
-  const borderWeightCell = showBorderPreview ? 'border-r-2' : 'border-r-0';
 
   const handleConfirmDelete = async () => {
     // Düzenleyen alanı zorunlu kontrolü
@@ -411,6 +415,23 @@ const Kartlar = () => {
   
     fetchData();
   }, []);
+
+  // Dropdown dışına tıklanınca kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionDropdownRef.current && !actionDropdownRef.current.contains(event.target)) {
+        setIsActionDropdownOpen(false);
+      }
+    };
+
+    if (isActionDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isActionDropdownOpen]);
 
   const handleKartEkle = async (yeniKart) => {
     setLoading(true);
@@ -853,21 +874,65 @@ const secilenKartlariIndir = async (type) => {
               {/* Desktop action buttons and search bar - only show on md and up */}
               <div className="flex items-center">
                 <div className="hidden md:flex items-center">
-                  <div className="items-center p-2 pl-4 pr-4 rounded-full ml-4" style={{ backgroundColor: '#0A0875' }}>
-                    <button onClick={silSecilenleri} className="font-semibold text-white text-md">Seçilenleri Sil</button>
-                  </div>
-                  <div className="items-center p-2 pl-4 pr-4 rounded-full ml-4" style={{ backgroundColor: '#3D1566' }}>
-                    <button onClick={() => secilenKartlariIndir('excel')} className="font-semibold text-white text-md">Seçilenleri Excel İndir</button>
-                  </div>
-                  <div className="items-center p-2 pl-4 pr-4 rounded-full ml-4" style={{ backgroundColor: '#6F2157' }}>
-                    <button onClick={() => secilenKartlariIndir('pdf')} className="font-semibold text-white text-md">Seçilenleri PDF İndir</button>
+                  <div className="relative" ref={actionDropdownRef}>
+                    <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                      <button 
+                        onClick={() => setIsActionDropdownOpen(!isActionDropdownOpen)} 
+                        className="font-semibold text-md whitespace-nowrap text-white flex items-center gap-2"
+                      >
+                        Action
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                    {isActionDropdownOpen && (
+                      <div className="absolute top-full left-4 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
+                        <button
+                          onClick={() => {
+                            silSecilenleri();
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Seçilenleri Sil
+                        </button>
+                        <button
+                          onClick={() => {
+                            secilenKartlariIndir('excel');
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Seçilenleri Excel İndir
+                        </button>
+                        <button
+                          onClick={() => {
+                            secilenKartlariIndir('pdf');
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          Seçilenleri PDF İndir
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#A22E47' }}>
-                  <button onClick={toggleYeniKartEkleModal} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Yeni Kart Ekle</button>
+                <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                  <button onClick={toggleYeniKartEkleModal} className="font-semibold text-md whitespace-nowrap text-white">Yeni Kart Ekle</button>
                 </div>
-                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#D43A38' }}>
-                  <button onClick={togglePeriyodikBakimModal} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Periyodik Bakım</button>
+                <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                  <button onClick={togglePeriyodikBakimModal} className="font-semibold text-md whitespace-nowrap text-white">Periyodik Bakım</button>
                 </div>
                 <div className="hidden md:block pr-4 items-center pl-4">
                   <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between">
@@ -886,17 +951,6 @@ const secilenKartlariIndir = async (type) => {
                     </div>
                   </div>
                 </div>
-                <div className="hidden md:flex items-center ml-4 gap-2 text-xs md:text-sm dark-text-secondary">
-                  <label className="flex items-center gap-2 select-none">
-                    <input
-                      type="checkbox"
-                      checked={showBorderPreview}
-                      onChange={() => setShowBorderPreview(!showBorderPreview)}
-                      className="w-4 h-4 dark-bg-tertiary dark-border rounded focus:ring-blue-500"
-                    />
-                    Kenar önizleme
-                  </label>
-                </div>
               </div>
             </div>
 
@@ -909,10 +963,10 @@ const secilenKartlariIndir = async (type) => {
                     style={{ left: resizeGuideX }}
                   />
                 )}
-                <table className={`w-full text-sm text-left dark-text-secondary font-medium ${borderWeightTable} ${borderColorClass} rounded-xl overflow-hidden`}>
-                  <thead className={`text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset ${borderWeightHead} ${borderColorClass}`}>
+                <table className="w-full text-xs text-left dark-text-secondary font-medium rounded-xl overflow-hidden">
+                  <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
                     <tr>
-                      <th scope="col" className={`p-3 ${borderWeightCell} ${borderColorClass} w-10`}></th>
+                      <th scope="col" className="p-3 w-10"></th>
                       {columns.map((column) => (
                         <th
                           key={column.id}
@@ -922,7 +976,7 @@ const secilenKartlariIndir = async (type) => {
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={() => handleColumnDrop(column.id)}
                           onClick={() => column.sortKey && handleSort(column.sortKey)}
-                          className={`px-6 py-3 select-none ${borderWeightCell} ${borderColorClass} ${
+                          className={`px-6 py-3 select-none ${
                             column.sortKey ? 'cursor-pointer' : 'cursor-move'
                           } relative`}
                           style={{ width: column.width || 'auto', minWidth: column.minWidth || 90 }}
@@ -951,7 +1005,7 @@ const secilenKartlariIndir = async (type) => {
                       kart.girisTarihi?.toString().includes(aramaTerimi)
                     ).map((kart) => (
                       <tr key={kart.card_id}>
-                        <td className={`w-10 p-3 ${borderWeightCell} ${borderColorClass}`}>
+                        <td className="w-10 p-3">
                           <div className="flex items-center">
                             <input
                               type="checkbox"
@@ -965,7 +1019,7 @@ const secilenKartlariIndir = async (type) => {
                         {columns.map((column) => (
                           <td
                             key={`${kart.card_id}-${column.id}`}
-                            className={`${getTdClass(column.id)} ${borderWeightCell} ${borderColorClass}`}
+                            className={getTdClass(column.id)}
                             style={{ width: column.width || 'auto', minWidth: column.minWidth || 90 }}
                             >
                             {renderCellContent(column, kart)}
@@ -995,38 +1049,66 @@ const secilenKartlariIndir = async (type) => {
                 </div>
                 {/* Action buttons stacked - Mobil için daha büyük touch target */}
                 <div className="flex flex-col gap-3 w-full mb-4">
-                  <button 
-                    onClick={silSecilenleri} 
-                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-                    style={{ backgroundColor: '#0A0875' }}
-                  >
-                    Seçilenleri Sil
-                  </button>
-                  <button 
-                    onClick={() => secilenKartlariIndir('excel')} 
-                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-                    style={{ backgroundColor: '#3D1566' }}
-                  >
-                    Seçilenleri Excel İndir
-                  </button>
-                  <button 
-                    onClick={() => secilenKartlariIndir('pdf')} 
-                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-                    style={{ backgroundColor: '#6F2157' }}
-                  >
-                    Seçilenleri PDF İndir
-                  </button>
+                  <div className="relative" ref={actionDropdownRef}>
+                    <button 
+                      onClick={() => setIsActionDropdownOpen(!isActionDropdownOpen)} 
+                      className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500 flex items-center justify-center gap-2"
+                    >
+                      Action
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isActionDropdownOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-2 w-full bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
+                        <button
+                          onClick={() => {
+                            silSecilenleri();
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Seçilenleri Sil
+                        </button>
+                        <button
+                          onClick={() => {
+                            secilenKartlariIndir('excel');
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Seçilenleri Excel İndir
+                        </button>
+                        <button
+                          onClick={() => {
+                            secilenKartlariIndir('pdf');
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          Seçilenleri PDF İndir
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <button 
                     onClick={toggleYeniKartEkleModal} 
-                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-                    style={{ backgroundColor: '#A22E47' }}
+                    className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
                   >
                     Yeni Kart Ekle
                   </button>
                   <button 
                     onClick={togglePeriyodikBakimModal} 
-                    className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-                    style={{ backgroundColor: '#D43A38' }}
+                    className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
                   >
                     Periyodik Bakım Ekle
                   </button>
@@ -1070,12 +1152,17 @@ const secilenKartlariIndir = async (type) => {
                         <div className="text-xs dark-text-secondary mb-1">{kart.km !== undefined && kart.km !== null ? formatKm(kart.km) : "Tanımsız"} km</div>
                         <div className="text-xs text-blue-400 mb-1">{kart.girisTarihi || "Tanımsız"}</div>
                         <div className="mt-1">
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium flex flex-col items-center justify-center leading-tight ${
                             kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1'
-                              ? 'bg-purple-500/20 text-purple-300' 
+                              ? 'bg-red-500/20 text-red-300' 
                               : 'dark-bg-tertiary dark-text-secondary'
                           }`}>
-                            {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? 'Periyodik Bakım' : 'Normal'}
+                            {kart.periyodikBakim === true || kart.periyodikBakim === 1 || kart.periyodikBakim === 'true' || kart.periyodikBakim === '1' ? (
+                              <>
+                                <span>Periyodik</span>
+                                <span>Bakım</span>
+                              </>
+                            ) : 'Normal'}
                           </span>
                         </div>
                       </div>
@@ -1084,7 +1171,7 @@ const secilenKartlariIndir = async (type) => {
                           onClick={() => toggleOdemeDurumu(kart.card_id)}
                           className={`p-2 rounded-full transition-all touch-manipulation active:scale-90 neumorphic-inset ${
                             kart.odemeAlindi 
-                              ? 'bg-green-500 text-white' 
+                              ? `bg-green-500 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}` 
                               : 'dark-bg-tertiary dark-text-secondary'
                           }`}
                           title={kart.odemeAlindi ? 'Ödeme Alındı' : 'Ödeme Alınmadı'}
@@ -1101,11 +1188,11 @@ const secilenKartlariIndir = async (type) => {
                         </button>
                         <Link 
                           href={DetailPage(kart.card_id)} 
-                          className="text-yellow-500 hover:text-yellow-600 active:scale-90 transition-transform p-2 touch-manipulation"
+                          className="text-yellow-500 hover:text-yellow-600 active:scale-90 transition-transform p-1.5 touch-manipulation inline-flex items-center justify-center"
+                          title="Detay"
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
                         </Link>
                         <div className="flex gap-3">
@@ -1173,8 +1260,7 @@ const secilenKartlariIndir = async (type) => {
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 rounded-full text-white font-semibold active:scale-95 transition-transform"
-                style={{ backgroundColor: '#0A0875' }}
+                className="px-4 py-2 rounded-full font-semibold active:scale-95 transition-transform text-white bg-blue-500"
               >
                 Onayla ve Sil
               </button>

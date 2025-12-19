@@ -256,12 +256,12 @@ export class AuthService {
       }
     } else {
       // E-posta değişmediyse sadece diğer alanları güncelle
-      if (profileData.firmaAdi !== undefined) user.firmaAdi = profileData.firmaAdi;
-      if (profileData.yetkiliKisi !== undefined) user.yetkiliKisi = profileData.yetkiliKisi;
-      if (profileData.telefon !== undefined) user.telefon = profileData.telefon;
-      if (profileData.email !== undefined) user.email = profileData.email;
-      if (profileData.adres !== undefined) user.adres = profileData.adres;
-      if (profileData.vergiNo !== undefined) user.vergiNo = profileData.vergiNo;
+    if (profileData.firmaAdi !== undefined) user.firmaAdi = profileData.firmaAdi;
+    if (profileData.yetkiliKisi !== undefined) user.yetkiliKisi = profileData.yetkiliKisi;
+    if (profileData.telefon !== undefined) user.telefon = profileData.telefon;
+    if (profileData.email !== undefined) user.email = profileData.email;
+    if (profileData.adres !== undefined) user.adres = profileData.adres;
+    if (profileData.vergiNo !== undefined) user.vergiNo = profileData.vergiNo;
     }
 
     await this.databaseRepository.save(user);
@@ -640,7 +640,16 @@ export class AuthService {
           newStartDate = user.membership_start_date ? new Date(user.membership_start_date) : now;
           newEndDate = new Date(user.membership_end_date);
           newEndDate.setMonth(newEndDate.getMonth() + months);
+          
+          // Negatif değerler için bitiş tarihinin geçmişe gitmemesini kontrol et
+          if (newEndDate < now) {
+            throw new Error('Üyelik süresi geçmişe gidemez');
+          }
         } else {
+          // Kullanıcının üyeliği yoksa veya süresi dolmuşsa negatif değer kabul edilemez
+          if (months < 0) {
+            throw new Error('Üyelik süresi olmayan kullanıcıdan süre kısılamaz');
+          }
           newStartDate = now;
           newEndDate = new Date(now);
           newEndDate.setMonth(newEndDate.getMonth() + months);
@@ -649,21 +658,32 @@ export class AuthService {
 
       user.membership_start_date = newStartDate;
       user.membership_end_date = newEndDate;
+      
+      // Bitiş tarihi geçmişteyse üyelik durumunu expired yap
+      if (newEndDate < now) {
+        user.membership_status = 'expired';
+      } else {
       user.membership_status = 'active';
       user.isActive = true;
+      }
 
       await this.databaseRepository.save(user);
 
       // Log kaydı oluştur
       try {
-        await this.logService.createLog(user.tenant_id, user.username, 'membership_add', null);
+        const logAction = months < 0 ? 'membership_reduce' : 'membership_add';
+        await this.logService.createLog(user.tenant_id, user.username, logAction, null);
       } catch (error) {
-        console.error('Üyelik ekleme log kaydetme hatası:', error);
+        console.error('Üyelik işlemi log kaydetme hatası:', error);
       }
+
+      const message = months < 0 
+        ? `${Math.abs(months)} ay üyelik süresi kısıldı`
+        : `${months} ay üyelik eklendi`;
 
       return { 
         success: true, 
-        message: `${months} ay üyelik eklendi`,
+        message: message,
         membership_start_date: newStartDate,
         membership_end_date: newEndDate
       };

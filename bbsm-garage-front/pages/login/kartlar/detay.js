@@ -11,12 +11,15 @@ import Navbar from '../../../components/Navbar';
 import { aracMarkalari, aracModelleri, yillar, renkler } from '../../../data/aracVerileri';
 import { useToast } from '../../../contexts/ToastContext';
 import { useProfile } from '../../../contexts/ProfileContext';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 function Detay() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { success, error: showError, warning, info } = useToast();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
+  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -586,13 +589,13 @@ function Detay() {
             <h2 className="text-2xl font-bold dark-text-primary mb-4">Kart Bilgileri</h2>
             <div className="flex items-center flex-wrap gap-2 sm:gap-0">
               <div className="items-center bg-green-500 p-2 px-4 sm:px-8 rounded-full neumorphic-inset">
-                <button onClick={handleExcelDownload} className="font-semibold text-white text-md">Excel</button>
+                <button onClick={handleExcelDownload} className={`font-semibold text-md ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Excel</button>
               </div>
               <div className="items-center bg-orange-600 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4 neumorphic-inset">
-                <button onClick={handlePDFDownload} className="font-semibold text-white text-md">PDF</button>
+                <button onClick={handlePDFDownload} className={`font-semibold text-md ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>PDF</button>
               </div>
               <div className="items-center bg-yellow-500 p-2 px-4 sm:px-8 rounded-full ml-2 sm:ml-4 neumorphic-inset">
-                <button onClick={handleSaveCardInfo} className="font-semibold text-white text-md">Kaydet</button>
+                <button onClick={handleSaveCardInfo} className={`font-semibold text-md ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Kaydet</button>
               </div>
             </div>
           </div>
@@ -632,7 +635,7 @@ function Detay() {
           <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 mt-8'>
             <h2 className="text-2xl font-bold dark-text-primary">Yapılanlar</h2>
             <div className="flex flex-wrap gap-2">
-              <button onClick={handleEkleYapilanlar} className="p-2 px-4 sm:px-8 rounded-full font-semibold bg-blue-500 text-white text-md neumorphic-inset">Ekle</button>
+              <button onClick={handleEkleYapilanlar} className={`p-2 px-4 sm:px-8 rounded-full font-semibold bg-blue-500 text-md neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
             </div>
           </div>
           <div className="overflow-x-auto -mx-6 sm:mx-0">
@@ -688,7 +691,7 @@ function Detay() {
                           <button
                             type="button"
                             onClick={() => handleStokDropdownToggle(index)}
-                            className="px-2 py-1 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 flex items-center justify-center"
+                            className={`px-2 py-1 bg-blue-500 rounded text-xs hover:bg-blue-600 flex items-center justify-center ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                             title="Stoktan Seç"
                           >
                             <img 
@@ -828,7 +831,7 @@ function Detay() {
               </button>
               <button
                 onClick={handleConfirmSave}
-                className="px-6 py-2 bg-blue-500 text-white rounded-full font-semibold neumorphic-inset hover:bg-blue-600 transition-colors"
+                className={`px-6 py-2 bg-blue-500 rounded-full font-semibold neumorphic-inset hover:bg-blue-600 transition-colors ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
               >
                 Kaydet
               </button>

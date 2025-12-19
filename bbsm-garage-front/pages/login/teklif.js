@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from 'next/router';
@@ -12,12 +12,14 @@ import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe, useVerticalSwipe } from '../../hooks/useTouchGestures';
 import { useToast } from '../../contexts/ToastContext';
 import { useProfile } from '../../contexts/ProfileContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function Teklif() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { success, error: showError, warning } = useToast();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const router = useRouter();
   const username = getUsername() || 'Kullanıcı';
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +28,8 @@ function Teklif() {
   const [secilenTeklifler, setSecilenTeklifler] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
+  const actionDropdownRef = useRef(null);
 
   const DetailPage = (id) => {
     return (id ? `/login/teklifler/detayT?id=${id}` : '/login/teklif');
@@ -86,6 +90,23 @@ function Teklif() {
   useEffect(() => {
     fetchTeklifListesi();
   }, []);
+
+  // Dropdown dışına tıklanınca kapat
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (actionDropdownRef.current && !actionDropdownRef.current.contains(event.target)) {
+        setIsActionDropdownOpen(false);
+      }
+    };
+
+    if (isActionDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isActionDropdownOpen]);
 
   const handleCheckboxChange = (e, teklifId) => {
     if (e.target.checked) {
@@ -584,32 +605,61 @@ const secilenTeklifleriIndir = async (type) => {
           <div className="flex flex-col gap-3 w-full mb-4">
             <button 
               onClick={secilenTeklifleriKartlaraAktar} 
-              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-              style={{ backgroundColor: '#0A0875' }}
+              className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
             >
-              Seçilenleri Kartlara Aktar
+              Kartlara Aktar
             </button>
-            <button 
-              onClick={silSecilenleri} 
-              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-              style={{ backgroundColor: '#4D1961' }}
-            >
-              Seçilenleri Sil
-            </button>
-            <button 
-              onClick={() => secilenTeklifleriIndir('excel')} 
-              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-              style={{ backgroundColor: '#8F294D' }}
-            >
-              Seçilenleri Excel İndir
-            </button>
-            <button 
-              onClick={() => secilenTeklifleriIndir('pdf')} 
-              className="w-full text-white font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px]"
-              style={{ backgroundColor: '#D43A38' }}
-            >
-              Seçilenleri PDF İndir
-            </button>
+            <div className="relative" ref={actionDropdownRef}>
+              <button 
+                onClick={() => setIsActionDropdownOpen(!isActionDropdownOpen)} 
+                className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500 flex items-center justify-center gap-2"
+              >
+                Action
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {isActionDropdownOpen && (
+                <div className="absolute top-full left-0 right-0 mt-2 w-full bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
+                  <button
+                    onClick={() => {
+                      silSecilenleri();
+                      setIsActionDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Seçilenleri Sil
+                  </button>
+                  <button
+                    onClick={() => {
+                      secilenTeklifleriIndir('excel');
+                      setIsActionDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                    Seçilenleri Excel İndir
+                  </button>
+                  <button
+                    onClick={() => {
+                      secilenTeklifleriIndir('pdf');
+                      setIsActionDropdownOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Seçilenleri PDF İndir
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           {/* Teklif list as cards - Mobil için optimize edilmiş */}
           <div className="w-full dark-card-bg neumorphic-card rounded-xl overflow-hidden">
@@ -631,35 +681,38 @@ const secilenTeklifleriIndir = async (type) => {
                 <div className="flex flex-col items-center ml-3 gap-3">
                   <button 
                     onClick={() => handleTeklifEkle(teklif)} 
-                    className="text-blue-400 hover:text-blue-300 active:scale-90 transition-transform p-2 touch-manipulation"
+                    className="bg-blue-500 p-1.5 rounded-md hover:bg-blue-600 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
+                    title="Kartlara Ekle"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                   </button>
-                  <a 
+                  <Link 
                     href={DetailPage(teklif.teklif_id)} 
-                    className="text-yellow-400 hover:text-yellow-300 active:scale-90 transition-transform p-2 touch-manipulation"
+                    className="text-yellow-500 hover:text-yellow-600 active:scale-90 transition-transform p-1.5 touch-manipulation inline-flex items-center justify-center"
+                    title="Detay"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                  </a>
-                  <div className="flex gap-3">
+                  </Link>
+                  <div className="flex gap-1 justify-center items-center">
                     <button 
                       onClick={() => handleExcelDownload(teklif.teklif_id)} 
-                      className="text-green-400 hover:text-green-300 active:scale-90 transition-transform p-2 touch-manipulation"
+                      className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
+                      title="Excel indir"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </button>
                     <button 
                       onClick={() => handlePDFDownload(teklif.teklif_id)} 
-                      className="text-orange-400 hover:text-orange-300 active:scale-90 transition-transform p-2 touch-manipulation"
+                      className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
+                      title="PDF indir"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                     </button>
@@ -683,17 +736,63 @@ const secilenTeklifleriIndir = async (type) => {
               </div>
 
               <div className="flex items-center">
-                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#0A0875' }}>
-                  <button onClick={secilenTeklifleriKartlaraAktar} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Kartlara Aktar</button>
+                <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                  <button onClick={secilenTeklifleriKartlaraAktar} className="font-semibold text-md whitespace-nowrap text-white">Kartlara Aktar</button>
                 </div>
-                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#4D1961' }}>
-                  <button onClick={silSecilenleri} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Seçilenleri Sil</button>
-                </div>
-                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#8F294D' }}>
-                  <button onClick={() => secilenTeklifleriIndir('excel')} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">Excel İndir</button>
-                </div>
-                <div className="items-center p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4" style={{ backgroundColor: '#D43A38' }}>
-                  <button onClick={() => secilenTeklifleriIndir('pdf')} className="font-semibold text-white text-xs md:text-sm lg:text-md whitespace-nowrap">PDF İndir</button>
+                <div className="hidden md:flex items-center">
+                  <div className="relative" ref={actionDropdownRef}>
+                    <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                      <button 
+                        onClick={() => setIsActionDropdownOpen(!isActionDropdownOpen)} 
+                        className="font-semibold text-md whitespace-nowrap text-white flex items-center gap-2"
+                      >
+                        Action
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </div>
+                    {isActionDropdownOpen && (
+                      <div className="absolute top-full left-4 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
+                        <button
+                          onClick={() => {
+                            silSecilenleri();
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                          Seçilenleri Sil
+                        </button>
+                        <button
+                          onClick={() => {
+                            secilenTeklifleriIndir('excel');
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                          </svg>
+                          Seçilenleri Excel İndir
+                        </button>
+                        <button
+                          onClick={() => {
+                            secilenTeklifleriIndir('pdf');
+                            setIsActionDropdownOpen(false);
+                          }}
+                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          Seçilenleri PDF İndir
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="pr-4 items-center pl-4">
@@ -717,7 +816,7 @@ const secilenTeklifleriIndir = async (type) => {
             </div>
 
             <div className="overflow-auto h-140">
-              <table className="w-full text-sm text-left dark-text-secondary font-medium">
+              <table className="w-full text-xs text-left dark-text-secondary font-medium rounded-xl overflow-hidden">
                 <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
                   <tr>
                     <th scope="col" className="p-4"></th>
@@ -742,11 +841,11 @@ const secilenTeklifleriIndir = async (type) => {
                     <th scope="col" className="px-4 py-3">
                       Kartlara Ekle
                     </th>
-                    <th scope="col" className="pl-5 px-4 py-3">
-                      Görüntüle
+                    <th scope="col" className="px-2 py-3 text-center">
+                      Detay
                     </th>
-                    <th scope="col" className="pl-10 px-4 py-3">
-                      İndİr
+                    <th scope="col" className="px-2 py-3 text-center">
+                      İndir
                     </th>
                   </tr>
                 </thead>
@@ -779,26 +878,32 @@ const secilenTeklifleriIndir = async (type) => {
                       <td className="px-6 py-2 uppercase dark-text-secondary">
                         {(teklif.sasi || "Tanımsız").length > 7 ? `${toUpperCase((teklif.sasi || "Tanımsız").substring(0, 7))}...` : toUpperCase(teklif.sasi || "Tanımsız")}
                       </td>
-                      <td className="px-6 py-2 text-blue-400">
+                      <td className="px-6 py-2 text-blue-400 whitespace-nowrap text-xs">
                         {teklif.girisTarihi || "Tanımsız"}
                       </td>
-                      <td className="px-8 py-2">
-                        <button onClick={() => handleTeklifEkle(teklif)} className="bg-blue-500 p-2 pl-6 pr-6 rounded-full font-medium text-white hover:underline neumorphic-outset">Ekle</button>
-                      </td>
                       <td className="px-6 py-2">
-                        <a href={DetailPage(teklif.teklif_id)} className="bg-yellow-500 p-2 pl-4 pr-4 rounded-full font-medium dark-text-primary hover:underline neumorphic-outset">Detay</a>
+                        <button onClick={() => handleTeklifEkle(teklif)} className="bg-blue-500 p-2 pl-4 pr-4 rounded-full font-medium text-white hover:bg-blue-600 active:scale-95 transition-transform">Ekle</button>
                       </td>
-                      <td className="px-6 py-2 flex gap-2">
-                        <button onClick={() => handleExcelDownload(teklif.teklif_id)} className="bg-green-500 p-2 pl-4 pr-4 rounded-full font-medium text-my-beyaz hover:underline">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      <td className="px-2 py-3 text-center">
+                        <Link href={DetailPage(teklif.teklif_id)} className="bg-yellow-500 p-1.5 rounded-md hover:bg-yellow-600 active:scale-95 transition-transform inline-flex items-center justify-center" title="Detay">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                           </svg>
-                        </button>
-                        <button onClick={() => handlePDFDownload(teklif.teklif_id)} className="bg-blue-500 p-2 pl-4 pr-4 rounded-full font-medium text-my-beyaz hover:underline">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                          </svg>
-                        </button>
+                        </Link>
+                      </td>
+                      <td className="px-2 py-3 text-center">
+                        <div className="flex gap-1 justify-center items-center">
+                          <button onClick={() => handleExcelDownload(teklif.teklif_id)} className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center" title="Excel indir">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </button>
+                          <button onClick={() => handlePDFDownload(teklif.teklif_id)} className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center" title="PDF indir">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -500,7 +500,12 @@ tr:hover {
 
 /* Sidebar active item gradient */
 .sidebar-active {
-  background: linear-gradient(90deg, #0A0875 0%, #2563EB 100%);
+  background: #3B82F6;
+}
+
+/* Modern tema için sidebar-active */
+:root[data-theme="modern"] .sidebar-active {
+  background: #3B82F6;
 }
 
 /* Dark Text Colors */
@@ -519,6 +524,11 @@ tr:hover {
 /* Dark Border */
 .dark-border {
   border-color: var(--dark-border);
+}
+
+/* Modern tema için text-white override - sadece beyaz/açık arka plan üzerindekiler için */
+[data-theme="modern"] .text-white:not(.bg-blue-500):not(.bg-blue-600):not(.bg-green-500):not(.bg-green-600):not(.bg-red-500):not(.bg-red-600):not(.bg-yellow-500):not(.bg-yellow-600):not(.bg-orange-500):not(.bg-orange-600):not(.bg-purple-500):not(.bg-purple-600):not(.bg-gray-500):not(.bg-gray-600):not([style*="background-color: #"]):not([style*="background:"]):not(.bg-gradient-to):not(.sidebar-active) {
+  color: #111827 !important;
 }
 
   

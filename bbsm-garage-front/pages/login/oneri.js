@@ -12,11 +12,13 @@ import { useProfile } from '../../contexts/ProfileContext';
 import { useNotification } from '../../contexts/NotificationContext';
 import { useToast } from '../../contexts/ToastContext';
 import { validateRequired, getErrorMessage } from '../../utils/validation';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function Oneri() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, firmaAdi, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotification();
   const { success, error: showError } = useToast();
   const username = getUsername() || 'Kullanıcı';
@@ -612,11 +614,11 @@ function Oneri() {
                 <button
                   type="submit"
                   disabled={isSubmitting || loading}
-                  className="w-full py-3.5 md:py-4 px-4 bg-gradient-to-r from-blue-600 to-slate-800 text-white rounded-lg hover:from-blue-700 hover:to-slate-900 transition-all font-semibold shadow-lg shadow-blue-900/40 text-sm md:text-base touch-manipulation min-h-[48px] md:min-h-[52px] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-slate-800 flex items-center justify-center gap-2"
+                  className={`w-full py-3.5 md:py-4 px-4 bg-gradient-to-r from-blue-600 to-slate-800 rounded-lg hover:from-blue-700 hover:to-slate-900 transition-all font-semibold shadow-lg shadow-blue-900/40 text-sm md:text-base touch-manipulation min-h-[48px] md:min-h-[52px] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-slate-800 flex items-center justify-center gap-2 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                 >
                   {isSubmitting ? (
                     <>
-                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className={`animate-spin h-5 w-5 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
