@@ -494,6 +494,11 @@ tr:hover {
   background-color: var(--layout-sidebar-bg);
 }
 
+/* Navbar hover efekti devre dışı */
+nav.neumorphic-outset:hover {
+  transform: none !important;
+}
+
 .navbar-bg {
   background-color: var(--layout-nav-bg);
 }

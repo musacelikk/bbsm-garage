@@ -210,7 +210,7 @@ function Uyelik() {
             {/* Üyelik Bilgileri Bölümü */}
             <div className="mb-8">
               <div className="dark-card-bg neumorphic-card rounded-xl md:rounded-2xl p-4 md:p-6 lg:p-8">
-                <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-4 md:mb-6">Üyelik Bilgileri</h1>
+                <h1 className="text-base md:text-lg font-semibold dark-text-primary mb-4 md:mb-6">Üyelik Bilgileri</h1>
 
                 {membershipLoading ? (
                   <div className="flex justify-center items-center py-12">
@@ -268,7 +268,7 @@ function Uyelik() {
             {/* Üyelik Paketleri Bölümü */}
             <div className="dark-card-bg neumorphic-card rounded-2xl p-6 md:p-8">
               <div className="text-center mb-8">
-                <h2 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3">Üyelik Paketleri</h2>
+                <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Üyelik Paketleri</h2>
                 <p className="dark-text-secondary text-sm sm:text-base">İhtiyacınıza uygun paketi seçin ve hemen başlayın</p>
               </div>
               
@@ -276,7 +276,7 @@ function Uyelik() {
                 {membershipPlans.map((plan) => (
                   <div
                     key={plan.id}
-                    className={`relative dark-card-bg neumorphic-card rounded-2xl border-2 dark-border overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 ${
+                    className={`relative dark-card-bg neumorphic-card rounded-2xl border-2 dark-border overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 flex flex-col ${
                       plan.popular ? 'border-blue-400 md:scale-105 md:-mt-2' : 'hover:border-dark-border'
                     }`}
                   >
@@ -301,9 +301,9 @@ function Uyelik() {
                         <div className="text-sm sm:text-base opacity-90">{plan.duration}</div>
                       </div>
                     </div>
-                    <div className="p-5 sm:p-6">
+                    <div className="p-5 sm:p-6 flex flex-col flex-grow">
                       <p className="dark-text-secondary text-sm mb-5 text-center font-medium">{plan.description}</p>
-                      <ul className="space-y-3 mb-6 min-h-[180px]">
+                      <ul className="space-y-3 mb-6 flex-grow">
                         {plan.features.map((feature, index) => (
                           <li key={index} className="flex items-start gap-2">
                             <svg className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +316,7 @@ function Uyelik() {
                       <button
                         onClick={() => selectMembershipPlan(plan.months)}
                         disabled={selectingPlan}
-                        className={`w-full ${plan.buttonColor} font-semibold py-3 px-6 rounded-lg neumorphic-inset transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
+                        className={`w-full ${plan.buttonColor} font-semibold py-3 px-6 rounded-lg neumorphic-inset transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-105 active:scale-95 mt-auto ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                       >
                         {selectingPlan ? (
                           <span className="flex items-center justify-center gap-2">

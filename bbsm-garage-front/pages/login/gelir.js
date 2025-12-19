@@ -374,8 +374,16 @@ function Gelir() {
             className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary"
             {...pullToRefresh}
           >
-          <div className="p-3 md:p-4 lg:p-6 mt-5 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
-            <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Gelir Raporu</h1>
+          <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
+            <div className="flex items-center pb-4 justify-between">
+              <div className="flex items-center">
+                <div className="pr-4 items-center">
+                  <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
+                    <p className="font-semibold text-base md:text-lg dark-text-primary">Gelir Raporu</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Filtreler */}
             <div className="mb-4 md:mb-6 p-3 md:p-4 dark-card-bg neumorphic-card rounded-lg md:rounded-xl">
@@ -479,19 +487,19 @@ function Gelir() {
 
             {/* Özet Kartlar */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6">
-              <div className={`bg-gradient-to-br from-blue-500 to-blue-600 p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 md:p-6 rounded-xl shadow-lg text-white">
                 <h3 className="text-base md:text-lg font-medium mb-2">Toplam Gelir</h3>
                 <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.toplamGelir)}</p>
               </div>
-              <div className={`bg-gradient-to-br from-green-500 to-green-600 p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
+              <div className="bg-gradient-to-br from-green-500 to-green-600 p-4 md:p-6 rounded-xl shadow-lg text-white">
                 <h3 className="text-base md:text-lg font-medium mb-2">Toplam İşlem Sayısı</h3>
                 <p className="text-2xl md:text-3xl font-bold">{gelirVerileri.toplamIslemSayisi}</p>
               </div>
-              <div className={`bg-gradient-to-br from-red-500 to-red-600 p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
+              <div className="bg-gradient-to-br from-red-500 to-red-600 p-4 md:p-6 rounded-xl shadow-lg text-white">
                 <h3 className="text-base md:text-lg font-medium mb-2">Son 7 Günlük Ciro</h3>
                 <p className="text-2xl md:text-3xl font-bold break-words">{formatPara(gelirVerileri.son7GunlukCiro)}</p>
               </div>
-              <div className={`bg-gradient-to-br ${gelirVerileri.karsilastirma.fark >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} p-4 md:p-6 rounded-xl shadow-lg ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
+              <div className={`bg-gradient-to-br ${gelirVerileri.karsilastirma.fark >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} p-4 md:p-6 rounded-xl shadow-lg text-white`}>
                 <h3 className="text-base md:text-lg font-medium mb-2">Önceki Dönem Karşılaştırma</h3>
                 <p className="text-lg md:text-xl font-bold break-words">
                   {gelirVerileri.karsilastirma.fark >= 0 ? '+' : ''}{formatPara(gelirVerileri.karsilastirma.fark)}
@@ -504,8 +512,9 @@ function Gelir() {
 
             {/* PDF Export Butonu */}
             <div className="mb-6 flex justify-end">
-              <button
-                onClick={async () => {
+              <div className="items-center p-2 pl-4 pr-4 rounded-full bg-blue-500">
+                <button
+                  onClick={async () => {
                   setLoading(true);
                   try {
                     const reportData = {
@@ -554,16 +563,17 @@ function Gelir() {
                   }
                   setLoading(false);
                 }}
-                className="px-4 md:px-6 py-2 md:py-3 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 text-white"
-              >
-                PDF Rapor İndir
-              </button>
+                    className="font-semibold text-md whitespace-nowrap text-white"
+                  >
+                    PDF Rapor İndir
+                  </button>
+                </div>
             </div>
 
             {/* Günlük Gelir Tablosu */}
             <div className="mb-6">
               <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Günlük Gelir Detayları</h2>
-              <div className="overflow-x-auto -mx-4 md:mx-0">
+              <div className="overflow-x-auto">
                 <table className="min-w-full text-xs dark-card-bg neumorphic-card border dark-border rounded-lg">
                   <thead className="dark-bg-tertiary neumorphic-inset">
                     <tr>
@@ -608,7 +618,7 @@ function Gelir() {
             {/* Aylık Gelir Tablosu */}
             <div className="mb-6">
               <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">Aylık Gelir Özeti</h2>
-              <div className="overflow-x-auto -mx-4 md:mx-0">
+              <div className="overflow-x-auto">
                 <table className="min-w-full text-xs dark-card-bg neumorphic-card border dark-border rounded-lg">
                   <thead className="dark-bg-tertiary neumorphic-inset">
                     <tr>
@@ -659,7 +669,7 @@ function Gelir() {
             {gelirVerileri.enCokGelirGunler.length > 0 && (
               <div className="mb-6">
                 <h2 className="text-base md:text-lg font-semibold dark-text-primary mb-3">En Çok Gelir Getiren Günler (Top 10)</h2>
-                <div className="overflow-x-auto -mx-4 md:mx-0">
+                <div className="overflow-x-auto">
                   <table className="min-w-full text-xs dark-card-bg neumorphic-card border dark-border rounded-lg">
                     <thead className="dark-bg-tertiary neumorphic-inset">
                       <tr>
@@ -694,7 +704,6 @@ function Gelir() {
             )}
           </div>
         </div>
-
         </ProtectedPage>
       </div>
     </div>

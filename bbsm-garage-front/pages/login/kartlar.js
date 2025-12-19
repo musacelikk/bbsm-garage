@@ -33,7 +33,7 @@ const Kartlar = () => {
   const [secilenKartlar, setSecilenKartlar] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
   const [teklifler, setTeklifler] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'girisTarihi', direction: 'desc' });
   const [isSilmeModalOpen, setIsSilmeModalOpen] = useState(false);
   const [silmeDuzenleyen, setSilmeDuzenleyen] = useState('');
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
@@ -161,10 +161,12 @@ const Kartlar = () => {
   };
 
   const handleCheckboxChange = (e, kartId) => {
+    // card_id'yi her zaman number olarak tut
+    const id = Number(kartId);
     if (e.target.checked) {
-      setSecilenKartlar([...secilenKartlar, kartId]);
+      setSecilenKartlar([...secilenKartlar, id]);
     } else {
-      setSecilenKartlar(secilenKartlar.filter(card_id => card_id !== kartId));
+      setSecilenKartlar(secilenKartlar.filter(card_id => Number(card_id) !== id));
     }
   };
 
@@ -323,7 +325,7 @@ const Kartlar = () => {
       );
       await Promise.all(deleteRequests);
 
-      const guncellenmisKartlar = kartlar.filter(kart => !secilenKartlar.includes(kart.card_id));
+      const guncellenmisKartlar = kartlar.filter(kart => !secilenKartlar.includes(Number(kart.card_id)));
       setKartlar(guncellenmisKartlar);
       setSecilenKartlar([]);
       setSilmeDuzenleyen('');
@@ -555,8 +557,12 @@ const Kartlar = () => {
   const sortedKartlar = React.useMemo(() => {
     let sortableItems = [...kartlar];
   
+    // Varsayılan olarak tarihe göre sırala (en yeni üstte)
+    const currentSortKey = sortConfig.key || 'girisTarihi';
+    const currentDirection = sortConfig.key ? sortConfig.direction : 'desc';
+  
     sortableItems.sort((a, b) => {
-      if (sortConfig.key === 'girisTarihi') {
+      if (currentSortKey === 'girisTarihi') {
         const dateA = parseDate(a.girisTarihi);
         const dateB = parseDate(b.girisTarihi);
   
@@ -565,30 +571,30 @@ const Kartlar = () => {
         if (dateA === null && dateB === null) return 0;
   
         if (dateA < dateB) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
+          return currentDirection === 'asc' ? -1 : 1;
         }
         if (dateA > dateB) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
+          return currentDirection === 'asc' ? 1 : -1;
         }
         return 0;
-      } else if (sortConfig.key === 'periyodikBakim') {
+      } else if (currentSortKey === 'periyodikBakim') {
         const aValue = a.periyodikBakim === true || a.periyodikBakim === 1 || a.periyodikBakim === 'true' || a.periyodikBakim === '1';
         const bValue = b.periyodikBakim === true || b.periyodikBakim === 1 || b.periyodikBakim === 'true' || b.periyodikBakim === '1';
         
         if (aValue === bValue) return 0;
         if (aValue && !bValue) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
+          return currentDirection === 'asc' ? -1 : 1;
         }
         if (!aValue && bValue) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
+          return currentDirection === 'asc' ? 1 : -1;
         }
         return 0;
       } else {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
+        if (a[currentSortKey] < b[currentSortKey]) {
+          return currentDirection === 'asc' ? -1 : 1;
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
+        if (a[currentSortKey] > b[currentSortKey]) {
+          return currentDirection === 'asc' ? 1 : -1;
         }
         return 0;
       }
@@ -890,18 +896,6 @@ const secilenKartlariIndir = async (type) => {
                       <div className="absolute top-full left-4 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
                         <button
                           onClick={() => {
-                            silSecilenleri();
-                            setIsActionDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Seçilenleri Sil
-                        </button>
-                        <button
-                          onClick={() => {
                             secilenKartlariIndir('excel');
                             setIsActionDropdownOpen(false);
                           }}
@@ -927,6 +921,18 @@ const secilenKartlariIndir = async (type) => {
                       </div>
                     )}
                   </div>
+                </div>
+                <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      silSecilenleri();
+                    }}
+                    className="font-semibold text-md whitespace-nowrap text-white"
+                  >
+                    Seçilenleri Sil
+                  </button>
                 </div>
                 <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
                   <button onClick={toggleYeniKartEkleModal} className="font-semibold text-md whitespace-nowrap text-white">Yeni Kart Ekle</button>
@@ -1063,18 +1069,6 @@ const secilenKartlariIndir = async (type) => {
                       <div className="absolute top-full left-0 right-0 mt-2 w-full bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
                         <button
                           onClick={() => {
-                            silSecilenleri();
-                            setIsActionDropdownOpen(false);
-                          }}
-                          className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                          Seçilenleri Sil
-                        </button>
-                        <button
-                          onClick={() => {
                             secilenKartlariIndir('excel');
                             setIsActionDropdownOpen(false);
                           }}
@@ -1100,6 +1094,16 @@ const secilenKartlariIndir = async (type) => {
                       </div>
                     )}
                   </div>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      silSecilenleri();
+                    }}
+                    className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
+                  >
+                    Seçilenleri Sil
+                  </button>
                   <button 
                     onClick={toggleYeniKartEkleModal} 
                     className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
@@ -1227,7 +1231,7 @@ const secilenKartlariIndir = async (type) => {
       {/* Silme Onay Modali */}
       {isSilmeModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 px-4"
           onClick={() => setIsSilmeModalOpen(false)}
         >
           <div

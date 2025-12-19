@@ -375,10 +375,26 @@ export class CardService {
       }
     }
 
-    // Her stok için toplam kullanılan adet kadar stoğa geri ekle
+    // Her stok için toplam kullanılan adet kadar stoğa geri ekle ve log kaydı oluştur
     for (const [stockId, toplamAdet] of stokKullanimMap.entries()) {
+      // Stok bilgilerini al
+      const stokList = await this.stokService.findOne(stockId, tenant_id);
+      const stok = stokList && stokList.length > 0 ? stokList[0] : null;
+      const stokAdi = stok ? stok.stokAdi : `Stok ID: ${stockId}`;
+
+      // Stok adetini geri yükle
       for (let i = 0; i < toplamAdet; i++) {
         await this.stokService.updateAdet(stockId, 'increment', tenant_id);
+      }
+
+      // Stok geri yükleme logunu kaydet
+      if (username) {
+        try {
+          await this.logService.createLog(tenant_id, username, 'stok_restore', `${stokAdi} (${toplamAdet} adet)`);
+        } catch (error) {
+          console.error('Stok geri yükleme log kaydetme hatası:', error);
+          // Log hatası işlemi engellemez
+        }
       }
     }
 

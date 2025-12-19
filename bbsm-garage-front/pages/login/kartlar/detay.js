@@ -19,7 +19,6 @@ function Detay() {
   const { success, error: showError, warning, info } = useToast();
   const { profileData, refreshProfile } = useProfile();
   const { activeTheme } = useTheme();
-  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);

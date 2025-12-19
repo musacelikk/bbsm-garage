@@ -229,8 +229,14 @@ function Stok() {
             <div className="hidden md:block">
               <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 lg:ml-64 dark-bg-primary">
                 <div className="p-3 md:p-4 lg:p-6 mt-16 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
-                <div className="flex items-center pb-4">
-                  <p className="font-semibold text-base md:text-lg dark-text-primary">Stok Ekle</p>
+                <div className="flex items-center pb-4 justify-between">
+                  <div className="flex items-center">
+                    <div className="pr-4 items-center">
+                      <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
+                        <p className="font-semibold text-base md:text-lg dark-text-primary">Stok Ekle</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <form onSubmit={handleSubmit} className="p-2">
                   <div className="grid gap-6 mb-4 md:grid-cols-3">
@@ -262,7 +268,7 @@ function Stok() {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                      <button type="submit" className={`bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
+                      <button type="submit" className="bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 text-white">Ekle</button>
                   </div>
               </form>
               </div>
@@ -287,49 +293,44 @@ function Stok() {
                 </div>
               )}
 
-              {/* Kategori Filtresi */}
-              <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl mt-4 md:mt-6">
-                <div className="mb-4">
-                  <label className="block text-sm font-medium dark-text-primary mb-2">Kategori Filtresi</label>
-                  <select
-                    value={seciliKategori}
-                    onChange={(e) => {
-                      setSeciliKategori(e.target.value);
-                      if (e.target.value === 'hepsi') {
-                        setFilteredStokListesi(stokListesi.filter(stok => 
-                          stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          stok.info.toLowerCase().includes(searchTerm.toLowerCase())
-                        ));
-                      } else {
-                        setFilteredStokListesi(stokListesi.filter(stok => 
-                          (stok.kategori || 'Genel') === e.target.value &&
-                          (stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          stok.info.toLowerCase().includes(searchTerm.toLowerCase()))
-                        ));
-                      }
-                    }}
-                    className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full md:w-64 p-2.5 touch-manipulation min-h-[44px]"
-                  >
-                    <option value="hepsi">Tüm Kategoriler</option>
-                    {Array.from(new Set(stokListesi.map(s => s.kategori || 'Genel'))).map(kat => (
-                      <option key={kat} value={kat}>{kat}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl mt-4 md:mt-6">
                 <div className="flex items-center pb-4 justify-between">
                   <div className="flex items-center">
-                    <div className="pr-4 items-center ">
-                      <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between ">
+                    <div className="pr-4 items-center">
+                      <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
                         <p className="font-semibold text-base md:text-lg dark-text-primary">Stoklarım</p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <div className="items-center bg-red-600 p-2 md:p-2 pl-3 md:pl-4 pr-3 md:pr-4 rounded-full ml-2 md:ml-4">
-                      <button onClick={handleClearItems} href="" className={`font-semibold text-xs md:text-sm lg:text-md whitespace-nowrap ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Seçilenleri Sil</button>
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <select
+                        value={seciliKategori}
+                        onChange={(e) => {
+                          setSeciliKategori(e.target.value);
+                          if (e.target.value === 'hepsi') {
+                            setFilteredStokListesi(stokListesi.filter(stok => 
+                              stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              stok.info.toLowerCase().includes(searchTerm.toLowerCase())
+                            ));
+                          } else {
+                            setFilteredStokListesi(stokListesi.filter(stok => 
+                              (stok.kategori || 'Genel') === e.target.value &&
+                              (stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                              stok.info.toLowerCase().includes(searchTerm.toLowerCase()))
+                            ));
+                          }
+                        }}
+                        className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full md:w-48 p-2 ps-8 touch-manipulation min-h-[44px]"
+                      >
+                        <option value="hepsi">Tüm Kategoriler</option>
+                        {Array.from(new Set(stokListesi.map(s => s.kategori || 'Genel'))).map(kat => (
+                          <option key={kat} value={kat}>{kat}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
+                      <button onClick={handleClearItems} className="font-semibold text-md whitespace-nowrap text-white">Seçilenleri Sil</button>
                     </div>
                     <div className="pr-4 items-center pl-4">
                       <div className="flex flex-column sm:flex-row flex-wrap space-y-4 sm:space-y-0 items-center justify-between">
@@ -338,13 +339,13 @@ function Stok() {
                           <div className="absolute inset-y-0 left-0 rtl:inset-r-0 rtl:right-0 flex items-center ps-3 pointer-events-none">
                             <svg className="w-5 h-5 dark-text-muted" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg>
                           </div>
-                          <input type="text" id="table-search" className="block p-2 ps-10 text-sm md:text-md dark-text-primary neumorphic-input rounded-full w-64 md:w-80" placeholder="Search for items" value={searchTerm} onChange={handleSearch}/>
+                          <input type="text" id="table-search" className="block p-2 ps-10 text-sm md:text-md dark-text-primary neumorphic-input rounded-full w-64 md:w-80" placeholder="Stok ara" value={searchTerm} onChange={handleSearch}/>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-                <table className="w-full text-sm text-left dark-text-secondary font-medium">
+                <table className="w-full text-xs text-left dark-text-secondary font-medium rounded-xl overflow-hidden">
                   <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
                     <tr>
                       <th scope="col" className="p-4">
@@ -382,16 +383,16 @@ function Stok() {
                             <label htmlFor={`checkbox-table-${index}`} className="sr-only">checkbox</label>
                           </div>
                         </td>
-                        <td className="px-6 py-4 font-medium dark-text-primary whitespace-nowrap">
+                        <td className="px-6 py-4 font-medium dark-text-primary whitespace-nowrap text-xs">
                           {capitalizeWords(stok.stokAdi)}
                         </td>
-                        <td className="px-6 py-4 dark-text-secondary">
+                        <td className="px-6 py-4 dark-text-secondary whitespace-nowrap text-xs">
                           {new Date(stok.eklenisTarihi).toLocaleDateString()}
                         </td>
-                        <td className="px-6 py-4 dark-text-secondary">
+                        <td className="px-6 py-4 dark-text-secondary text-xs">
                           {stok.kategori || 'Genel'}
                         </td>
-                        <td className="px-6 py-4 text-green-400">
+                        <td className="px-6 py-4 text-green-400 text-xs">
                           <div className="flex items-center space-x-2">
                             <button 
                               onClick={() => handleAdetUpdate(stok.id, 'decrement')}
@@ -418,13 +419,8 @@ function Stok() {
                             <span className="px-2 py-1 rounded text-xs font-medium bg-green-500/20 text-green-400">Normal</span>
                           )}
                         </td>
-                        <td className="px-6 py-4 uppercase">
-                        <textarea
-                          readOnly
-                          value={stok.info}
-                          className="dark-card-bg dark-text-secondary text-sm rounded-lg block w-full p-2.5 overflow neumorphic-inset"
-                          style={{ maxHeight: '120px' }}
-                        />
+                        <td className="px-6 py-4 text-xs dark-text-secondary">
+                          {stok.info || '-'}
                         </td>
                       </tr>
                     ))}
@@ -455,7 +451,7 @@ function Stok() {
                   <label htmlFor="info" className="block mb-1 text-sm font-medium dark-text-primary">Açıklama</label>
                   <input type="text" id="info" className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full p-3 touch-manipulation min-h-[44px]" placeholder="Açıklama Giriniz ..." value={info} onChange={(e) => handleChange(e, setInfo)} required/>
                 </div>
-                <button type="submit" className={`w-full bg-blue-500 hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-3 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
+                <button type="submit" className="w-full bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-5 py-3 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 text-white">Ekle</button>
               </form>
             </div>
             {/* Search bar at the top */}
@@ -471,7 +467,7 @@ function Stok() {
             </div>
             {/* Action button full width */}
             <div className="flex flex-col gap-2 w-full mb-4">
-              <button onClick={handleClearItems} className={`w-full bg-red-600 font-semibold py-3 rounded-full neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Seçilenleri Sil</button>
+              <button onClick={handleClearItems} className="w-full bg-blue-500 font-semibold py-3 rounded-full neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 text-white">Seçilenleri Sil</button>
             </div>
             {/* Stok list as cards */}
             <div className="w-full dark-card-bg neumorphic-card rounded-xl overflow-hidden">

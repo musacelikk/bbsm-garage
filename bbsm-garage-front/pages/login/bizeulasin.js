@@ -104,9 +104,9 @@ function BizeUlasin() {
         />
 
         <ProtectedPage>
-          <div className="p-3 md:p-4 lg:p-6 pt-16 lg:ml-64">
+          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary">
             <div className="max-w-7xl mx-auto">
-              <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-4 md:mb-6">Bize Ulaşın</h1>
+              <h1 className="text-base md:text-lg font-semibold dark-text-primary mb-4 md:mb-6">Bize Ulaşın</h1>
 
               {/* İletişim Kartları */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6 mb-4 md:mb-6 lg:mb-8">

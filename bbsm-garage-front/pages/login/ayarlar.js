@@ -374,7 +374,7 @@ function Ayarlar() {
         <ProtectedPage>
           <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary">
             <div className="p-3 md:p-4 lg:p-6 mt-5 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
-              <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-4 md:mb-6">Ayarlar</h1>
+              <h1 className="text-base md:text-lg font-semibold dark-text-primary mb-4 md:mb-6">Ayarlar</h1>
 
               {/* Sekme Navigasyonu */}
               <div className="mb-6">

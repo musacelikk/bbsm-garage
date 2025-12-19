@@ -294,29 +294,21 @@ function Oneri() {
         />
 
         <ProtectedPage>
-          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 pb-6 md:pb-8">
-            {/* Başlık Bölümü */}
-            <div className="mb-4 md:mb-6">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/30">
-                  <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-xl md:text-2xl font-bold dark-text-primary">
-                    Öneri & Ödül Sistemi
-                  </h1>
-                  <p className="dark-text-secondary text-xs md:text-sm mt-0.5">
-                    Önerdiğin özellik kabul edilirse ödül kazan!
-                  </p>
+          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary">
+            <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
+              <div className="flex items-center pb-4 justify-between">
+                <div className="flex items-center">
+                  <div className="pr-4 items-center">
+                    <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
+                      <p className="font-semibold text-base md:text-lg dark-text-primary">Öneri & Ödül Sistemi</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
             {/* Bildirimler Bölümü */}
             {notifications.length > 0 && (
-              <div className="mb-3 md:mb-4 lg:mb-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 border border-blue-500/20">
+              <div className="mb-4 md:mb-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6">
                 <div className="flex items-center justify-between mb-3 md:mb-4">
                   <div className="flex items-center gap-2 md:gap-3">
                     <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center border border-blue-500/30">
@@ -382,7 +374,7 @@ function Oneri() {
             )}
 
             {/* Form Progress Indicator */}
-            <div className="mb-4 md:mb-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 border border-purple-500/20">
+            <div className="mb-4 md:mb-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs md:text-sm font-semibold dark-text-primary">Form İlerlemesi</span>
                 <span className="text-xs md:text-sm font-semibold dark-text-secondary">{calculateFormProgress()}%</span>
@@ -399,7 +391,7 @@ function Oneri() {
             </div>
 
             {/* Form */}
-            <div className="dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 border border-purple-500/20">
+            <div className="dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6">
               {formGonderildi && (
                 <div className="mb-4 p-3 md:p-4 bg-green-500/20 border border-green-500/50 rounded-lg">
                   <div className="flex items-center gap-2 md:gap-3">
@@ -531,7 +523,7 @@ function Oneri() {
                       { deger: 'zaman', label: 'Zaman', color: 'bg-blue-500/20 border-blue-500/50 text-blue-300' },
                       { deger: 'para', label: 'Para', color: 'bg-green-500/20 border-green-500/50 text-green-300' },
                       { deger: 'hata', label: 'Hata azalması', color: 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300' },
-                      { deger: 'memnuniyet', label: 'Müşteri memnuniyeti', color: 'bg-purple-500/20 border-purple-500/50 text-purple-300' }
+                      { deger: 'memnuniyet', label: 'Müşteri memnuniyeti', color: 'bg-red-500/20 border-red-500/50 text-red-300' }
                     ].map((item) => (
                       <button
                         key={item.deger}
@@ -540,7 +532,7 @@ function Oneri() {
                         className={`p-3 md:p-4 rounded-lg transition-all border-2 touch-manipulation min-h-[60px] md:min-h-[70px] active:scale-95 hover:scale-105 flex flex-col items-center justify-center gap-2 ${
                           etkiAlani.includes(item.deger)
                             ? `${item.color} border-2 shadow-lg`
-                            : 'border-gray-600/30 bg-gray-700/30 hover:border-purple-500/30 dark-text-primary'
+                            : 'border-gray-600/30 bg-gray-700/30 hover:border-red-500/30 dark-text-primary'
                         }`}
                       >
                         <div className="text-xs md:text-sm font-semibold text-center leading-tight">{item.label}</div>
@@ -611,109 +603,115 @@ function Oneri() {
                 </div>
 
                 {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting || loading}
-                  className={`w-full py-3.5 md:py-4 px-4 bg-gradient-to-r from-blue-600 to-slate-800 rounded-lg hover:from-blue-700 hover:to-slate-900 transition-all font-semibold shadow-lg shadow-blue-900/40 text-sm md:text-base touch-manipulation min-h-[48px] md:min-h-[52px] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:from-blue-600 disabled:hover:to-slate-800 flex items-center justify-center gap-2 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <svg className={`animate-spin h-5 w-5 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Gönderiliyor...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                      </svg>
-                      <span>Öneriyi Gönder</span>
-                    </>
-                  )}
-                </button>
+                <div className="flex justify-end">
+                  <div className="items-center p-2 pl-4 pr-4 rounded-full bg-blue-500">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || loading}
+                      className="font-semibold text-md whitespace-nowrap text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          <span>Gönderiliyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                          <span>Öneriyi Gönder</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </form>
             </div>
 
             {/* Öneri Geçmişi Bölümü */}
             {oneriGecmisi.length > 0 && (
-              <div className="mt-4 md:mt-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6 border border-purple-500/20">
+              <div className="mt-4 md:mt-6 dark-card-bg neumorphic-card rounded-lg md:rounded-xl p-3 md:p-4 lg:p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center border border-purple-500/30">
-                      <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-base md:text-lg font-semibold dark-text-primary">Öneri Geçmişim</h2>
-                      <p className="text-xs dark-text-muted">Gönderdiğin önerilerin durumunu takip et</p>
+                  <div className="flex items-center">
+                    <div className="pr-4 items-center">
+                      <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
+                        <p className="font-semibold text-base md:text-lg dark-text-primary">Öneri Geçmişim</p>
+                      </div>
                     </div>
                   </div>
-                  <button
-                    onClick={() => setOneriGecmisiGoster(!oneriGecmisiGoster)}
-                    className="text-xs md:text-sm text-purple-400 hover:text-purple-300 font-medium touch-manipulation px-4 py-2 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 transition-all min-h-[36px]"
-                  >
-                    {oneriGecmisiGoster ? 'Gizle' : 'Göster'}
-                  </button>
+                  <div className="items-center p-2 pl-4 pr-4 rounded-full bg-blue-500">
+                    <button
+                      onClick={() => setOneriGecmisiGoster(!oneriGecmisiGoster)}
+                      className="font-semibold text-md whitespace-nowrap text-white"
+                    >
+                      {oneriGecmisiGoster ? 'Gizle' : 'Göster'}
+                    </button>
+                  </div>
                 </div>
 
                 {oneriGecmisiGoster && (
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {oneriGecmisi.map((oneri) => (
-                      <div
-                        key={oneri.id}
-                        className="p-3 md:p-4 rounded-lg border-2 border-gray-600/30 bg-gray-700/20 hover:border-purple-500/30 hover:bg-gray-700/30 transition-all"
-                      >
-                        <div className="flex items-start justify-between gap-3 mb-2">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-sm md:text-base font-semibold dark-text-primary mb-1 truncate">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left dark-text-secondary font-medium rounded-xl overflow-hidden">
+                      <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
+                        <tr>
+                          <th scope="col" className="px-6 py-3">Başlık</th>
+                          <th scope="col" className="px-6 py-3">Sorun Tanımı</th>
+                          <th scope="col" className="px-6 py-3">Tarih</th>
+                          <th scope="col" className="px-6 py-3">Etki Alanı</th>
+                          <th scope="col" className="px-6 py-3">Durum</th>
+                        </tr>
+                      </thead>
+                      <tbody className="dark-card-bg divide-y dark-border">
+                        {oneriGecmisi.map((oneri) => (
+                          <tr key={oneri.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
+                            <td className="px-6 py-4 font-medium dark-text-primary text-xs whitespace-nowrap">
                               {oneri.oneriBaslik}
-                            </h3>
-                            <p className="text-xs dark-text-muted line-clamp-2 mb-2">
-                              {oneri.sorunTanimi}
-                            </p>
-                            <div className="flex flex-wrap items-center gap-2 text-xs dark-text-muted">
-                              <span>
-                                {oneri.tarih ? new Date(oneri.tarih).toLocaleDateString('tr-TR', {
-                                  day: '2-digit',
-                                  month: '2-digit',
-                                  year: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                }) : ''}
-                              </span>
-                              {oneri.etkiAlani && oneri.etkiAlani.length > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <span>{oneri.etkiAlani.length} etki alanı</span>
-                                </>
+                            </td>
+                            <td className="px-6 py-4 dark-text-secondary text-xs">
+                              <div className="line-clamp-2">{oneri.sorunTanimi}</div>
+                            </td>
+                            <td className="px-6 py-4 dark-text-secondary text-xs whitespace-nowrap">
+                              {oneri.tarih ? new Date(oneri.tarih).toLocaleDateString('tr-TR', {
+                                day: '2-digit',
+                                month: '2-digit',
+                                year: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }) : '-'}
+                            </td>
+                            <td className="px-6 py-4 dark-text-secondary text-xs">
+                              {oneri.etkiAlani && oneri.etkiAlani.length > 0 ? `${oneri.etkiAlani.length} alan` : '-'}
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(oneri.status)}`}>
+                                {getStatusText(oneri.status)}
+                              </div>
+                              {oneri.admin_response && (
+                                <div className={`mt-2 p-2 rounded-lg text-xs ${
+                                  oneri.status === 'approved' 
+                                    ? 'bg-green-500/10 border border-green-500/20 text-green-300'
+                                    : oneri.status === 'rejected'
+                                    ? 'bg-red-500/10 border border-red-500/20 text-red-300'
+                                    : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
+                                }`}>
+                                  <p className="font-semibold mb-1">Yanıt:</p>
+                                  <p>{oneri.admin_response}</p>
+                                </div>
                               )}
-                            </div>
-                          </div>
-                          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(oneri.status)}`}>
-                            {getStatusText(oneri.status)}
-                          </div>
-                        </div>
-                        {oneri.admin_response && (
-                          <div className={`mt-3 p-2.5 rounded-lg text-xs ${
-                            oneri.status === 'approved' 
-                              ? 'bg-green-500/10 border border-green-500/20 text-green-300'
-                              : oneri.status === 'rejected'
-                              ? 'bg-red-500/10 border border-red-500/20 text-red-300'
-                              : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
-                          }`}>
-                            <p className="font-semibold mb-1">Yanıt:</p>
-                            <p>{oneri.admin_response}</p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
             )}
+            </div>
           </div>
         </ProtectedPage>
       </div>

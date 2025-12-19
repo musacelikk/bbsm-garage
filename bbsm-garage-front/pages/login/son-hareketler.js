@@ -10,11 +10,13 @@ import Navbar from '../../components/Navbar';
 import ProtectedPage from '../../components/ProtectedPage';
 import { useSwipe } from '../../hooks/useTouchGestures';
 import { useProfile } from '../../contexts/ProfileContext';
+import { useTheme } from '../../contexts/ThemeContext';
 
 function SonHareketler() {
   const { fetchWithAuth, getUsername, logout } = useAuth();
   const { loading, setLoading } = useLoading();
   const { profileData, refreshProfile } = useProfile();
+  const { activeTheme } = useTheme();
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
@@ -88,6 +90,7 @@ function SonHareketler() {
     if (action === 'stok_create') return 'Stok Ekledi';
     if (action === 'stok_delete') return 'Stok Sildi';
     if (action === 'stok_update') return 'Stok Güncelledi';
+    if (action === 'stok_restore') return 'Stok Geri Yüklendi';
     if (action === 'oneri_send') return 'Öneri Gönderdi';
     if (action === 'oneri_approve') return 'Öneri Onaylandı';
     if (action === 'oneri_reject') return 'Öneri Reddedildi';
@@ -118,6 +121,7 @@ function SonHareketler() {
     if (action === 'stok_create') return 'text-emerald-400 bg-emerald-500/20';
     if (action === 'stok_delete') return 'text-red-400 bg-red-500/30';
     if (action === 'stok_update') return 'text-yellow-400 bg-yellow-500/20';
+    if (action === 'stok_restore') return 'text-teal-400 bg-teal-500/20';
     if (action === 'oneri_send') return 'text-indigo-400 bg-indigo-500/20';
     if (action === 'oneri_approve') return 'text-green-400 bg-green-500/20';
     if (action === 'oneri_reject') return 'text-red-400 bg-red-500/20';
@@ -200,6 +204,7 @@ function SonHareketler() {
       h.action === 'stok_create' ||
       h.action === 'stok_delete' ||
       h.action === 'stok_update' ||
+      h.action === 'stok_restore' ||
       h.action === 'oneri_send' ||
       h.action === 'oneri_approve' ||
       h.action === 'oneri_reject' ||
@@ -258,9 +263,17 @@ function SonHareketler() {
         />
 
         <ProtectedPage>
-          <div className="pt-16 pb-6 md:pb-8 px-3 md:px-4 lg:px-8 lg:ml-64">
-            <div className="max-w-7xl mx-auto w-full">
-            <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-3 md:mb-4">Son Hareketler</h1>
+          <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary">
+            <div className="p-3 md:p-4 lg:p-6 dark-card-bg neumorphic-card rounded-xl md:rounded-2xl lg:rounded-3xl">
+              <div className="flex items-center pb-4 justify-between">
+                <div className="flex items-center">
+                  <div className="pr-4 items-center">
+                    <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
+                      <p className="font-semibold text-base md:text-lg dark-text-primary">Son Hareketler</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             
             {/* Filtreler */}
             <div className="mb-4 dark-card-bg neumorphic-card rounded-lg p-3 md:p-4">
@@ -304,6 +317,7 @@ function SonHareketler() {
                     <option value="stok_create">Stok Ekleme</option>
                     <option value="stok_update">Stok Güncelleme</option>
                     <option value="stok_delete">Stok Silme</option>
+                    <option value="stok_restore">Stok Geri Yükleme</option>
                     <option value="oneri_send">Öneri Gönderme</option>
                     <option value="oneri_approve">Öneri Onaylama</option>
                     <option value="oneri_reject">Öneri Reddetme</option>
@@ -351,7 +365,7 @@ function SonHareketler() {
                       setFiltreBaslangicTarihi('');
                       setFiltreBitisTarihi('');
                     }}
-                    className={`px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-gray-500 hover:bg-gray-600 transition-all touch-manipulation min-h-[36px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
+                    className="px-4 py-2 rounded-lg font-medium text-xs md:text-sm bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[36px] active:scale-95 text-white"
                   >
                     Filtreleri Temizle
                   </button>
@@ -423,7 +437,7 @@ function SonHareketler() {
                     <div className="overflow-x-auto -mx-4 sm:mx-0">
                       <div className="inline-block min-w-full align-middle">
                         <div className="overflow-hidden">
-                          <table className="min-w-full divide-y dark-border">
+                          <table className="min-w-full text-xs divide-y dark-border">
                             <thead className="dark-bg-tertiary neumorphic-inset">
                               <tr>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
@@ -441,14 +455,19 @@ function SonHareketler() {
                               {girisCikisPaginated.map((hareket) => (
                                 <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
                                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs sm:text-sm font-medium dark-text-primary">{hareket.username}</div>
+                                    <div className="text-xs font-medium dark-text-primary">{hareket.username}</div>
                                   </td>
                                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
-                                      {getActionLabel(hareket.action)}
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
+                                        {getActionLabel(hareket.action)}
+                                      </span>
+                                      {hareket.action === 'stok_restore' && hareket.duzenleyen && (
+                                        <span className="text-xs dark-text-muted whitespace-nowrap">{hareket.duzenleyen}</span>
+                                      )}
+                                    </div>
                                   </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm dark-text-secondary">
+                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
                                     {formatTarih(hareket.timestamp)}
                                   </td>
                                 </tr>
@@ -504,7 +523,7 @@ function SonHareketler() {
                     <div className="overflow-x-auto -mx-4 sm:mx-0">
                       <div className="inline-block min-w-full align-middle">
                         <div className="overflow-hidden">
-                          <table className="min-w-full divide-y dark-border">
+                          <table className="min-w-full text-xs divide-y dark-border">
                             <thead className="dark-bg-tertiary neumorphic-inset">
                               <tr>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
@@ -525,7 +544,7 @@ function SonHareketler() {
                               {duzenlemePaginated.map((hareket) => (
                                 <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
                                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs sm:text-sm font-medium dark-text-primary">{hareket.username}</div>
+                                    <div className="text-xs font-medium dark-text-primary">{hareket.username}</div>
                                   </td>
                                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                     <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
@@ -533,9 +552,9 @@ function SonHareketler() {
                                     </span>
                                   </td>
                                   <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs sm:text-sm dark-text-secondary">{hareket.duzenleyen || '-'}</div>
+                                    <div className="text-xs dark-text-secondary">{hareket.duzenleyen || '-'}</div>
                                   </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm dark-text-secondary">
+                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
                                     {formatTarih(hareket.timestamp)}
                                   </td>
                                 </tr>

@@ -30,7 +30,6 @@ function Dashboard() {
     const bugun = new Date();
     return bugun.toISOString().split('T')[0];
   });
-  const [aramaMetni, setAramaMetni] = useState('');
 
 
   const fetchKartlar = async () => {
@@ -320,65 +319,6 @@ function Dashboard() {
 
   const periyodikBakimData = hesaplaPeriyodikBakim();
 
-  // Arama fonksiyonu
-  const aramaSonuclari = () => {
-    if (!aramaMetni || aramaMetni.trim() === '') {
-      return { kartlar: [], teklifler: [], hareketler: [] };
-    }
-
-    const arama = aramaMetni.toLowerCase().trim();
-    
-    const filtrelenmisKartlar = kartlar.filter(kart => {
-      const plaka = (kart.plaka || '').toLowerCase();
-      const markaModel = (kart.markaModel || '').toLowerCase();
-      const adSoyad = (kart.adSoyad || '').toLowerCase();
-      const telNo = (kart.telNo || '').toLowerCase();
-      const sasi = (kart.sasi || '').toLowerCase();
-      const notlar = (kart.notlar || '').toLowerCase();
-      
-      return plaka.includes(arama) || 
-             markaModel.includes(arama) || 
-             adSoyad.includes(arama) || 
-             telNo.includes(arama) || 
-             sasi.includes(arama) || 
-             notlar.includes(arama);
-    });
-
-    const filtrelenmisTeklifler = teklifler.filter(teklif => {
-      const plaka = (teklif.plaka || '').toLowerCase();
-      const markaModel = (teklif.markaModel || '').toLowerCase();
-      const adSoyad = (teklif.adSoyad || '').toLowerCase();
-      const telNo = (teklif.telNo || '').toLowerCase();
-      const notlar = (teklif.notlar || '').toLowerCase();
-      
-      return plaka.includes(arama) || 
-             markaModel.includes(arama) || 
-             adSoyad.includes(arama) || 
-             telNo.includes(arama) || 
-             notlar.includes(arama);
-    });
-
-    const filtrelenmisHareketler = hareketler.filter(hareket => {
-      const action = (getActionLabel(hareket.action) || '').toLowerCase();
-      const actionDetail = (hareket.action_detail || '').toLowerCase();
-      const username = (hareket.username || '').toLowerCase();
-      
-      return action.includes(arama) || 
-             actionDetail.includes(arama) || 
-             username.includes(arama);
-    });
-
-    return {
-      kartlar: filtrelenmisKartlar.slice(0, 5),
-      teklifler: filtrelenmisTeklifler.slice(0, 5),
-      hareketler: filtrelenmisHareketler.slice(0, 5),
-      toplamKart: filtrelenmisKartlar.length,
-      toplamTeklif: filtrelenmisTeklifler.length,
-      toplamHareket: filtrelenmisHareketler.length
-    };
-  };
-
-  const aramaSonuc = aramaSonuclari();
 
   // Para formatı
   const formatPara = (tutar) => {
@@ -461,154 +401,16 @@ function Dashboard() {
           <div className="p-3 md:p-4 lg:p-6 pt-4 md:pt-6 lg:pt-8 mt-16 lg:ml-64 dark-bg-primary">
             {/* Başlık Bölümü */}
             <div className="mb-4 md:mb-6">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div>
-                  <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-1">
-                    Hoş Geldiniz, <span className="text-blue-400">{firmaAdi}</span>
-                  </h1>
-                  <p className="dark-text-muted text-xs">
-                    Bugün mağazanızda neler oluyor?
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 text-xs dark-text-muted">
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>{new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                </div>
+              <div>
+                <h1 className="text-xl md:text-2xl font-semibold dark-text-primary mb-1">
+                  Hoş Geldiniz, <span className="text-blue-400">{firmaAdi}</span>
+                </h1>
+                <p className="dark-text-muted text-xs">
+                  Bugün mağazanızda neler oluyor?
+                </p>
               </div>
             </div>
 
-            {/* Arama Kutusu */}
-            <div className="mb-4 md:mb-6">
-              <div className="dark-card-bg neumorphic-inset rounded-lg p-2 md:p-3">
-                <div className="flex items-center gap-2 md:gap-3">
-                  <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <input
-                    type="text"
-                    placeholder="Kartlar, teklifler ve hareketlerde ara..."
-                    value={aramaMetni}
-                    onChange={(e) => setAramaMetni(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-sm md:text-base dark-text-primary placeholder-gray-500 min-h-[36px] md:min-h-[40px]"
-                  />
-                  {aramaMetni && (
-                    <button
-                      onClick={() => setAramaMetni('')}
-                      className="text-gray-400 hover:text-gray-300 transition-colors p-1"
-                      aria-label="Aramayı temizle"
-                    >
-                      <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Arama Sonuçları */}
-            {aramaMetni && aramaMetni.trim() !== '' && (
-              <div className="mb-4 md:mb-6 dark-card-bg neumorphic-card rounded-lg p-3 md:p-4 border border-blue-500/20">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm md:text-base font-medium dark-text-primary">
-                    Arama Sonuçları: "{aramaMetni}"
-                  </h2>
-                  <span className="text-xs dark-text-muted">
-                    {aramaSonuc.toplamKart + aramaSonuc.toplamTeklif + aramaSonuc.toplamHareket} sonuç bulundu
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-                  {/* Kartlar Sonuçları */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Kartlar ({aramaSonuc.toplamKart})</h3>
-                      {aramaSonuc.toplamKart > 5 && (
-                        <Link href={`/login/kartlar?arama=${encodeURIComponent(aramaMetni)}`} className="text-[10px] text-blue-400 hover:text-blue-300">
-                          Tümü →
-                        </Link>
-                      )}
-                    </div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                      {aramaSonuc.kartlar.length === 0 ? (
-                        <p className="text-[10px] dark-text-muted text-center py-2">Sonuç bulunamadı</p>
-                      ) : (
-                        aramaSonuc.kartlar.map((kart) => (
-                          <Link
-                            key={kart.card_id}
-                            href={`/login/kartlar/detay?card_id=${kart.card_id}`}
-                            className="block p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
-                          >
-                            <p className="text-xs font-medium dark-text-primary truncate">{kart.plaka || 'Plaka Yok'}</p>
-                            <p className="text-[10px] dark-text-muted truncate">{kart.markaModel || 'Marka/Model Yok'}</p>
-                            <p className="text-[10px] dark-text-muted truncate">{kart.adSoyad || 'Müşteri Yok'}</p>
-                          </Link>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Teklifler Sonuçları */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Teklifler ({aramaSonuc.toplamTeklif})</h3>
-                      {aramaSonuc.toplamTeklif > 5 && (
-                        <Link href={`/login/teklif?arama=${encodeURIComponent(aramaMetni)}`} className="text-[10px] text-blue-400 hover:text-blue-300">
-                          Tümü →
-                        </Link>
-                      )}
-                    </div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                      {aramaSonuc.teklifler.length === 0 ? (
-                        <p className="text-[10px] dark-text-muted text-center py-2">Sonuç bulunamadı</p>
-                      ) : (
-                        aramaSonuc.teklifler.map((teklif) => (
-                          <Link
-                            key={teklif.teklif_id}
-                            href={`/login/teklifler/detayT?teklif_id=${teklif.teklif_id}`}
-                            className="block p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
-                          >
-                            <p className="text-xs font-medium dark-text-primary truncate">{teklif.plaka || 'Plaka Yok'}</p>
-                            <p className="text-[10px] dark-text-muted truncate">{teklif.markaModel || 'Marka/Model Yok'}</p>
-                            <p className="text-[10px] dark-text-muted truncate">{teklif.adSoyad || 'Müşteri Yok'}</p>
-                          </Link>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Hareketler Sonuçları */}
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Hareketler ({aramaSonuc.toplamHareket})</h3>
-                      {aramaSonuc.toplamHareket > 5 && (
-                        <Link href={`/login/son-hareketler?arama=${encodeURIComponent(aramaMetni)}`} className="text-[10px] text-blue-400 hover:text-blue-300">
-                          Tümü →
-                        </Link>
-                      )}
-                    </div>
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                      {aramaSonuc.hareketler.length === 0 ? (
-                        <p className="text-[10px] dark-text-muted text-center py-2">Sonuç bulunamadı</p>
-                      ) : (
-                        aramaSonuc.hareketler.map((hareket) => (
-                          <div
-                            key={hareket.id}
-                            className="p-2 rounded-lg neumorphic-inset hover:dark-bg-tertiary transition-colors"
-                          >
-                            <p className="text-xs font-medium dark-text-primary truncate">{getActionLabel(hareket.action)}</p>
-                            <p className="text-[10px] dark-text-muted truncate">{hareket.action_detail || '-'}</p>
-                            <p className="text-[10px] dark-text-muted truncate">{formatTarih(hareket.timestamp)}</p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="space-y-4 md:space-y-6">
 

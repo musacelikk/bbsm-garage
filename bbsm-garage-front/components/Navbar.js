@@ -7,7 +7,7 @@ function Navbar({
 }) {
 
   return (
-    <nav className="fixed top-0 left-0 z-40 w-full navbar-bg neumorphic-outset border-b dark-border lg:left-64 lg:w-[calc(100%-16rem)]">
+    <nav className="fixed top-0 left-0 z-40 w-full navbar-bg neumorphic-outset border-b dark-border lg:left-64 lg:w-[calc(100%-16rem)] hover:transform-none">
       <div className="px-3 py-2 lg:px-5">
         <div className="flex items-center justify-between w-full">
           {/* Sol taraf: Logo + BBSM Tech + ServisPanel */}
@@ -30,6 +30,14 @@ function Navbar({
           {/* Orta: Döviz Kurları */}
           <div className="flex-1 flex items-center justify-center px-2 hidden lg:flex">
             <CurrencyBar />
+          </div>
+
+          {/* Sağ taraf: Tarih */}
+          <div className="flex items-center gap-2 text-xs dark-text-muted flex-shrink-0">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span>{new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
           </div>
 
         </div>

@@ -27,7 +27,7 @@ function Teklif() {
   const [teklifler, setTeklifler] = useState([]);
   const [secilenTeklifler, setSecilenTeklifler] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'girisTarihi', direction: 'desc' });
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const actionDropdownRef = useRef(null);
 
@@ -371,34 +371,36 @@ function Teklif() {
   const sortedTeklifler = useMemo(() => {
     let sortableItems = [...teklifler];
   
-    if (sortConfig.key) {
-      sortableItems.sort((a, b) => {
-        if (sortConfig.key === 'girisTarihi') {
-          const dateA = parseDate(a.girisTarihi);
-          const dateB = parseDate(b.girisTarihi);
+    // Varsayılan olarak tarihe göre sırala (en yeni üstte)
+    const currentSortKey = sortConfig.key || 'girisTarihi';
+    const currentDirection = sortConfig.key ? sortConfig.direction : 'desc';
+  
+    sortableItems.sort((a, b) => {
+      if (currentSortKey === 'girisTarihi') {
+        const dateA = parseDate(a.girisTarihi);
+        const dateB = parseDate(b.girisTarihi);
     
-          if (dateA === null && dateB !== null) return 1;
-          if (dateA !== null && dateB === null) return -1;
-          if (dateA === null && dateB === null) return 0;
+        if (dateA === null && dateB !== null) return 1;
+        if (dateA !== null && dateB === null) return -1;
+        if (dateA === null && dateB === null) return 0;
     
-          if (dateA < dateB) {
-            return sortConfig.direction === 'asc' ? -1 : 1;
-          }
-          if (dateA > dateB) {
-            return sortConfig.direction === 'asc' ? 1 : -1;
-          }
-          return 0;
-        } else {
-          if (a[sortConfig.key] < b[sortConfig.key]) {
-            return sortConfig.direction === 'asc' ? -1 : 1;
-          }
-          if (a[sortConfig.key] > b[sortConfig.key]) {
-            return sortConfig.direction === 'asc' ? 1 : -1;
-          }
-          return 0;
+        if (dateA < dateB) {
+          return currentDirection === 'asc' ? -1 : 1;
         }
-      });
-    }
+        if (dateA > dateB) {
+          return currentDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      } else {
+        if (a[currentSortKey] < b[currentSortKey]) {
+          return currentDirection === 'asc' ? -1 : 1;
+        }
+        if (a[currentSortKey] > b[currentSortKey]) {
+          return currentDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      }
+    });
   
     return sortableItems;
   }, [teklifler, sortConfig]);
@@ -622,9 +624,13 @@ const secilenTeklifleriIndir = async (type) => {
               {isActionDropdownOpen && (
                 <div className="absolute top-full left-0 right-0 mt-2 w-full bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
                   <button
-                    onClick={() => {
-                      silSecilenleri();
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       setIsActionDropdownOpen(false);
+                      setTimeout(() => {
+                        silSecilenleri();
+                      }, 100);
                     }}
                     className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2 touch-manipulation"
                   >
@@ -755,9 +761,13 @@ const secilenTeklifleriIndir = async (type) => {
                     {isActionDropdownOpen && (
                       <div className="absolute top-full left-4 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
                         <button
-                          onClick={() => {
-                            silSecilenleri();
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setIsActionDropdownOpen(false);
+                            setTimeout(() => {
+                              silSecilenleri();
+                            }, 100);
                           }}
                           className="w-full text-left px-4 py-3 text-white hover:bg-gray-700 transition-colors flex items-center gap-2"
                         >
