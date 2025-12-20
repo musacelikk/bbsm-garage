@@ -505,12 +505,41 @@ nav.neumorphic-outset:hover {
 
 /* Sidebar active item gradient */
 .sidebar-active {
-  background: #3B82F6;
+  background: linear-gradient(135deg, #1c41b2 0%, #1c41b2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.sidebar-active:hover::before {
+  left: 100%;
 }
 
 /* Modern tema için sidebar-active */
 :root[data-theme="modern"] .sidebar-active {
-  background: #3B82F6;
+  background: linear-gradient(135deg, #bebebe 0%, #9ca3af 100%);
+  box-shadow: 
+    4px 4px 8px rgba(0, 0, 0, 0.15),
+    -2px -2px 6px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+:root[data-theme="modern"] .sidebar-active:hover {
+  box-shadow: 
+    6px 6px 12px rgba(0, 0, 0, 0.2),
+    -3px -3px 8px rgba(255, 255, 255, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
 /* Dark Text Colors */
@@ -531,9 +560,13 @@ nav.neumorphic-outset:hover {
   border-color: var(--dark-border);
 }
 
-/* Modern tema için text-white override - sadece beyaz/açık arka plan üzerindekiler için */
-[data-theme="modern"] .text-white:not(.bg-blue-500):not(.bg-blue-600):not(.bg-green-500):not(.bg-green-600):not(.bg-red-500):not(.bg-red-600):not(.bg-yellow-500):not(.bg-yellow-600):not(.bg-orange-500):not(.bg-orange-600):not(.bg-purple-500):not(.bg-purple-600):not(.bg-gray-500):not(.bg-gray-600):not([style*="background-color: #"]):not([style*="background:"]):not(.bg-gradient-to):not(.sidebar-active) {
-  color: #111827 !important;
+/* Modern tema için tarih input takvim ikonu siyah */
+[data-theme="modern"] input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0) brightness(0);
+  cursor: pointer;
 }
 
-  
+[data-theme="modern"] input[type="date"]::-webkit-inner-spin-button,
+[data-theme="modern"] input[type="date"]::-webkit-clear-button {
+  filter: invert(0) brightness(0);
+}

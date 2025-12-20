@@ -50,7 +50,13 @@ export class TeklifService {
       // Log kaydı oluştur
       if (username) {
         try {
-          await this.logService.createLog(tenant_id, username, 'teklif_create');
+          const actionDetail = JSON.stringify({
+            adSoyad: createTeklifDto.adSoyad || '',
+            plaka: createTeklifDto.plaka || '',
+            markaModel: createTeklifDto.markaModel || '',
+            telNo: createTeklifDto.telNo || '',
+          });
+          await this.logService.createLog(tenant_id, username, 'teklif_create', undefined, actionDetail);
         } catch (error) {
           console.error('Teklif oluşturma log kaydetme hatası:', error);
         }
@@ -82,7 +88,14 @@ export class TeklifService {
     // Log kaydı oluştur
     if (username) {
       try {
-        await this.logService.createLog(tenant_id, username, 'teklif_update');
+        const updatedTeklif = await this.findOne(id, tenant_id);
+        const actionDetail = JSON.stringify({
+          adSoyad: updatedTeklif.adSoyad || '',
+          plaka: updatedTeklif.plaka || '',
+          markaModel: updatedTeklif.markaModel || '',
+          telNo: updatedTeklif.telNo || '',
+        });
+        await this.logService.createLog(tenant_id, username, 'teklif_update', undefined, actionDetail);
       } catch (error) {
         console.error('Teklif güncelleme log kaydetme hatası:', error);
       }
@@ -108,6 +121,9 @@ export class TeklifService {
       yapilan.toplamFiyat = dto.toplamFiyat;
       yapilan.tenant_id = tenant_id;
       yapilan.teklif = teklif; // Set the relationship
+      // Stok bilgilerini kaydet (teklif güncellemesinde stoktan düşülmez ama bilgi saklanır)
+      yapilan.stockId = dto.stockId ?? null;
+      yapilan.isFromStock = dto.isFromStock ?? false;
       return yapilan;
     });
 
@@ -118,16 +134,25 @@ export class TeklifService {
   }
 
   async remove(id: number, tenant_id: number, username?: string): Promise<void> {
-    await this.databaseRepository.delete({ teklif_id: id, tenant_id });
-    
-    // Log kaydı oluştur
+    // Silme logunu kaydet (teklif silinmeden önce)
     if (username) {
       try {
-        await this.logService.createLog(tenant_id, username, 'teklif_delete');
+        const teklif = await this.findOne(id, tenant_id);
+        if (teklif) {
+          const actionDetail = JSON.stringify({
+            adSoyad: teklif.adSoyad || '',
+            plaka: teklif.plaka || '',
+            markaModel: teklif.markaModel || '',
+            telNo: teklif.telNo || '',
+          });
+          await this.logService.createLog(tenant_id, username, 'teklif_delete', undefined, actionDetail);
+        }
       } catch (error) {
         console.error('Teklif silme log kaydetme hatası:', error);
       }
     }
+    
+    await this.databaseRepository.delete({ teklif_id: id, tenant_id });
   }
 
   async removeAll(tenant_id: number): Promise<void> {

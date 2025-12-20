@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTheme } from '../contexts/ThemeContext';
 
 const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, onTeklifEkle, yapilanlar, onYapilanlarEkle, onYapilanlarSil, onYapilanlarSil_index, fetchWithAuth, API_URL }) => {
+  const { activeTheme } = useTheme();
   const [birimAdedi, setBirimAdedi] = useState('');
   const [parcaAdi, setParcaAdi] = useState('');
   const [birimFiyati, setBirimFiyati] = useState('');
@@ -17,6 +19,42 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
   useEffect(() => {
     setLocalYapilanlar(yapilanlar);
   }, [yapilanlar]);
+
+  // ContentEditable hücrelerinin içeriğini state ile senkronize et
+  useEffect(() => {
+    localYapilanlar.forEach((item, index) => {
+      const birimAdediEl = cellRefs.current[`${index}-birimAdedi`];
+      const parcaAdiEl = cellRefs.current[`${index}-parcaAdi`];
+      const birimFiyatiEl = cellRefs.current[`${index}-birimFiyati`];
+      
+      if (birimAdediEl && birimAdediEl.textContent !== String(item.birimAdedi ?? '')) {
+        birimAdediEl.textContent = item.birimAdedi ?? '';
+      }
+      if (parcaAdiEl && parcaAdiEl.textContent !== String(item.parcaAdi ?? '')) {
+        parcaAdiEl.textContent = item.parcaAdi ?? '';
+      }
+      if (birimFiyatiEl && birimFiyatiEl.textContent !== String(item.birimFiyati ?? '')) {
+        birimFiyatiEl.textContent = item.birimFiyati ?? '';
+      }
+    });
+  }, [localYapilanlar]);
+
+  // Yeni ekleme satırı için state senkronizasyonu
+  useEffect(() => {
+    const birimAdediEl = cellRefs.current[`${localYapilanlar.length}-birimAdedi`];
+    const parcaAdiEl = cellRefs.current[`${localYapilanlar.length}-parcaAdi`];
+    const birimFiyatiEl = cellRefs.current[`${localYapilanlar.length}-birimFiyati`];
+    
+    if (birimAdediEl && birimAdediEl.textContent !== birimAdedi) {
+      birimAdediEl.textContent = birimAdedi;
+    }
+    if (parcaAdiEl && parcaAdiEl.textContent !== parcaAdi) {
+      parcaAdiEl.textContent = parcaAdi;
+    }
+    if (birimFiyatiEl && birimFiyatiEl.textContent !== birimFiyati) {
+      birimFiyatiEl.textContent = birimFiyati;
+    }
+  }, [birimAdedi, parcaAdi, birimFiyati, localYapilanlar.length]);
 
   // Stok listesini yükle
   useEffect(() => {
@@ -60,6 +98,12 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
     setStokDropdownOpen(false);
     setStockWarning('');
     
+    // ContentEditable hücresini güncelle
+    const parcaAdiEl = cellRefs.current[`${localYapilanlar.length}-parcaAdi`];
+    if (parcaAdiEl) {
+      parcaAdiEl.textContent = stok.stokAdi;
+    }
+    
     // Stok yetersizse uyarı göster
     if (stok.adet < (parseInt(birimAdedi) || 1)) {
       setStockWarning(`Uyarı: Stokta sadece ${stok.adet} adet var!`);
@@ -88,9 +132,17 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
   const focusCell = (rowIndex, field) => {
     const key = `${rowIndex}-${field}`;
     const el = cellRefs.current[key];
-    if (el && typeof el.focus === 'function') {
+    if (el) {
       el.focus();
-      if (el.select) el.select();
+      // ContentEditable için text seçimi
+      if (window.getSelection && document.createRange) {
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        range.collapse(false);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
     }
   };
 
@@ -131,11 +183,16 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
     focusCell(targetRow, fieldsOrder[targetFieldIndex]);
   };
 
-  const handleIkinciModalSubmit = () => {
-    const parsedBirimAdedi = parseInt(birimAdedi, 10) || 1;
-    const parsedBirimFiyati = parseFloat(birimFiyati) || 0;
+  const handleIkinciModalSubmit = (shouldFocusNext = false, overrideValues = {}) => {
+    // Override değerleri varsa onları kullan, yoksa state'lerden al
+    const currentBirimAdedi = overrideValues.birimAdedi !== undefined ? overrideValues.birimAdedi : birimAdedi;
+    const currentParcaAdi = overrideValues.parcaAdi !== undefined ? overrideValues.parcaAdi : parcaAdi;
+    const currentBirimFiyati = overrideValues.birimFiyati !== undefined ? overrideValues.birimFiyati : birimFiyati;
+    
+    const parsedBirimAdedi = parseInt(currentBirimAdedi, 10) || 1;
+    const parsedBirimFiyati = parseFloat(currentBirimFiyati) || 0;
 
-    if (!parcaAdi) {
+    if (!currentParcaAdi) {
       alert("Lütfen tüm alanları doğru bir şekilde doldurun.");
       return;
     }
@@ -151,12 +208,16 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
 
     const ikinciModalBilgiler = {
       birimAdedi: parsedBirimAdedi,
-      parcaAdi,
+      parcaAdi: currentParcaAdi,
       birimFiyati: parsedBirimFiyati,
       toplamFiyat: parsedBirimAdedi * parsedBirimFiyati,
       stockId: selectedStockId || null, // Stoktan seçildiyse stockId ekle
       isFromStock: !!selectedStockId, // Flag: stoktan mı seçildi
     };
+    
+    // Yeni satırın index'ini kaydet (state güncellenmeden önce)
+    const newRowIndex = localYapilanlar.length;
+    
     onYapilanlarEkle(ikinciModalBilgiler);
 
     setBirimAdedi('');
@@ -165,9 +226,23 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
     setSelectedStockId(null);
     setStokArama('');
     setStockWarning('');
+
+    // Eğer Enter ile çağrıldıysa yeni satıra odaklan
+    if (shouldFocusNext) {
+      setTimeout(() => {
+        // State güncellendikten sonra yeni satıra odaklan
+        focusCell(newRowIndex, 'birimAdedi');
+      }, 150);
+    }
   };
 
   const handleSubmit = async () => {
+    // Yapılanlar listesi boşsa uyarı ver
+    if (!localYapilanlar || localYapilanlar.length === 0) {
+      alert('İşlem giriniz! Lütfen en az bir işlem ekleyin.');
+      return;
+    }
+    
     try {
       const yeniKart = {
         ...ilkModalBilgi,
@@ -181,6 +256,12 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
   };
 
   const handleTeklifEkle = async () => {
+    // Yapılanlar listesi boşsa uyarı ver
+    if (!localYapilanlar || localYapilanlar.length === 0) {
+      alert('İşlem giriniz! Lütfen en az bir işlem ekleyin.');
+      return;
+    }
+    
     try {
       const yeniTeklif = {
         ...ilkModalBilgi,
@@ -211,7 +292,14 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
   const handleExistingChange = (index, field, value) => {
     const updated = [...localYapilanlar];
     const item = { ...updated[index] };
-    item[field] = value;
+    
+    // Number alanlar için validation
+    if (field === 'birimAdedi' || field === 'birimFiyati') {
+      const numValue = field === 'birimAdedi' ? parseInt(value, 10) : parseFloat(value);
+      item[field] = isNaN(numValue) ? '' : numValue;
+    } else {
+      item[field] = value;
+    }
 
     // Parça adı manuel değişirse stok bilgisini sıfırla
     if (field === 'parcaAdi') {
@@ -226,6 +314,33 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
 
     updated[index] = item;
     setLocalYapilanlar(updated);
+  };
+
+  const handleCellBlur = (index, field, e) => {
+    const value = e.target.textContent.trim();
+    handleExistingChange(index, field, value);
+  };
+
+  const handleCellKeyDown = (e, index, field) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Önce mevcut değeri kaydet
+      const value = e.target.textContent.trim();
+      handleExistingChange(index, field, value);
+      // Sonra bir sonraki hücreye geç
+      setTimeout(() => {
+        const currentFieldIndex = fieldsOrder.indexOf(field);
+        if (currentFieldIndex < fieldsOrder.length - 1) {
+          focusCell(index, fieldsOrder[currentFieldIndex + 1]);
+        } else if (index < localYapilanlar.length - 1) {
+          focusCell(index + 1, fieldsOrder[0]);
+        }
+      }, 0);
+    } else if (e.key === 'Escape') {
+      e.target.blur();
+    } else {
+      handleArrowNavigation(e, index, field);
+    }
   };
 
   return (
@@ -248,42 +363,44 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
         </div>
         <div className="p-4 md:p-8">
           <div className="overflow-x-auto border dark-border rounded-lg">
-            <table className="min-w-full text-sm divide-y dark-border">
+            <table className="min-w-full text-sm border-collapse">
               <thead className="dark-bg-tertiary neumorphic-inset sticky top-0 z-10">
                 <tr>
-                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-1/6">Adet</th>
-                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-3/6">Parça Adı</th>
-                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-1/6">Birim ₺</th>
-                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-1/6">Toplam ₺</th>
-                  <th className="px-4 md:px-6 py-3 text-center font-medium dark-text-primary uppercase tracking-wider w-1/12">✕</th>
+                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-1/6 border dark-border border-r">Adet</th>
+                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-3/6 border dark-border border-r">Parça Adı</th>
+                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-1/6 border dark-border border-r">Birim ₺</th>
+                  <th className="px-4 md:px-6 py-3 text-left font-medium dark-text-primary uppercase tracking-wider w-1/6 border dark-border border-r">Toplam ₺</th>
+                  <th className="px-4 md:px-6 py-3 text-center font-medium dark-text-primary uppercase tracking-wider w-1/12 border dark-border">✕</th>
                 </tr>
               </thead>
-              <tbody className="dark-card-bg divide-y dark-border">
+              <tbody className="dark-card-bg">
                 {localYapilanlar.map((asd, index) => (
                   <tr
                     key={index}
-                    className="hover:dark-bg-tertiary/60 transition-colors"
+                    className="hover:dark-bg-tertiary/60 transition-colors border-b dark-border"
                   >
-                    <td className="px-4 md:px-6 py-2 whitespace-nowrap">
-                      <input
-                        type="number"
-                        value={asd.birimAdedi ?? ''}
-                        onChange={(e) => handleExistingChange(index, 'birimAdedi', e.target.value)}
-                        onKeyDown={(e) => handleArrowNavigation(e, index, 'birimAdedi')}
-                        ref={(el) => { cellRefs.current[`${index}-birimAdedi`] = el; }}
-                        className="bg-transparent border-none outline-none dark-text-primary font-medium w-16 text-center"
-                      />
+                    <td 
+                      className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handleCellBlur(index, 'birimAdedi', e)}
+                      onKeyDown={(e) => handleCellKeyDown(e, index, 'birimAdedi')}
+                      ref={(el) => { cellRefs.current[`${index}-birimAdedi`] = el; }}
+                    >
+                      {asd.birimAdedi ?? ''}
                     </td>
-                    <td className="px-4 md:px-6 py-2 whitespace-nowrap">
+                    <td className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={asd.parcaAdi ?? ''}
-                          onChange={(e) => handleExistingChange(index, 'parcaAdi', e.target.value)}
-                          onKeyDown={(e) => handleArrowNavigation(e, index, 'parcaAdi')}
+                        <div
+                          className="dark-text-primary font-medium flex-1 cursor-text"
+                          contentEditable
+                          suppressContentEditableWarning
+                          onBlur={(e) => handleCellBlur(index, 'parcaAdi', e)}
+                          onKeyDown={(e) => handleCellKeyDown(e, index, 'parcaAdi')}
                           ref={(el) => { cellRefs.current[`${index}-parcaAdi`] = el; }}
-                          className="bg-transparent border-none outline-none dark-text-primary font-medium w-full"
-                        />
+                        >
+                          {asd.parcaAdi ?? ''}
+                        </div>
                         {asd.isFromStock && (
                           <img 
                             src="/images/envanterikon.png" 
@@ -294,17 +411,17 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                         )}
                       </div>
                     </td>
-                    <td className="px-4 md:px-6 py-2 whitespace-nowrap">
-                      <input
-                        type="number"
-                        value={asd.birimFiyati ?? ''}
-                        onChange={(e) => handleExistingChange(index, 'birimFiyati', e.target.value)}
-                        onKeyDown={(e) => handleArrowNavigation(e, index, 'birimFiyati')}
-                        ref={(el) => { cellRefs.current[`${index}-birimFiyati`] = el; }}
-                        className="bg-transparent border-none outline-none dark-text-primary font-medium w-20 text-center"
-                      />
+                    <td 
+                      className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
+                      contentEditable
+                      suppressContentEditableWarning
+                      onBlur={(e) => handleCellBlur(index, 'birimFiyati', e)}
+                      onKeyDown={(e) => handleCellKeyDown(e, index, 'birimFiyati')}
+                      ref={(el) => { cellRefs.current[`${index}-birimFiyati`] = el; }}
+                    >
+                      {asd.birimFiyati ?? ''}
                     </td>
-                    <td className="px-4 md:px-6 py-2 whitespace-nowrap dark-text-secondary font-medium">
+                    <td className="px-4 md:px-6 py-2 whitespace-nowrap dark-text-secondary font-medium border-r dark-border text-center">
                       {asd.toplamFiyat || 0}
                     </td>
                     <td className="px-4 md:px-6 py-2 whitespace-nowrap text-center text-sm font-medium">
@@ -317,38 +434,71 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                     </td>
                   </tr>
                 ))}
-                <tr className="hover:dark-bg-tertiary/60 transition-colors">
-                  <td className="px-4 md:px-6 py-2 whitespace-nowrap">
-                    <input
-                      type="number"
-                      id="birimAdedi"
-                      value={birimAdedi}
-                      onChange={(e) => setBirimAdedi(e.target.value)}
-                      onKeyDown={(e) => handleArrowNavigation(e, localYapilanlar.length, 'birimAdedi')}
-                      ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimAdedi`] = el; }}
-                      placeholder=""
-                      className="bg-transparent border-none outline-none dark-text-primary font-medium w-16 text-center"
-                      style={{ color: 'inherit' }}
-                    />
+                <tr className="hover:dark-bg-tertiary/60 transition-colors border-b dark-border">
+                  <td 
+                    className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => {
+                      const value = e.target.textContent.trim();
+                      setBirimAdedi(value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Önce değeri kaydet
+                        const value = e.target.textContent.trim();
+                        setBirimAdedi(value);
+                        // Sonra bir sonraki hücreye geç
+                        setTimeout(() => {
+                          focusCell(localYapilanlar.length, 'parcaAdi');
+                        }, 0);
+                      } else {
+                        handleArrowNavigation(e, localYapilanlar.length, 'birimAdedi');
+                      }
+                    }}
+                    ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimAdedi`] = el; }}
+                  >
+                    {birimAdedi}
                   </td>
-                  <td className="px-4 md:px-6 py-2 whitespace-nowrap relative">
+                  <td className="px-4 md:px-6 py-2 whitespace-nowrap relative border-r dark-border">
                     <div className="flex items-center">
-                      <input
-                        type="text"
-                        id="parcaAdi"
-                        value={parcaAdi}
-                        onChange={(e) => {
-                          setParcaAdi(e.target.value);
-                          setSelectedStockId(null);
-                          setStockWarning('');
-                          setStokArama('');
+                      <div
+                        className="dark-text-primary font-medium flex-1 cursor-text"
+                        contentEditable
+                        suppressContentEditableWarning
+                        onBlur={(e) => {
+                          const value = e.target.textContent.trim();
+                          setParcaAdi(value);
+                          if (value !== parcaAdi) {
+                            setSelectedStockId(null);
+                            setStockWarning('');
+                            setStokArama('');
+                          }
                         }}
-                        onKeyDown={(e) => handleArrowNavigation(e, localYapilanlar.length, 'parcaAdi')}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            // Önce değeri kaydet
+                            const value = e.target.textContent.trim();
+                            setParcaAdi(value);
+                            if (value !== parcaAdi) {
+                              setSelectedStockId(null);
+                              setStockWarning('');
+                              setStokArama('');
+                            }
+                            // Sonra bir sonraki hücreye geç
+                            setTimeout(() => {
+                              focusCell(localYapilanlar.length, 'birimFiyati');
+                            }, 0);
+                          } else {
+                            handleArrowNavigation(e, localYapilanlar.length, 'parcaAdi');
+                          }
+                        }}
                         ref={(el) => { cellRefs.current[`${localYapilanlar.length}-parcaAdi`] = el; }}
-                        placeholder=""
-                        className="bg-transparent border-none outline-none dark-text-primary font-medium flex-1"
-                        style={{ color: 'inherit' }}
-                      />
+                      >
+                        {parcaAdi}
+                      </div>
                       <div className="ml-2 flex gap-1">
                         <button
                           type="button"
@@ -356,7 +506,7 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                             setStokArama('');
                             setStokDropdownOpen(!stokDropdownOpen);
                           }}
-                          className="px-1 py-0.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600 flex items-center justify-center"
+                          className={`px-1 py-0.5 bg-blue-500 rounded text-xs hover:bg-blue-600 flex items-center justify-center ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                           title="Stoktan Seç"
                         >
                           <img 
@@ -374,7 +524,7 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                               setSelectedStockId(null);
                               setStockWarning('');
                             }}
-                            className="px-1 py-0.5 bg-gray-500 text-white rounded text-xs hover:bg-gray-600"
+                            className={`px-1 py-0.5 bg-gray-500 rounded text-xs hover:bg-gray-600 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
                             title="Temizle"
                           >
                             ✕
@@ -383,27 +533,46 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 md:px-6 py-2 whitespace-nowrap">
-                    <input
-                      type="number"
-                      id="birimFiyati"
-                      value={birimFiyati}
-                      onChange={(e) => setBirimFiyati(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleIkinciModalSubmit();
-                          return;
+                  <td 
+                    className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
+                    contentEditable
+                    suppressContentEditableWarning
+                    onBlur={(e) => {
+                      const value = e.target.textContent.trim();
+                      setBirimFiyati(value);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Önce mevcut değeri kaydet
+                        const value = e.target.textContent.trim();
+                        setBirimFiyati(value);
+                        
+                        // Eğer tüm alanlar doluysa satırı ekle ve yeni satıra geç
+                        const currentBirimAdedi = birimAdedi || '';
+                        const currentParcaAdi = parcaAdi || '';
+                        const currentBirimFiyati = value || '';
+                        
+                        if (currentBirimAdedi && currentParcaAdi && currentBirimFiyati) {
+                          // Güncel değerleri override olarak geç
+                          handleIkinciModalSubmit(true, {
+                            birimAdedi: currentBirimAdedi,
+                            parcaAdi: currentParcaAdi,
+                            birimFiyati: currentBirimFiyati
+                          });
+                        } else {
+                          // Eksik alan varsa sadece blur yap
+                          e.target.blur();
                         }
-                        handleArrowNavigation(e, localYapilanlar.length, 'birimFiyati');
-                      }}
-                      ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimFiyati`] = el; }}
-                      placeholder=""
-                      className="bg-transparent border-none outline-none dark-text-primary font-medium w-20 text-center"
-                      style={{ color: 'inherit' }}
-                    />
+                        return;
+                      }
+                      handleArrowNavigation(e, localYapilanlar.length, 'birimFiyati');
+                    }}
+                    ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimFiyati`] = el; }}
+                  >
+                    {birimFiyati}
                   </td>
-                  <td className="px-4 md:px-6 py-2 whitespace-nowrap dark-text-secondary font-medium text-center">
+                  <td className="px-4 md:px-6 py-2 whitespace-nowrap dark-text-secondary font-medium text-center border-r dark-border">
                     {(parseFloat(birimFiyati) || 0) * (parseInt(birimAdedi) || 0)}
                   </td>
                   <td className="px-4 md:px-6 py-2 whitespace-nowrap text-center text-sm font-medium">
@@ -438,10 +607,10 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
             <button onClick={onIkinciModalClose} className="dark-bg-tertiary dark-text-primary font-semibold text-md rounded-full p-2 px-6 w-full md:w-auto neumorphic-inset">
               Geri Dön
             </button>
-            <button onClick={handleTeklifEkle} className="bg-gray-600 text-white font-semibold text-md rounded-full p-2 px-4 w-full md:w-auto neumorphic-inset">
+            <button onClick={handleTeklifEkle} className={`bg-gray-600 font-semibold text-md rounded-full p-2 px-4 w-full md:w-auto neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
               Teklif Olarak Kaydet
             </button>
-            <button onClick={handleSubmit} className="bg-blue-500 text-white font-semibold text-md rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset">
+            <button onClick={handleSubmit} className={`bg-blue-500 font-semibold text-md rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
               Kaydet
             </button>
           </div>

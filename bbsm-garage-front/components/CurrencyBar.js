@@ -1,12 +1,14 @@
 import React from 'react';
 import { useCurrency } from '../contexts/CurrencyContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 function CurrencyBar() {
   const { rates, previousRates, loading } = useCurrency();
+  const { activeTheme } = useTheme();
 
   if (loading) {
     return (
-      <div className="dark-card-bg neumorphic-card rounded-lg px-4 py-2 border dark-border">
+      <div className="px-4 py-2">
         <div className="flex items-center justify-center gap-3 text-sm dark-text-muted">
           <span>USD -</span>
           <span className="dark-text-muted opacity-50">|</span>
@@ -90,13 +92,13 @@ function CurrencyBar() {
   };
 
   return (
-    <div className="dark-card-bg neumorphic-card rounded-lg px-4 py-2 border dark-border">
+    <div className="px-4 py-2">
       <div className="flex items-center justify-center gap-6 text-sm">
         {rates.usd && (
           <>
             <div className="flex flex-col min-w-[120px]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-white font-semibold text-[10px]">DOLAR</span>
+                <span className={`font-semibold text-[10px] ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>DOLAR</span>
                 {usdChange.percentage && (
                   <div className={`flex items-center gap-0.5 ${usdChange.textColor || 'text-yellow-400'}`}>
                     {usdChange.icon}
@@ -104,7 +106,7 @@ function CurrencyBar() {
                   </div>
                 )}
               </div>
-              <span className={`${getValueBgColor(usdChange)} text-white text-base font-bold px-2.5 py-1.5`} style={{...getValueBgStyle(usdChange), color: '#ffffff'}}>{rates.usd}</span>
+              <span className={`${getValueBgColor(usdChange)} text-base font-bold px-2.5 py-1.5 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`} style={activeTheme === 'modern' ? {color: '#111827'} : {color: '#ffffff'}}>{rates.usd}</span>
             </div>
             <div className="h-8 w-px dark-border opacity-30"></div>
           </>
@@ -113,7 +115,7 @@ function CurrencyBar() {
           <>
             <div className="flex flex-col min-w-[120px]">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-white font-semibold text-[10px]">EURO</span>
+                <span className={`font-semibold text-[10px] ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>EURO</span>
                 {eurChange.percentage && (
                   <div className={`flex items-center gap-0.5 ${eurChange.textColor || 'text-yellow-400'}`}>
                     {eurChange.icon}
@@ -121,7 +123,7 @@ function CurrencyBar() {
                   </div>
                 )}
               </div>
-              <span className={`${getValueBgColor(eurChange)} text-white text-base font-bold px-2.5 py-1.5`} style={{...getValueBgStyle(eurChange), color: '#ffffff'}}>{rates.eur}</span>
+              <span className={`${getValueBgColor(eurChange)} text-base font-bold px-2.5 py-1.5 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`} style={activeTheme === 'modern' ? {color: '#111827'} : {color: '#ffffff'}}>{rates.eur}</span>
             </div>
             <div className="h-8 w-px dark-border opacity-30"></div>
           </>
@@ -129,7 +131,7 @@ function CurrencyBar() {
         {rates.altin && (
           <div className="flex flex-col min-w-[140px]">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-white font-semibold text-[10px]">GRAM ALTIN</span>
+              <span className={`font-semibold text-[10px] ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>GRAM ALTIN</span>
               {altinChange.percentage && (
                 <div className={`flex items-center gap-0.5 ${altinChange.textColor || 'text-yellow-400'}`}>
                   {altinChange.icon}
@@ -137,7 +139,7 @@ function CurrencyBar() {
                 </div>
               )}
             </div>
-            <span className={`${getValueBgColor(altinChange)} text-white text-base font-bold px-2.5 py-1.5`} style={{...getValueBgStyle(altinChange), color: '#ffffff'}}>{rates.altin}</span>
+            <span className={`${getValueBgColor(altinChange)} text-base font-bold px-2.5 py-1.5 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`} style={activeTheme === 'modern' ? {color: '#111827'} : {color: '#ffffff'}}>{rates.altin}</span>
           </div>
         )}
       </div>

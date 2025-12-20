@@ -205,12 +205,26 @@ function Detay() {
     setLoading(true);
     const { name, value } = event.target;
     const updatedYapilanlar = [...yapilanlar];
-    updatedYapilanlar[index] = { ...updatedYapilanlar[index], [name]: value };
+    const mevcut = updatedYapilanlar[index] || {};
+    updatedYapilanlar[index] = { ...mevcut, [name]: value };
+    
     // Parça adı manuel değişirse, stoktan bağımsız kabul et
     if (name === 'parcaAdi') {
       updatedYapilanlar[index].isFromStock = false;
       updatedYapilanlar[index].stockId = null;
     }
+    
+    // Birim adedi değiştiğinde ve stoktan seçilmişse stok kontrolü yap
+    if (name === 'birimAdedi' && mevcut.isFromStock && mevcut.stockId) {
+      const yeniAdet = parseInt(value, 10) || 0;
+      const stok = stoklar.find(s => s.id === mevcut.stockId);
+      if (stok && stok.adet < yeniAdet) {
+        warning(`Uyarı: Stokta sadece ${stok.adet} adet var! Girdiğiniz adet: ${yeniAdet}`);
+        // Adedi stok adedine sınırla
+        updatedYapilanlar[index][name] = stok.adet;
+      }
+    }
+    
     setYapilanlar(updatedYapilanlar);
     setLoading(false);
   };
@@ -229,6 +243,14 @@ function Detay() {
   const handleStokSec = (index, stok) => {
     const updated = [...yapilanlar];
     const mevcut = updated[index] || {};
+    const birimAdedi = parseInt(mevcut.birimAdedi, 10) || 1;
+    
+    // Stok kontrolü
+    if (stok.adet < birimAdedi) {
+      warning(`Uyarı: Stokta sadece ${stok.adet} adet var! Seçilen adet: ${birimAdedi}`);
+      return;
+    }
+    
     updated[index] = {
       ...mevcut,
       parcaAdi: stok.stokAdi,
@@ -299,6 +321,37 @@ function Detay() {
     // Düzenleyen alanı zorunlu kontrolü
     if (!tempDuzenleyen || tempDuzenleyen.trim() === '') {
       warning('Lütfen Düzenleyen alanını doldurun.');
+      return;
+    }
+
+    // Yapılanlar listesi boşsa uyarı ver
+    if (!yapilanlar || yapilanlar.length === 0) {
+      warning('İşlem giriniz! Lütfen en az bir işlem ekleyin.');
+      return;
+    }
+
+    // Stok kontrolü - Kaydetmeden önce tüm stoktan seçilen ürünleri kontrol et
+    const stokHatalari = [];
+    yapilanlar.forEach((yapilan, index) => {
+      if (yapilan.isFromStock && yapilan.stockId) {
+        const stok = stoklar.find(s => s.id === yapilan.stockId);
+        const birimAdedi = parseInt(yapilan.birimAdedi, 10) || 0;
+        if (stok && stok.adet < birimAdedi) {
+          stokHatalari.push({
+            index: index + 1,
+            parcaAdi: yapilan.parcaAdi || 'Bilinmeyen',
+            stokAdet: stok.adet,
+            istenenAdet: birimAdedi
+          });
+        }
+      }
+    });
+
+    if (stokHatalari.length > 0) {
+      const hataMesaji = stokHatalari.map(h => 
+        `Satır ${h.index} - ${h.parcaAdi}: Stokta ${h.stokAdet} adet var, ${h.istenenAdet} adet istendi.`
+      ).join('\n');
+      warning(`Stok yetersiz! Kayıt yapılamadı.\n\n${hataMesaji}`);
       return;
     }
 
@@ -396,6 +449,31 @@ function Detay() {
   };
 
   const handleSaveYapilanlar = async () => {
+    // Stok kontrolü - Kaydetmeden önce tüm stoktan seçilen ürünleri kontrol et
+    const stokHatalari = [];
+    yapilanlar.forEach((yapilan, index) => {
+      if (yapilan.isFromStock && yapilan.stockId) {
+        const stok = stoklar.find(s => s.id === yapilan.stockId);
+        const birimAdedi = parseInt(yapilan.birimAdedi, 10) || 0;
+        if (stok && stok.adet < birimAdedi) {
+          stokHatalari.push({
+            index: index + 1,
+            parcaAdi: yapilan.parcaAdi || 'Bilinmeyen',
+            stokAdet: stok.adet,
+            istenenAdet: birimAdedi
+          });
+        }
+      }
+    });
+
+    if (stokHatalari.length > 0) {
+      const hataMesaji = stokHatalari.map(h => 
+        `Satır ${h.index} - ${h.parcaAdi}: Stokta ${h.stokAdet} adet var, ${h.istenenAdet} adet istendi.`
+      ).join('\n');
+      warning(`Stok yetersiz! Kayıt yapılamadı.\n\n${hataMesaji}`);
+      return;
+    }
+
     setLoading(true);
     const dataToSend = yapilanlar.map(yapilan => ({
       id: yapilan.id,

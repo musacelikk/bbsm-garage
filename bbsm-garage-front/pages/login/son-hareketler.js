@@ -441,10 +441,10 @@ function SonHareketler() {
                             <thead className="dark-bg-tertiary neumorphic-inset">
                               <tr>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
-                                  Kullanıcı
+                                  İşlem
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
-                                  İşlem
+                                  Müşteri / Detay
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
                                   Tarih ve Saat
@@ -452,26 +452,48 @@ function SonHareketler() {
                               </tr>
                             </thead>
                             <tbody className="dark-card-bg divide-y dark-border">
-                              {girisCikisPaginated.map((hareket) => (
-                                <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs font-medium dark-text-primary">{hareket.username}</div>
-                                  </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center gap-2">
-                                      <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
-                                        {getActionLabel(hareket.action)}
-                                      </span>
-                                      {hareket.action === 'stok_restore' && hareket.duzenleyen && (
-                                        <span className="text-xs dark-text-muted whitespace-nowrap">{hareket.duzenleyen}</span>
+                              {girisCikisPaginated.map((hareket) => {
+                                let musteriBilgisi = null;
+                                try {
+                                  if (hareket.action_detail) {
+                                    musteriBilgisi = JSON.parse(hareket.action_detail);
+                                  }
+                                } catch (e) {
+                                  // JSON parse hatası, görmezden gel
+                                }
+                                
+                                return (
+                                  <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
+                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                      <div className="flex items-center gap-2">
+                                        <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
+                                          {getActionLabel(hareket.action)}
+                                        </span>
+                                        {hareket.action === 'stok_restore' && hareket.duzenleyen && (
+                                          <span className="text-xs dark-text-muted whitespace-nowrap">{hareket.duzenleyen}</span>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4">
+                                      {musteriBilgisi && (musteriBilgisi.adSoyad || musteriBilgisi.plaka || musteriBilgisi.markaModel) ? (
+                                        <div className="text-xs dark-text-secondary">
+                                          <div className="font-medium dark-text-primary">{musteriBilgisi.adSoyad || '-'}</div>
+                                          <div className="text-xs dark-text-muted mt-0.5">
+                                            {musteriBilgisi.plaka && <span>Plaka: {musteriBilgisi.plaka}</span>}
+                                            {musteriBilgisi.plaka && musteriBilgisi.markaModel && <span> • </span>}
+                                            {musteriBilgisi.markaModel && <span>{musteriBilgisi.markaModel}</span>}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs dark-text-muted">-</span>
                                       )}
-                                    </div>
-                                  </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
-                                    {formatTarih(hareket.timestamp)}
-                                  </td>
-                                </tr>
-                              ))}
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
+                                      {formatTarih(hareket.timestamp)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>
@@ -527,10 +549,10 @@ function SonHareketler() {
                             <thead className="dark-bg-tertiary neumorphic-inset">
                               <tr>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
-                                  Kullanıcı
+                                  İşlem
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
-                                  İşlem
+                                  Müşteri / Detay
                                 </th>
                                 <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium dark-text-primary uppercase tracking-wider">
                                   Düzenleyen
@@ -541,24 +563,46 @@ function SonHareketler() {
                               </tr>
                             </thead>
                             <tbody className="dark-card-bg divide-y dark-border">
-                              {duzenlemePaginated.map((hareket) => (
-                                <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs font-medium dark-text-primary">{hareket.username}</div>
-                                  </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
-                                      {getActionLabel(hareket.action)}
-                                    </span>
-                                  </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                    <div className="text-xs dark-text-secondary">{hareket.duzenleyen || '-'}</div>
-                                  </td>
-                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
-                                    {formatTarih(hareket.timestamp)}
-                                  </td>
-                                </tr>
-                              ))}
+                              {duzenlemePaginated.map((hareket) => {
+                                let musteriBilgisi = null;
+                                try {
+                                  if (hareket.action_detail) {
+                                    musteriBilgisi = JSON.parse(hareket.action_detail);
+                                  }
+                                } catch (e) {
+                                  // JSON parse hatası, görmezden gel
+                                }
+                                
+                                return (
+                                  <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
+                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                      <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
+                                        {getActionLabel(hareket.action)}
+                                      </span>
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4">
+                                      {musteriBilgisi && (musteriBilgisi.adSoyad || musteriBilgisi.plaka || musteriBilgisi.markaModel) ? (
+                                        <div className="text-xs dark-text-secondary">
+                                          <div className="font-medium dark-text-primary">{musteriBilgisi.adSoyad || '-'}</div>
+                                          <div className="text-xs dark-text-muted mt-0.5">
+                                            {musteriBilgisi.plaka && <span>Plaka: {musteriBilgisi.plaka}</span>}
+                                            {musteriBilgisi.plaka && musteriBilgisi.markaModel && <span> • </span>}
+                                            {musteriBilgisi.markaModel && <span>{musteriBilgisi.markaModel}</span>}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <span className="text-xs dark-text-muted">-</span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                      <div className="text-xs dark-text-secondary">{hareket.duzenleyen || '-'}</div>
+                                    </td>
+                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
+                                      {formatTarih(hareket.timestamp)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
                             </tbody>
                           </table>
                         </div>

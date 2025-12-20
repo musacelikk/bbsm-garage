@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { aracMarkalari, aracModelleri, yillar, renkler } from '../data/aracVerileri';
+import { useTheme } from '../contexts/ThemeContext';
 
 const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi, isPeriyodikBakimMode = false }) => {
+  const { activeTheme } = useTheme();
   // Bugünün tarihini YYYY-MM-DD formatında al
   const getTodayDate = () => {
     const today = new Date();
@@ -249,10 +251,10 @@ const IlkModal = ({ onIlkModalSubmit, onClose, ilkModalBilgi, isPeriyodikBakimMo
             <button onClick={onClose} className="dark-bg-tertiary dark-text-primary font-semibold rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset">
               İptal
             </button>
-            <button onClick={handleClearForm} className="bg-red-500 text-white font-semibold rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset">
+            <button onClick={handleClearForm} className={`bg-red-500 font-semibold rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>
               Formu Temizle
             </button>
-            <button className="bg-blue-500 text-white font-semibold rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset" onClick={handleIlkModalSubmit}>İleri</button>
+            <button className={`bg-blue-500 font-semibold rounded-full p-2 px-8 w-full md:w-auto neumorphic-inset ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`} onClick={handleIlkModalSubmit}>İleri</button>
           </div>
         </div>
       </div>

@@ -29,6 +29,7 @@ function Teklif() {
   const [aramaTerimi, setAramaTerimi] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'girisTarihi', direction: 'desc' });
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
+  const [stoklar, setStoklar] = useState([]);
   const actionDropdownRef = useRef(null);
 
   const DetailPage = (id) => {
@@ -87,8 +88,22 @@ function Teklif() {
     setLoading(false);
   };
 
+  // Stok listesini yükle
+  const fetchStokListesi = async () => {
+    try {
+      const response = await fetchWithAuth(`${API_URL}/stok`, { method: 'GET' });
+      if (response && response.ok) {
+        const data = await response.json();
+        setStoklar(Array.isArray(data) ? data : []);
+      }
+    } catch (error) {
+      console.error('Stoklar yüklenirken hata:', error);
+    }
+  };
+
   useEffect(() => {
     fetchTeklifListesi();
+    fetchStokListesi();
   }, []);
 
   // Dropdown dışına tıklanınca kapat
@@ -141,11 +156,50 @@ function Teklif() {
       return;
     }
 
+    // Stok listesini güncelle (aktarım öncesi güncel stok bilgisi için)
+    await fetchStokListesi();
+
     setLoading(true);
     try {
       const secilenTeklifObjesi = teklifler.filter(teklif => 
         secilenTeklifler.includes(teklif.teklif_id)
       );
+
+      // Tüm teklifler için stok kontrolü yap
+      const stokHatalari = [];
+      for (const teklif of secilenTeklifObjesi) {
+        const teklifYapilanlar = teklif.yapilanlar || [];
+        teklifYapilanlar.forEach((yapilan, index) => {
+          const isFromStock = yapilan.isFromStock === true || yapilan.isFromStock === 'true' || yapilan.isFromStock === 1 || yapilan.isFromStock === '1';
+          const stockId = yapilan.stockId ? Number(yapilan.stockId) : null;
+          
+          if (isFromStock && stockId) {
+            const stok = stoklar.find(s => s.id === stockId);
+            const birimAdedi = Number(yapilan.birimAdedi) || 0;
+            
+            if (stok && stok.adet < birimAdedi) {
+              stokHatalari.push({
+                teklifId: teklif.teklif_id,
+                teklifAdSoyad: teklif.adSoyad || 'Bilinmeyen',
+                satir: index + 1,
+                parcaAdi: yapilan.parcaAdi || 'Bilinmeyen',
+                stokAdet: stok.adet,
+                istenenAdet: birimAdedi
+              });
+            }
+          }
+        });
+      }
+
+      // Stok hataları varsa uyarı göster ve aktarımı engelle
+      if (stokHatalari.length > 0) {
+        const hataMesaji = stokHatalari.map(h => 
+          `Teklif #${h.teklifId} (${h.teklifAdSoyad}) - Satır ${h.satir} - ${h.parcaAdi}: Stokta ${h.stokAdet} adet var, ${h.istenenAdet} adet istendi.`
+        ).join('\n');
+        warning(`Stok yetersiz! Aktarım yapılamadı.\n\n${hataMesaji}`);
+        setLoading(false);
+        return;
+      }
 
       let basariliSayisi = 0;
       let hataSayisi = 0;
@@ -153,14 +207,20 @@ function Teklif() {
       for (const teklif of secilenTeklifObjesi) {
         try {
           // yapilanlar array'ini DTO formatına dönüştür (stok bilgilerini koru)
-          const yapilanlarDTO = (teklif.yapilanlar || []).map(y => ({
-            birimAdedi: y.birimAdedi || 0,
-            parcaAdi: y.parcaAdi || "",
-            birimFiyati: y.birimFiyati || 0,
-            toplamFiyat: y.toplamFiyat || 0,
-            stockId: y.stockId || null, // Stok ID'sini koru
-            isFromStock: y.isFromStock || false, // Stok flag'ini koru
-          }));
+          const yapilanlarDTO = (teklif.yapilanlar || []).map(y => {
+            // isFromStock değerini boolean'a çevir (string 'true' veya boolean true olabilir)
+            const isFromStock = y.isFromStock === true || y.isFromStock === 'true' || y.isFromStock === 1 || y.isFromStock === '1';
+            const stockId = y.stockId ? Number(y.stockId) : null;
+            
+            return {
+              birimAdedi: Number(y.birimAdedi) || 0,
+              parcaAdi: y.parcaAdi || "",
+              birimFiyati: Number(y.birimFiyati) || 0,
+              toplamFiyat: Number(y.toplamFiyat) || 0,
+              stockId: stockId, // Stok ID'sini koru (number olarak)
+              isFromStock: isFromStock, // Stok flag'ini koru (boolean olarak)
+            };
+          });
           
           // Debug: Stok bilgilerini kontrol et
           console.log('Teklif yapilanlar:', teklif.yapilanlar);
@@ -260,16 +320,56 @@ function Teklif() {
   }
 
   const handleTeklifEkle = async (teklif) => {
+    // Stok listesini güncelle (aktarım öncesi güncel stok bilgisi için)
+    await fetchStokListesi();
+
+    // Stok kontrolü - Aktarım öncesi tüm stoktan seçilen ürünleri kontrol et
+    const stokHatalari = [];
+    const teklifYapilanlar = teklif.yapilanlar || [];
+    teklifYapilanlar.forEach((yapilan, index) => {
+      const isFromStock = yapilan.isFromStock === true || yapilan.isFromStock === 'true' || yapilan.isFromStock === 1 || yapilan.isFromStock === '1';
+      const stockId = yapilan.stockId ? Number(yapilan.stockId) : null;
+      
+      if (isFromStock && stockId) {
+        const stok = stoklar.find(s => s.id === stockId);
+        const birimAdedi = Number(yapilan.birimAdedi) || 0;
+        
+        if (stok && stok.adet < birimAdedi) {
+          stokHatalari.push({
+            satir: index + 1,
+            parcaAdi: yapilan.parcaAdi || 'Bilinmeyen',
+            stokAdet: stok.adet,
+            istenenAdet: birimAdedi
+          });
+        }
+      }
+    });
+
+    // Stok hataları varsa uyarı göster ve aktarımı engelle
+    if (stokHatalari.length > 0) {
+      const hataMesaji = stokHatalari.map(h => 
+        `Satır ${h.satir} - ${h.parcaAdi}: Stokta ${h.stokAdet} adet var, ${h.istenenAdet} adet istendi.`
+      ).join('\n');
+      warning(`Stok yetersiz! Aktarım yapılamadı.\n\n${hataMesaji}`);
+      return;
+    }
+
     setLoading(true);
     // yapilanlar array'ini DTO formatına dönüştür (stok bilgilerini koru)
-    const yapilanlarDTO = (teklif.yapilanlar || []).map(y => ({
-      birimAdedi: y.birimAdedi || 0,
-      parcaAdi: y.parcaAdi || "",
-      birimFiyati: y.birimFiyati || 0,
-      toplamFiyat: y.toplamFiyat || 0,
-      stockId: y.stockId || null, // Stok ID'sini koru
-      isFromStock: y.isFromStock || false, // Stok flag'ini koru
-    }));
+    const yapilanlarDTO = teklifYapilanlar.map(y => {
+      // isFromStock değerini boolean'a çevir (string 'true' veya boolean true olabilir)
+      const isFromStock = y.isFromStock === true || y.isFromStock === 'true' || y.isFromStock === 1 || y.isFromStock === '1';
+      const stockId = y.stockId ? Number(y.stockId) : null;
+      
+      return {
+        birimAdedi: Number(y.birimAdedi) || 0,
+        parcaAdi: y.parcaAdi || "",
+        birimFiyati: Number(y.birimFiyati) || 0,
+        toplamFiyat: Number(y.toplamFiyat) || 0,
+        stockId: stockId, // Stok ID'sini koru (number olarak)
+        isFromStock: isFromStock, // Stok flag'ini koru (boolean olarak)
+      };
+    });
     
     // Debug: Stok bilgilerini kontrol et
     console.log('Teklif ekle - yapilanlar:', teklif.yapilanlar);
@@ -715,7 +815,7 @@ const secilenTeklifleriIndir = async (type) => {
                     </button>
                     <button 
                       onClick={() => handlePDFDownload(teklif.teklif_id)} 
-                      className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
+                      className="bg-red-600 p-1.5 rounded-md hover:bg-red-700 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
                       title="PDF indir"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -908,7 +1008,7 @@ const secilenTeklifleriIndir = async (type) => {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
                           </button>
-                          <button onClick={() => handlePDFDownload(teklif.teklif_id)} className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center" title="PDF indir">
+                          <button onClick={() => handlePDFDownload(teklif.teklif_id)} className="bg-red-600 p-1.5 rounded-md hover:bg-red-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center" title="PDF indir">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                             </svg>

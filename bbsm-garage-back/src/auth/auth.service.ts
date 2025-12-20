@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { AuthEntity } from './auth.entity';
@@ -9,6 +9,7 @@ import { LogService } from '../log/log.service';
 import { EmailService } from '../email/email.service';
 import { OneriService } from '../oneri/oneri.service';
 import * as crypto from 'crypto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
@@ -25,6 +26,53 @@ export class AuthService {
     return this.databaseRepository.find();
   }
 
+  // Şifre güçlülük kontrolü
+  private validatePasswordStrength(password: string): void {
+    if (!password || password.length < 8) {
+      throw new BadRequestException('Şifre en az 8 karakter olmalıdır');
+    }
+
+    if (password.length > 128) {
+      throw new BadRequestException('Şifre en fazla 128 karakter olabilir');
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    const errors: string[] = [];
+    if (!hasUpperCase) {
+      errors.push('en az bir büyük harf');
+    }
+    if (!hasLowerCase) {
+      errors.push('en az bir küçük harf');
+    }
+    if (!hasNumbers) {
+      errors.push('en az bir sayı');
+    }
+    if (!hasSpecialChar) {
+      errors.push('en az bir özel karakter (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+    }
+
+    if (errors.length > 0) {
+      throw new BadRequestException(
+        `Şifre güvenliği için şunlar gereklidir: ${errors.join(', ')}`
+      );
+    }
+  }
+
+  // Şifre hash'leme
+  private async hashPassword(password: string): Promise<string> {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
+  }
+
+  // Şifre doğrulama
+  private async comparePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    return await bcrypt.compare(plainPassword, hashedPassword);
+  }
+
   async addOne(database: AuthDto): Promise<AuthEntity> {
     const existingUser = await this.databaseRepository.findOne({
       where: { username: database.username }
@@ -34,9 +82,15 @@ export class AuthService {
       throw new Error('Bu kullanıcı adı zaten kullanılıyor');
     }
 
+    // Şifre güçlülük kontrolü
+    this.validatePasswordStrength(database.password);
+
+    // Şifreyi hash'le
+    const hashedPassword = await this.hashPassword(database.password);
+
     const newUser = this.databaseRepository.create({
       username: database.username,
-      password: database.password,
+      password: hashedPassword,
       firmaAdi: database.firmaAdi || null,
       yetkiliKisi: database.yetkiliKisi || null,
       telefon: database.telefon || null,
@@ -97,15 +151,19 @@ export class AuthService {
     if (!database.username || !database.password) {
       return null;
     }
-    const result = await this.databaseRepository.find({
+    const user = await this.databaseRepository.findOne({
       where: { 
-        username: database.username, 
-        password: database.password
+        username: database.username
       }
     });
   
-    if (result.length > 0) {
-      const user = result[0];
+    if (user) {
+      // Şifreyi hash ile karşılaştır
+      const isPasswordValid = await this.comparePassword(database.password, user.password);
+      
+      if (!isPasswordValid) {
+        return null;
+      }
       
       // Kullanıcı aktif değilse giriş yapamaz
       if (!user.isActive) {
@@ -282,18 +340,30 @@ export class AuthService {
 
   async changePassword(username: string, oldPassword: string, newPassword: string) {
     const user = await this.databaseRepository.findOne({
-      where: { username, password: oldPassword }
+      where: { username }
     });
 
     if (!user) {
-      throw new Error('Eski şifre hatalı');
+      throw new BadRequestException('Kullanıcı bulunamadı');
     }
 
-    if (newPassword.length < 3) {
-      throw new Error('Yeni şifre en az 3 karakter olmalıdır');
+    // Eski şifreyi kontrol et
+    const isOldPasswordValid = await this.comparePassword(oldPassword, user.password);
+    if (!isOldPasswordValid) {
+      throw new BadRequestException('Eski şifre hatalı');
     }
 
-    user.password = newPassword;
+    // Yeni şifre güçlülük kontrolü
+    this.validatePasswordStrength(newPassword);
+
+    // Eski ve yeni şifre aynı olamaz
+    const isSamePassword = await this.comparePassword(newPassword, user.password);
+    if (isSamePassword) {
+      throw new BadRequestException('Yeni şifre eski şifre ile aynı olamaz');
+    }
+
+    // Yeni şifreyi hash'le ve kaydet
+    user.password = await this.hashPassword(newPassword);
     await this.databaseRepository.save(user);
 
     return { success: true, message: 'Şifre başarıyla değiştirildi' };
@@ -406,25 +476,65 @@ export class AuthService {
     return { success: true, message: 'Eğer bu email adresi kayıtlıysa, şifre sıfırlama linki gönderildi.' };
   }
 
-  async resetPassword(token: string, newPassword: string) {
-    if (!newPassword || newPassword.length < 3) {
-      throw new Error('Yeni şifre en az 3 karakter olmalıdır');
+  async requestPasswordResetForAuthenticatedUser(username: string) {
+    const user = await this.databaseRepository.findOne({
+      where: { username }
+    });
+
+    if (!user) {
+      throw new BadRequestException('Kullanıcı bulunamadı');
     }
+
+    if (!user.email) {
+      throw new BadRequestException('Email adresi kayıtlı değil. Lütfen önce profil ayarlarınızdan email adresinizi ekleyin.');
+    }
+
+    if (!user.emailVerified) {
+      throw new BadRequestException('Email adresiniz doğrulanmamış. Lütfen önce email adresinizi doğrulayın.');
+    }
+
+    // Şifre sıfırlama token'ı oluştur
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date();
+    resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1); // 1 saat geçerli
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await this.databaseRepository.save(user);
+
+    // Email gönder
+    try {
+      await this.emailService.sendPasswordResetEmail(
+        user.email,
+        resetToken,
+        user.username
+      );
+    } catch (error) {
+      console.error('Şifre sıfırlama email gönderme hatası:', error);
+      throw new BadRequestException('Email gönderilemedi. Lütfen tekrar deneyin.');
+    }
+
+    return { success: true, message: 'Şifre sıfırlama linki email adresinize gönderildi. Lütfen email\'inizi kontrol edin.' };
+  }
+
+  async resetPassword(token: string, newPassword: string) {
+    // Şifre güçlülük kontrolü
+    this.validatePasswordStrength(newPassword);
 
     const user = await this.databaseRepository.findOne({
       where: { resetToken: token }
     });
 
     if (!user) {
-      throw new Error('Geçersiz veya süresi dolmuş şifre sıfırlama token\'ı');
+      throw new BadRequestException('Geçersiz veya süresi dolmuş şifre sıfırlama token\'ı');
     }
 
     if (user.resetTokenExpiry && new Date() > user.resetTokenExpiry) {
-      throw new Error('Şifre sıfırlama token\'ı süresi dolmuş. Lütfen yeni bir istek yapın.');
+      throw new BadRequestException('Şifre sıfırlama token\'ı süresi dolmuş. Lütfen yeni bir istek yapın.');
     }
 
-    // Şifreyi güncelle
-    user.password = newPassword;
+    // Şifreyi hash'le ve güncelle
+    user.password = await this.hashPassword(newPassword);
     user.resetToken = null;
     user.resetTokenExpiry = null;
     await this.databaseRepository.save(user);
@@ -778,6 +888,10 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
+      // JWT token süresi dolmuşsa daha anlamlı hata mesajı ver
+      if (error.name === 'TokenExpiredError' || error.message?.includes('jwt expired')) {
+        throw new UnauthorizedException('Token süresi dolmuş. Lütfen yeniden giriş yapın.');
+      }
       console.error('getAllMembershipRequests error:', error);
       throw new Error(error.message || 'Teklifler yüklenirken bir hata oluştu');
     }
@@ -950,6 +1064,10 @@ export class AuthService {
       console.error('getAllOneriler error:', error);
       if (error instanceof UnauthorizedException) {
         throw error;
+      }
+      // JWT token süresi dolmuşsa daha anlamlı hata mesajı ver
+      if (error.name === 'TokenExpiredError' || error.message?.includes('jwt expired')) {
+        throw new UnauthorizedException('Token süresi dolmuş. Lütfen yeniden giriş yapın.');
       }
       throw new Error(error.message || 'Öneriler yüklenirken bir hata oluştu');
     }

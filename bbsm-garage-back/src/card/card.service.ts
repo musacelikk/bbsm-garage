@@ -53,25 +53,34 @@ export class CardService {
           console.log('CardService - yapilanlar DTO:', dto);
           console.log('CardService - isFromStock:', dto.isFromStock, 'stockId:', dto.stockId);
           
-          if (dto.isFromStock && dto.stockId) {
+          // isFromStock değerini boolean'a çevir (string 'true' veya boolean true olabilir)
+          const isFromStockValue = dto.isFromStock as any; // Runtime'da string, number veya boolean olabilir
+          const isFromStock = isFromStockValue === true || 
+                              String(isFromStockValue).toLowerCase() === 'true' || 
+                              Number(isFromStockValue) === 1;
+          const stockId = dto.stockId ? Number(dto.stockId) : null;
+          
+          if (isFromStock && stockId) {
             try {
               // Stok kontrolü ve düşme
-              const stok = await this.stokService.findOne(dto.stockId, tenant_id);
+              const stok = await this.stokService.findOne(stockId, tenant_id);
               if (!stok || stok.length === 0) {
-                throw new BadRequestException(`Stok bulunamadı (ID: ${dto.stockId})`);
+                throw new BadRequestException(`Stok bulunamadı (ID: ${stockId})`);
               }
               const stokItem = stok[0];
-              console.log('CardService - Stok bulundu:', stokItem.stokAdi, 'Mevcut adet:', stokItem.adet, 'Talep edilen:', dto.birimAdedi);
+              const birimAdedi = Number(dto.birimAdedi) || 0;
               
-              if (stokItem.adet < dto.birimAdedi) {
+              console.log('CardService - Stok bulundu:', stokItem.stokAdi, 'Mevcut adet:', stokItem.adet, 'Talep edilen:', birimAdedi);
+              
+              if (stokItem.adet < birimAdedi) {
                 throw new BadRequestException(
-                  `Yetersiz stok: "${stokItem.stokAdi}" için stokta sadece ${stokItem.adet} adet var, ${dto.birimAdedi} adet talep edildi.`
+                  `Yetersiz stok: "${stokItem.stokAdi}" için stokta sadece ${stokItem.adet} adet var, ${birimAdedi} adet talep edildi.`
                 );
               }
               // Birim adedi kadar stoktan düş
-              console.log('CardService - Stoktan düşülüyor:', dto.birimAdedi, 'adet');
-              for (let i = 0; i < dto.birimAdedi; i++) {
-                await this.stokService.updateAdet(dto.stockId, 'decrement', tenant_id);
+              console.log('CardService - Stoktan düşülüyor:', birimAdedi, 'adet');
+              for (let i = 0; i < birimAdedi; i++) {
+                await this.stokService.updateAdet(stockId, 'decrement', tenant_id);
               }
               console.log('CardService - Stoktan düşme tamamlandı');
             } catch (error) {
@@ -107,7 +116,13 @@ export class CardService {
       // Kart ekleme logunu kaydet
       if (username) {
         try {
-          await this.logService.createLog(tenant_id, username, 'card_create', createCardDto.duzenleyen);
+          const actionDetail = JSON.stringify({
+            adSoyad: createCardDto.adSoyad || '',
+            plaka: createCardDto.plaka || '',
+            markaModel: createCardDto.markaModel || '',
+            telNo: createCardDto.telNo || '',
+          });
+          await this.logService.createLog(tenant_id, username, 'card_create', createCardDto.duzenleyen, actionDetail);
         } catch (error) {
           console.error('Kart ekleme log kaydetme hatası:', error);
           // Log hatası kart eklemeyi engellemez
@@ -322,7 +337,13 @@ export class CardService {
       // Diğer düzenlemeler için normal log
       try {
         const duzenleyen = updateCardDto.duzenleyen || null;
-        await this.logService.createLog(tenant_id, username, 'card_edit', duzenleyen);
+        const actionDetail = JSON.stringify({
+          adSoyad: savedCard.adSoyad || '',
+          plaka: savedCard.plaka || '',
+          markaModel: savedCard.markaModel || '',
+          telNo: savedCard.telNo || '',
+        });
+        await this.logService.createLog(tenant_id, username, 'card_edit', duzenleyen, actionDetail);
       } catch (error) {
         console.error('Düzenleme log kaydetme hatası:', error);
         // Log hatası güncellemeyi engellemez
@@ -398,17 +419,22 @@ export class CardService {
       }
     }
 
-    // Kartı ve ilişkili yapılanları sil
-    await this.databaseRepository.remove(card);
-    
-    // Silme logunu kaydet
+    // Silme logunu kaydet (kart silinmeden önce)
     if (username) {
       try {
-        await this.logService.createLog(tenant_id, username, 'card_delete', duzenleyen);
+        const actionDetail = JSON.stringify({
+          adSoyad: card.adSoyad || '',
+          plaka: card.plaka || '',
+          markaModel: card.markaModel || '',
+          telNo: card.telNo || '',
+        });
+        await this.logService.createLog(tenant_id, username, 'card_delete', duzenleyen, actionDetail);
       } catch (error) {
         console.error('Silme log kaydetme hatası:', error);
-        // Log hatası silmeyi engellemez
       }
     }
+
+    // Kartı ve ilişkili yapılanları sil
+    await this.databaseRepository.remove(card);
   }
 }

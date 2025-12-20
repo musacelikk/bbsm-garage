@@ -9,13 +9,62 @@ const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoadi
   const [success, setSuccess] = useState(false);
   const { success: showSuccess, error: showError } = useToast();
 
+  // Şifre güçlülük kontrolü
+  const validatePasswordStrength = (password) => {
+    if (!password || password.length < 8) {
+      return 'Şifre en az 8 karakter olmalıdır';
+    }
+
+    if (password.length > 128) {
+      return 'Şifre en fazla 128 karakter olabilir';
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    const errors = [];
+    if (!hasUpperCase) {
+      errors.push('en az bir büyük harf');
+    }
+    if (!hasLowerCase) {
+      errors.push('en az bir küçük harf');
+    }
+    if (!hasNumbers) {
+      errors.push('en az bir sayı');
+    }
+    if (!hasSpecialChar) {
+      errors.push('en az bir özel karakter (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+    }
+
+    if (errors.length > 0) {
+      return `Şifre güvenliği için şunlar gereklidir: ${errors.join(', ')}`;
+    }
+
+    return null;
+  };
+
+  // Şifre gereksinimlerini kontrol et (görsel gösterim için)
+  const getPasswordRequirements = (password) => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumbers: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
 
-    if (newPassword.length < 3) {
-      setError('Yeni şifre en az 3 karakter olmalıdır');
+    // Şifre güçlülük kontrolü
+    const passwordError = validatePasswordStrength(newPassword);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 
@@ -122,9 +171,35 @@ const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoadi
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                   required
-                  minLength={3}
+                  minLength={8}
                 />
-                <p className="text-xs dark-text-muted mt-1">En az 3 karakter olmalıdır</p>
+                <div className={`mt-2 overflow-hidden transition-all duration-300 ease-in-out ${newPassword ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="p-2.5 bg-gray-800/50 rounded-lg border dark-border">
+                    <p className="text-xs font-semibold dark-text-primary mb-2">Şifre Gereksinimleri:</p>
+                    <div className="space-y-1.5">
+                      <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).minLength ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).minLength ? '✓' : '✗'}</span>
+                        <span>En az 8 karakter</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasUpperCase ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasUpperCase ? '✓' : '✗'}</span>
+                        <span>En az bir büyük harf (A-Z)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasLowerCase ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasLowerCase ? '✓' : '✗'}</span>
+                        <span>En az bir küçük harf (a-z)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasNumbers ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasNumbers ? '✓' : '✗'}</span>
+                        <span>En az bir sayı (0-9)</span>
+                      </div>
+                      <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasSpecialChar ? 'text-green-400' : 'text-red-400'}`}>
+                        <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasSpecialChar ? '✓' : '✗'}</span>
+                        <span>En az bir özel karakter (!@#$%^&*()_+-=[]&#123;&#125;|;:,.&#60;&#62;?)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -135,7 +210,7 @@ const ChangePasswordModal = ({ isOpen, onClose, fetchWithAuth, API_URL, setLoadi
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                   required
-                  minLength={3}
+                  minLength={8}
                 />
               </div>
 

@@ -18,89 +18,64 @@ export function CurrencyProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const isFirstLoadRef = useRef(true);
 
+  // localStorage'dan önceki değerleri yükle
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPreviousRates = localStorage.getItem('currency_previous_rates');
+      if (savedPreviousRates) {
+        try {
+          const parsed = JSON.parse(savedPreviousRates);
+          prevRatesRef.current = {
+            usd: parsed.usd || null,
+            eur: parsed.eur || null,
+            altin: parsed.altin || null
+          };
+          setPreviousRates(prevRatesRef.current);
+        } catch (e) {
+          console.error('localStorage currency_previous_rates parse hatası:', e);
+        }
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const fetchRates = async () => {
       try {
-        // CurrencyAPI - Güncel döviz kurları
-        // API Key: Environment variable'dan alınıyor
-        const API_KEY = process.env.NEXT_PUBLIC_CURRENCY_API_KEY || 'cur_live_NIwaks8n6WtngNQmDqmAWS563AhxcQY8oPGNOfxx';
-        
         let usdTry = null;
         let eurTry = null;
         let altinFiyat = null;
 
+        // exchangerate-api.com - Ücretsiz, günlük 1,500 istek limiti
         try {
-          // CurrencyAPI'den USD bazlı TRY kurlarını çek
-          const currencyResponse = await fetch(
-            `https://api.currencyapi.com/v3/latest?base_currency=USD&currencies=TRY,EUR`,
-            {
-              headers: {
-                'apikey': API_KEY
-              }
-            }
-          );
-          
-          if (!currencyResponse.ok) {
-            throw new Error('CurrencyAPI yanıt vermedi');
+          // USD/TRY oranı
+          const usdResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+          if (usdResponse.ok) {
+            const usdData = await usdResponse.json();
+            usdTry = usdData.rates?.TRY || null;
           }
           
-          const currencyData = await currencyResponse.json();
-          
-          // USD/TRY oranı
-          usdTry = currencyData?.data?.TRY?.value || null;
-          
-          // EUR/TRY için ayrı bir istek gerekebilir veya USD/EUR oranından hesaplanabilir
-          // EUR bazlı TRY çek
-          const eurResponse = await fetch(
-            `https://api.currencyapi.com/v3/latest?base_currency=EUR&currencies=TRY`,
-            {
-              headers: {
-                'apikey': API_KEY
-              }
-            }
-          );
-          
+          // EUR/TRY oranı
+          const eurResponse = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
           if (eurResponse.ok) {
             const eurData = await eurResponse.json();
-            eurTry = eurData?.data?.TRY?.value || null;
+            eurTry = eurData.rates?.TRY || null;
           }
 
-          // Altın fiyatı için GenelPara API (CurrencyAPI altın vermiyor)
+          // Altın fiyatı için GenelPara API
           try {
             const altinResponse = await fetch('https://api.genelpara.com/embed/altin.json');
-            const altinData = await altinResponse.json();
-            altinFiyat = altinData?.gram_altin?.satis ? parseFloat(altinData.gram_altin.satis.replace(',', '.')) : null;
+            if (altinResponse.ok) {
+              const altinData = await altinResponse.json();
+              altinFiyat = altinData?.gram_altin?.satis ? parseFloat(altinData.gram_altin.satis.replace(',', '.')) : null;
+            }
           } catch (altinError) {
             // Altın API çalışmazsa yaklaşık hesaplama
             altinFiyat = usdTry ? (usdTry * 75) : null;
           }
           
-        } catch (currencyApiError) {
-          // CurrencyAPI rate limit hatası - sessizce alternatif API'ye geç
-          // console.log sadece ilk hatada göster
-          if (!currencyApiError.message?.includes('429')) {
-            console.log('CurrencyAPI çalışmıyor, alternatif API kullanılıyor');
-          }
-          
-          // Alternatif: exchangerate-api.com (ücretsiz, güncel)
-          try {
-            const usdResponse = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-            if (usdResponse.ok) {
-              const usdData = await usdResponse.json();
-              usdTry = usdData.rates?.TRY || null;
-            }
-            
-            const eurResponse = await fetch('https://api.exchangerate-api.com/v4/latest/EUR');
-            if (eurResponse.ok) {
-              const eurData = await eurResponse.json();
-              eurTry = eurData.rates?.TRY || null;
-            }
-
-            // Altın için yaklaşık hesaplama
-            altinFiyat = usdTry ? (usdTry * 75) : null;
-          } catch (altError) {
-            // Alternatif API hatası - sessizce devam et
-          }
+        } catch (error) {
+          console.error('Döviz kuru API hatası:', error);
+          // Hata durumunda sessizce devam et, fallback değerler kullanılacak
         }
 
         // Yeni değerleri hazırla
@@ -136,49 +111,61 @@ export function CurrencyProvider({ children }) {
 
   // rates değiştiğinde previousRates'i güncelle
   useEffect(() => {
-    // İlk yüklemede sadece ref'i güncelle, previousRates state'ini güncelleme
+    // İlk yüklemede, eğer previousRates yoksa mevcut değerleri previous olarak kaydet
     if (isFirstLoadRef.current) {
       if (rates.usd || rates.eur || rates.altin) {
-        prevRatesRef.current = {
-          usd: rates.usd || null,
-          eur: rates.eur || null,
-          altin: rates.altin || null
-        };
-        isFirstLoadRef.current = false;
-        // localStorage'a kaydet
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('currency_previous_rates', JSON.stringify(prevRatesRef.current));
+        // Eğer localStorage'dan previousRates yüklenmediyse, mevcut değerleri previous olarak kaydet
+        if (!prevRatesRef.current.usd && !prevRatesRef.current.eur && !prevRatesRef.current.altin) {
+          prevRatesRef.current = {
+            usd: rates.usd || null,
+            eur: rates.eur || null,
+            altin: rates.altin || null
+          };
+          // localStorage'a kaydet
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('currency_previous_rates', JSON.stringify(prevRatesRef.current));
+          }
+        } else {
+          // localStorage'dan yüklenen previousRates varsa, state'e de set et
+          setPreviousRates(prevRatesRef.current);
         }
+        isFirstLoadRef.current = false;
       }
       return;
     }
     
     // İkinci ve sonraki güncellemelerde karşılaştırma yap
-    if ((rates.usd || rates.eur || rates.altin) && 
-        (prevRatesRef.current.usd !== rates.usd || 
-         prevRatesRef.current.eur !== rates.eur || 
-         prevRatesRef.current.altin !== rates.altin)) {
+    // Değerler değiştiyse previousRates'i güncelle
+    if (rates.usd || rates.eur || rates.altin) {
+      // Önceki değerlerle karşılaştır
+      const hasChanged = (
+        prevRatesRef.current.usd !== rates.usd || 
+        prevRatesRef.current.eur !== rates.eur || 
+        prevRatesRef.current.altin !== rates.altin
+      );
       
-      // Önceki değerleri state'e kaydet (re-render tetikler)
-      const previousToSave = {
-        usd: prevRatesRef.current.usd,
-        eur: prevRatesRef.current.eur,
-        altin: prevRatesRef.current.altin
-      };
-      
-      setPreviousRates(previousToSave);
-      
-      // Ref'i yeni değerlerle güncelle
-      const newPrevRates = {
-        usd: rates.usd || prevRatesRef.current.usd,
-        eur: rates.eur || prevRatesRef.current.eur,
-        altin: rates.altin || prevRatesRef.current.altin
-      };
-      prevRatesRef.current = newPrevRates;
-      
-      // localStorage'a kaydet
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currency_previous_rates', JSON.stringify(newPrevRates));
+      if (hasChanged) {
+        // Önceki değerleri state'e kaydet (re-render tetikler)
+        const previousToSave = {
+          usd: prevRatesRef.current.usd,
+          eur: prevRatesRef.current.eur,
+          altin: prevRatesRef.current.altin
+        };
+        
+        setPreviousRates(previousToSave);
+        
+        // Ref'i yeni değerlerle güncelle
+        const newPrevRates = {
+          usd: rates.usd || prevRatesRef.current.usd,
+          eur: rates.eur || prevRatesRef.current.eur,
+          altin: rates.altin || prevRatesRef.current.altin
+        };
+        prevRatesRef.current = newPrevRates;
+        
+        // localStorage'a kaydet
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('currency_previous_rates', JSON.stringify(newPrevRates));
+        }
       }
     }
   }, [rates]);

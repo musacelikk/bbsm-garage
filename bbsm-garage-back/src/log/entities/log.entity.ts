@@ -17,6 +17,9 @@ export class LogEntity {
   @Column({ type: 'text', nullable: true })
   duzenleyen: string; // Kart işlemleri için düzenleyen bilgisi
 
+  @Column({ type: 'text', nullable: true })
+  action_detail: string; // İşlem detayları (JSON formatında müşteri bilgileri vb.)
+
   @Column({ type: 'varchar', length: 45, nullable: true })
   ip_address: string; // IP adresi
 

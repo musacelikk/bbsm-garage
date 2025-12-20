@@ -42,6 +42,8 @@ function Ayarlar() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [forgotPasswordStatus, setForgotPasswordStatus] = useState(''); // '', 'success', 'error'
+  const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
   
   const [preferences, setPreferences] = useState({
     emailEnabled: true,
@@ -162,13 +164,62 @@ function Ayarlar() {
     }
   };
 
+  // Şifre güçlülük kontrolü
+  const validatePasswordStrength = (password) => {
+    if (!password || password.length < 8) {
+      return 'Şifre en az 8 karakter olmalıdır';
+    }
+
+    if (password.length > 128) {
+      return 'Şifre en fazla 128 karakter olabilir';
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    const errors = [];
+    if (!hasUpperCase) {
+      errors.push('en az bir büyük harf');
+    }
+    if (!hasLowerCase) {
+      errors.push('en az bir küçük harf');
+    }
+    if (!hasNumbers) {
+      errors.push('en az bir sayı');
+    }
+    if (!hasSpecialChar) {
+      errors.push('en az bir özel karakter (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+    }
+
+    if (errors.length > 0) {
+      return `Şifre güvenliği için şunlar gereklidir: ${errors.join(', ')}`;
+    }
+
+    return null;
+  };
+
+  // Şifre gereksinimlerini kontrol et (görsel gösterim için)
+  const getPasswordRequirements = (password) => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumbers: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    };
+  };
+
   const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setPasswordError('');
     setPasswordSuccess(false);
 
-    if (newPassword.length < 3) {
-      setPasswordError('Yeni şifre en az 3 karakter olmalıdır');
+    // Şifre güçlülük kontrolü
+    const passwordError = validatePasswordStrength(newPassword);
+    if (passwordError) {
+      setPasswordError(passwordError);
       return;
     }
 
@@ -214,6 +265,52 @@ function Ayarlar() {
       const errorMessage = 'Şifre değiştirilirken bir hata oluştu';
       setPasswordError(errorMessage);
       showError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    setLoading(true);
+    setForgotPasswordStatus('');
+    setForgotPasswordMessage('');
+
+    // Email kontrolü
+    if (!profileData?.email) {
+      setForgotPasswordStatus('error');
+      setForgotPasswordMessage('Email adresi kayıtlı değil. Lütfen önce profil ayarlarınızdan email adresinizi ekleyin.');
+      setLoading(false);
+      return;
+    }
+
+    if (!profileData?.emailVerified) {
+      setForgotPasswordStatus('error');
+      setForgotPasswordMessage('Email adresiniz doğrulanmamış. Lütfen önce email adresinizi doğrulayın.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetchWithAuth(`${API_URL}/auth/request-password-reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setForgotPasswordStatus('success');
+        setForgotPasswordMessage(data.message || 'Şifre sıfırlama linki email adresinize gönderildi. Lütfen email\'inizi kontrol edin.');
+      } else {
+        setForgotPasswordStatus('error');
+        setForgotPasswordMessage(data.message || 'Bir hata oluştu. Lütfen tekrar deneyin.');
+      }
+    } catch (error) {
+      console.error('Şifre sıfırlama hatası:', error);
+      setForgotPasswordStatus('error');
+      setForgotPasswordMessage('Sunucuya bağlanılamıyor. Lütfen internet bağlantınızı kontrol edin.');
     } finally {
       setLoading(false);
     }
@@ -908,9 +1005,35 @@ function Ayarlar() {
                             onChange={(e) => setNewPassword(e.target.value)}
                             className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                             required
-                            minLength={3}
+                            minLength={8}
                           />
-                          <p className="text-xs dark-text-muted mt-1">En az 3 karakter olmalıdır</p>
+                          <div className={`mt-2 overflow-hidden transition-all duration-300 ease-in-out ${newPassword ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                            <div className="p-2.5 bg-gray-800/50 rounded-lg border dark-border">
+                              <p className="text-xs font-semibold dark-text-primary mb-2">Şifre Gereksinimleri:</p>
+                              <div className="space-y-1.5">
+                                <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).minLength ? 'text-green-400' : 'text-red-400'}`}>
+                                  <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).minLength ? '✓' : '✗'}</span>
+                                  <span>En az 8 karakter</span>
+                                </div>
+                                <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasUpperCase ? 'text-green-400' : 'text-red-400'}`}>
+                                  <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasUpperCase ? '✓' : '✗'}</span>
+                                  <span>En az bir büyük harf (A-Z)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasLowerCase ? 'text-green-400' : 'text-red-400'}`}>
+                                  <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasLowerCase ? '✓' : '✗'}</span>
+                                  <span>En az bir küçük harf (a-z)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasNumbers ? 'text-green-400' : 'text-red-400'}`}>
+                                  <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasNumbers ? '✓' : '✗'}</span>
+                                  <span>En az bir sayı (0-9)</span>
+                                </div>
+                                <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(newPassword).hasSpecialChar ? 'text-green-400' : 'text-red-400'}`}>
+                                  <span className="font-bold w-4 text-center">{getPasswordRequirements(newPassword).hasSpecialChar ? '✓' : '✗'}</span>
+                                  <span>En az bir özel karakter (!@#$%^&*()_+-=[]&#123;&#125;|;:,.&#60;&#62;?)</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
 
                         <div>
@@ -921,7 +1044,7 @@ function Ayarlar() {
                             onChange={(e) => setConfirmPassword(e.target.value)}
                             className="w-full p-3 rounded-lg neumorphic-input dark-text-primary"
                             required
-                            minLength={3}
+                            minLength={8}
                           />
                         </div>
 
@@ -949,6 +1072,69 @@ function Ayarlar() {
                         </div>
                       </form>
                     )}
+                    
+                    {/* Şifremi Unuttum Bölümü */}
+                    <div className="mt-8 pt-8 border-t dark-border">
+                      <h3 className="text-md font-semibold dark-text-primary mb-4">Şifremi Unuttum</h3>
+                      <p className="text-sm dark-text-muted mb-4">
+                        Şifrenizi unuttuysanız, kayıtlı email adresinize ({profileData?.email || 'belirtilmemiş'}) şifre sıfırlama linki gönderebiliriz.
+                      </p>
+                      
+                      {!profileData?.email && (
+                        <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-400 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <p className="text-sm text-yellow-400">Email adresi kayıtlı değil. Lütfen önce profil ayarlarınızdan email adresinizi ekleyin.</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {profileData?.email && !profileData?.emailVerified && (
+                        <div className="mb-4 p-3 bg-yellow-500/20 border border-yellow-400 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <p className="text-sm text-yellow-400">Email adresiniz doğrulanmamış. Lütfen önce email adresinizi doğrulayın.</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {forgotPasswordStatus === 'success' && (
+                        <div className="mb-4 p-3 bg-green-500/20 border border-green-400 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <p className="text-sm text-green-400">{forgotPasswordMessage}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {forgotPasswordStatus === 'error' && (
+                        <div className="mb-4 p-3 bg-red-500/20 border border-red-400 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <p className="text-sm text-red-400">{forgotPasswordMessage}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="max-w-md">
+                        <button
+                          type="button"
+                          onClick={handleForgotPassword}
+                          disabled={loading || forgotPasswordStatus === 'success' || !profileData?.email || !profileData?.emailVerified}
+                          className={`w-full px-4 py-3 bg-blue-500 rounded-lg neumorphic-inset hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
+                        >
+                          {loading ? 'Gönderiliyor...' : forgotPasswordStatus === 'success' ? 'Email Gönderildi' : 'Şifre Sıfırlama Linki Gönder'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
 

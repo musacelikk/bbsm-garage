@@ -29,6 +29,53 @@ export default function Kayit() {
     }));
   };
 
+  // Şifre güçlülük kontrolü
+  const validatePasswordStrength = (password) => {
+    if (!password || password.length < 8) {
+      return 'Şifre en az 8 karakter olmalıdır';
+    }
+
+    if (password.length > 128) {
+      return 'Şifre en fazla 128 karakter olabilir';
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumbers = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    const errors = [];
+    if (!hasUpperCase) {
+      errors.push('en az bir büyük harf');
+    }
+    if (!hasLowerCase) {
+      errors.push('en az bir küçük harf');
+    }
+    if (!hasNumbers) {
+      errors.push('en az bir sayı');
+    }
+    if (!hasSpecialChar) {
+      errors.push('en az bir özel karakter (!@#$%^&*()_+-=[]{}|;:,.<>?)');
+    }
+
+    if (errors.length > 0) {
+      return `Şifre güvenliği için şunlar gereklidir: ${errors.join(', ')}`;
+    }
+
+    return null;
+  };
+
+  // Şifre gereksinimlerini kontrol et (görsel gösterim için)
+  const getPasswordRequirements = (password) => {
+    return {
+      minLength: password.length >= 8,
+      hasUpperCase: /[A-Z]/.test(password),
+      hasLowerCase: /[a-z]/.test(password),
+      hasNumbers: /\d/.test(password),
+      hasSpecialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+    };
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -40,8 +87,10 @@ export default function Kayit() {
       return;
     }
 
-    if (formData.password.length < 3) {
-      alert('Şifre en az 3 karakter olmalıdır!');
+    // Şifre güçlülük kontrolü
+    const passwordError = validatePasswordStrength(formData.password);
+    if (passwordError) {
+      alert(passwordError);
       setLoading(false);
       return;
     }
@@ -220,13 +269,40 @@ export default function Kayit() {
                     <input 
                       className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="password" 
-                      placeholder="Şifre (min. 3 karakter)" 
+                      placeholder="Şifre (min. 8 karakter)" 
                       name="password"
                       value={formData.password} 
                       onChange={handleChange}
                       required
-                      minLength={3}
+                      minLength={8}
                     />
+                    <div className={`mt-2 overflow-hidden transition-all duration-300 ease-in-out ${formData.password ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                      <div className="p-2.5 bg-white/10 rounded-lg border border-my-açıkgri/30">
+                        <p className="text-xs font-semibold text-my-beyaz mb-2">Şifre Gereksinimleri:</p>
+                        <div className="space-y-1.5">
+                          <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(formData.password).minLength ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className="font-bold w-4 text-center">{getPasswordRequirements(formData.password).minLength ? '✓' : '✗'}</span>
+                            <span>En az 8 karakter</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(formData.password).hasUpperCase ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className="font-bold w-4 text-center">{getPasswordRequirements(formData.password).hasUpperCase ? '✓' : '✗'}</span>
+                            <span>En az bir büyük harf (A-Z)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(formData.password).hasLowerCase ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className="font-bold w-4 text-center">{getPasswordRequirements(formData.password).hasLowerCase ? '✓' : '✗'}</span>
+                            <span>En az bir küçük harf (a-z)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(formData.password).hasNumbers ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className="font-bold w-4 text-center">{getPasswordRequirements(formData.password).hasNumbers ? '✓' : '✗'}</span>
+                            <span>En az bir sayı (0-9)</span>
+                          </div>
+                          <div className={`flex items-center gap-2 text-xs transition-colors duration-200 ${getPasswordRequirements(formData.password).hasSpecialChar ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className="font-bold w-4 text-center">{getPasswordRequirements(formData.password).hasSpecialChar ? '✓' : '✗'}</span>
+                            <span>En az bir özel karakter (!@#$%^&*()_+-=[]&#123;&#125;|;:,.&#60;&#62;?)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="sm:col-span-2">
@@ -239,7 +315,7 @@ export default function Kayit() {
                       value={formData.confirmPassword} 
                       onChange={handleChange}
                       required
-                      minLength={3}
+                      minLength={8}
                     />
                   </div>
                 </div>

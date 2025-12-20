@@ -7,16 +7,12 @@ const ThemeContext = createContext({
 });
 
 export const ThemeProvider = ({ children }) => {
-  const [activeTheme, setActiveTheme] = useState(DEFAULT_THEME);
-
-  // İlk yüklemede localStorage'dan oku
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  // localStorage'dan direkt oku (SSR için güvenli - lazy initialization)
+  const [activeTheme, setActiveTheme] = useState(() => {
+    if (typeof window === 'undefined') return DEFAULT_THEME;
     const saved = window.localStorage.getItem('activeTheme');
-    if (saved && themes[saved]) {
-      setActiveTheme(saved);
-    }
-  }, []);
+    return (saved && themes[saved]) ? saved : DEFAULT_THEME;
+  });
 
   // Tema değişince CSS değişkenlerini uygula + localStorage'a yaz
   useEffect(() => {

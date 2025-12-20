@@ -268,7 +268,7 @@ function Stok() {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                      <button type="submit" className="bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 text-white">Ekle</button>
+                      <button type="submit" className={`bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm w-full sm:w-auto px-5 py-2.5 md:py-2.5 text-center neumorphic-inset touch-manipulation min-h-[44px] active:scale-95 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}>Ekle</button>
                   </div>
               </form>
               </div>

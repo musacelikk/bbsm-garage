@@ -42,6 +42,15 @@ export class TeklifEntity {
   @Column({ nullable: true })
   adres: string;
 
+  @Column({ nullable: true, type: 'boolean', default: false })
+  odemeAlindi: boolean;
+
+  @Column({ nullable: true, type: 'boolean', default: false })
+  periyodikBakim: boolean;
+
+  @Column({ nullable: true })
+  duzenleyen: string;
+
   @OneToMany(() => YapilanlarEntity, yapilan => yapilan.teklif, { cascade: true, onDelete: 'CASCADE' })
   yapilanlar: YapilanlarEntity[];
 }

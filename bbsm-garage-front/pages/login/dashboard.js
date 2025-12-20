@@ -406,7 +406,7 @@ function Dashboard() {
                   Hoş Geldiniz, <span className="text-blue-400">{firmaAdi}</span>
                 </h1>
                 <p className="dark-text-muted text-xs">
-                  Bugün mağazanızda neler oluyor?
+                  Bugün İşletmenizde neler oluyor?
                 </p>
               </div>
             </div>
@@ -570,7 +570,7 @@ function Dashboard() {
                         setTarihBaslangic(`${yil}-01-01`);
                         setTarihBitis(new Date().toISOString().split('T')[0]);
                       }}
-                      className="px-4 py-2 md:py-1.5 text-xs bg-blue-600 text-white rounded-lg neumorphic-inset hover:bg-blue-700 transition-colors font-medium whitespace-nowrap touch-manipulation min-h-[44px] active:scale-95"
+                      className="px-4 py-2 md:py-1.5 text-xs bg-blue-600 black rounded-lg neumorphic-inset hover:bg-blue-700 transition-colors font-medium whitespace-nowrap touch-manipulation min-h-[44px] active:scale-95"
                     >
                       Bu Yıl
                     </button>

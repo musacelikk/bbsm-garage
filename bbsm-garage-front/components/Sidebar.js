@@ -127,8 +127,8 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
     }
     
     if (isActive) {
-      const textColor = activeTheme === 'modern' ? 'text-blue-700' : 'text-white';
-      return `flex items-center gap-3 p-3 text-md font-semibold ${textColor} sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg`;
+      const textColor = activeTheme === 'modern' ? 'text-gray-900' : 'text-white';
+      return `flex items-center gap-3 p-3 text-md font-semibold ${textColor} sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg relative`;
     }
     
     return `flex items-center gap-3 p-3 font-medium text-md dark-text-secondary rounded-xl hover:dark-text-primary hover:dark-bg-tertiary group transition-all`;
@@ -199,7 +199,11 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
               onClick={() => {
                 logout();
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition-colors rounded-lg neumorphic-inset"
+              className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors rounded-lg neumorphic-inset ${
+                activeTheme === 'modern' 
+                  ? 'text-red-600 hover:bg-red-50' 
+                  : 'text-red-400 hover:bg-red-900/20'
+              }`}
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

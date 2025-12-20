@@ -106,6 +106,14 @@ export class AuthController {
     return this.authService.requestPasswordReset(resetPasswordDto.email);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('request-password-reset')
+  async requestPasswordResetForAuthenticated(@Request() req) {
+    const username = req.user.username;
+    return this.authService.requestPasswordResetForAuthenticatedUser(username);
+  }
+
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
