@@ -33,20 +33,20 @@ const Kartlar = () => {
   const [secilenKartlar, setSecilenKartlar] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
   const [teklifler, setTeklifler] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: 'girisTarihi', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'card_id', direction: 'desc' });
   const [isSilmeModalOpen, setIsSilmeModalOpen] = useState(false);
   const [silmeDuzenleyen, setSilmeDuzenleyen] = useState('');
   const defaultColumns = [
-    { id: 'adSoyad', label: 'Ad-Soyad', sortKey: 'adSoyad', width: '17%', minWidth: 110 },
-    { id: 'markaModel', label: 'Marka-Model', sortKey: 'markaModel', width: '17%', minWidth: 110 },
-    { id: 'plaka', label: 'Plaka', sortKey: 'plaka', width: '10%', minWidth: 90 },
-    { id: 'km', label: 'Km', sortKey: 'km', width: '9%', minWidth: 90 },
-    { id: 'telNo', label: 'Telefon No', sortKey: 'telNo', width: '14%', minWidth: 110 },
-    { id: 'girisTarihi', label: 'Giriş Tarihi', sortKey: 'girisTarihi', width: '12%', minWidth: 110 },
-    { id: 'periyodikBakim', label: 'Türü', sortKey: 'periyodikBakim', width: '10%', minWidth: 100 },
-    { id: 'odeme', label: 'Ödeme', width: '3%', minWidth: 60 },
-    { id: 'goruntule', label: 'Detay', width: '2%', minWidth: 45 },
-    { id: 'indir', label: 'İndir', width: '5%', minWidth: 80 },
+    { id: 'adSoyad', label: 'Ad-Soyad', sortKey: 'adSoyad', width: '14%', minWidth: 100 },
+    { id: 'markaModel', label: 'Marka-Model', sortKey: 'markaModel', width: '14%', minWidth: 100 },
+    { id: 'plaka', label: 'Plaka', sortKey: 'plaka', width: '9%', minWidth: 80 },
+    { id: 'km', label: 'Km', sortKey: 'km', width: '8%', minWidth: 70 },
+    { id: 'telNo', label: 'Telefon', sortKey: 'telNo', width: '12%', minWidth: 100 },
+    { id: 'girisTarihi', label: 'Giriş Tarihi', sortKey: 'girisTarihi', width: '11%', minWidth: 100 },
+    { id: 'periyodikBakim', label: 'Türü', sortKey: 'periyodikBakim', width: '9%', minWidth: 90 },
+    { id: 'odeme', label: 'Ödeme', width: '6%', minWidth: 60 },
+    { id: 'goruntule', label: 'Detay', width: '5%', minWidth: 50 },
+    { id: 'indir', label: 'İndir', width: '6%', minWidth: 80 },
   ];
   const [columns, setColumns] = useState(defaultColumns);
   const [draggedColumnId, setDraggedColumnId] = useState(null);
@@ -60,9 +60,25 @@ const Kartlar = () => {
     const savedColumns = window.localStorage.getItem('kartlarTableColumns');
     if (savedColumns) {
       try {
-        setColumns(JSON.parse(savedColumns));
+        const parsedColumns = JSON.parse(savedColumns);
+        // Eksik kolonları varsayılan kolonlarla tamamla
+        const defaultColumnIds = defaultColumns.map(col => col.id);
+        const parsedColumnIds = parsedColumns.map(col => col.id);
+        
+        // Eksik kolonları bul ve ekle
+        const missingColumns = defaultColumns.filter(col => !parsedColumnIds.includes(col.id));
+        const mergedColumns = [...parsedColumns, ...missingColumns];
+        
+        // Kolonları varsayılan sıraya göre düzenle
+        const orderedColumns = defaultColumnIds.map(id => 
+          mergedColumns.find(col => col.id === id) || defaultColumns.find(col => col.id === id)
+        ).filter(Boolean);
+        
+        setColumns(orderedColumns);
       } catch (err) {
         console.error('Kolonları yükleme hatası', err);
+        // Hata durumunda varsayılan kolonları kullan
+        setColumns(defaultColumns);
       }
     }
   }, []);
@@ -181,24 +197,24 @@ const Kartlar = () => {
   const getTdClass = (columnId) => {
     switch (columnId) {
       case 'adSoyad':
-        return 'px-6 py-4 font-medium dark-text-primary whitespace-nowrap';
+        return 'px-3 py-3 font-medium dark-text-primary whitespace-nowrap truncate';
       case 'markaModel':
       case 'km':
-        return 'px-6 py-4 dark-text-secondary';
+        return 'px-3 py-3 dark-text-secondary truncate';
       case 'plaka':
-        return 'px-6 py-4 text-green-400';
+        return 'px-3 py-3 text-green-400 whitespace-nowrap';
       case 'telNo':
-        return 'px-6 py-4';
+        return 'px-3 py-3 truncate';
       case 'girisTarihi':
-        return 'px-6 py-4 text-blue-400 whitespace-nowrap text-xs';
+        return 'px-3 py-3 text-blue-400 whitespace-nowrap text-xs';
       case 'periyodikBakim':
-        return 'px-6 py-4';
+        return 'px-3 py-3';
       case 'odeme':
       case 'goruntule':
       case 'indir':
         return 'px-2 py-3 text-center';
       default:
-        return 'px-6 py-4';
+        return 'px-3 py-3 truncate';
     }
   };
 
@@ -540,12 +556,23 @@ const Kartlar = () => {
   const sortedKartlar = React.useMemo(() => {
     let sortableItems = [...kartlar];
   
-    // Varsayılan olarak tarihe göre sırala (en yeni üstte)
-    const currentSortKey = sortConfig.key || 'girisTarihi';
+    // Varsayılan olarak ID'ye göre sırala (en son eklenen en üstte)
+    const currentSortKey = sortConfig.key || 'card_id';
     const currentDirection = sortConfig.key ? sortConfig.direction : 'desc';
   
     sortableItems.sort((a, b) => {
-      if (currentSortKey === 'girisTarihi') {
+      if (currentSortKey === 'card_id') {
+        // ID'ye göre sırala (en yüksek ID = en son eklenen)
+        const idA = a.card_id || 0;
+        const idB = b.card_id || 0;
+        if (idA < idB) {
+          return currentDirection === 'asc' ? -1 : 1;
+        }
+        if (idA > idB) {
+          return currentDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      } else if (currentSortKey === 'girisTarihi') {
         const dateA = parseDate(a.girisTarihi);
         const dateB = parseDate(b.girisTarihi);
   
@@ -660,6 +687,7 @@ const handlePrint = async (kartId) => {
 
   const dataToSend = {
     vehicleInfo: {
+      firmaAdi: profileData?.firmaAdi || '',
       adSoyad: kart.adSoyad,
       telNo: kart.telNo,
       markaModel: kart.markaModel,
@@ -688,9 +716,17 @@ const handlePrint = async (kartId) => {
       body: JSON.stringify(dataToSend)
     });
 
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response || !response.ok) {
+      const errorText = await response.text().catch(() => 'Bilinmeyen hata');
+      throw new Error(`PDF yazdırma hatası: ${response?.status || 'Bilinmeyen'} - ${errorText}`);
+    }
 
     const blob = await response.blob();
+    
+    if (!blob || blob.size === 0) {
+      throw new Error('PDF dosyası boş geldi');
+    }
+
     const url = window.URL.createObjectURL(blob);
     const printWindow = window.open(url, '_blank');
     if (printWindow) {
@@ -701,7 +737,7 @@ const handlePrint = async (kartId) => {
     }
   } catch (error) {
     console.error('PDF yazdırma hatası:', error);
-    showError('PDF yazdırma sırasında bir hata oluştu.');
+    showError(error.message || 'PDF yazdırma sırasında bir hata oluştu.');
     }
     setLoading(false);
 };
@@ -713,12 +749,14 @@ const handlePrint = async (kartId) => {
 
   if (!kart) {
       console.error("Seçilen kart bulunamadı");
+      showError("Seçilen kart bulunamadı");
       setLoading(false);
       return;
   }
 
   const dataToSend = {
       vehicleInfo: {
+          firmaAdi: profileData?.firmaAdi || '',
           adSoyad: kart.adSoyad,
           telNo: kart.telNo,
           markaModel: kart.markaModel,
@@ -749,11 +787,17 @@ const handlePrint = async (kartId) => {
           body: JSON.stringify(dataToSend)
       });
 
-      if (!response.ok) {
-          throw new Error('Network response was not ok');
+      if (!response || !response.ok) {
+          const errorText = await response.text().catch(() => 'Bilinmeyen hata');
+          throw new Error(`PDF indirme hatası: ${response?.status || 'Bilinmeyen'} - ${errorText}`);
       }
 
       const blob = await response.blob();
+      
+      if (!blob || blob.size === 0) {
+          throw new Error('PDF dosyası boş geldi');
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -762,8 +806,11 @@ const handlePrint = async (kartId) => {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      success('PDF başarıyla indirildi');
   } catch (error) {
       console.error('PDF download error:', error);
+      showError(error.message || 'PDF indirme sırasında bir hata oluştu. Lütfen Java servisinin çalıştığından emin olun.');
   }
   setLoading(false);
 };
@@ -900,16 +947,16 @@ const secilenKartlariIndir = async (type) => {
               </div>
             </div>
 
-            <div className="overflow-x-auto md:overflow-x-hidden">
+            <div className="overflow-x-auto">
               {/* Desktop Table */}
-              <div className="hidden md:block relative" ref={tableWrapperRef}>
+              <div className="hidden md:block relative w-full" ref={tableWrapperRef}>
                 {resizeGuideX !== null && (
                   <div
                     className="absolute top-0 bottom-0 w-px bg-slate-400 pointer-events-none"
                     style={{ left: resizeGuideX }}
                   />
                 )}
-                <table className="w-full text-xs text-left dark-text-secondary font-medium rounded-xl overflow-hidden">
+                <table className="w-full text-xs text-left dark-text-secondary font-medium rounded-xl overflow-hidden table-fixed">
                   <thead className="text-xs dark-text-primary uppercase dark-bg-tertiary neumorphic-inset">
                     <tr>
                       <th scope="col" className="p-3 w-10"></th>
@@ -922,7 +969,7 @@ const secilenKartlariIndir = async (type) => {
                           onDragOver={(e) => e.preventDefault()}
                           onDrop={() => handleColumnDrop(column.id)}
                           onClick={() => column.sortKey && handleSort(column.sortKey)}
-                          className={`px-6 py-3 select-none ${
+                          className={`px-3 py-3 select-none ${
                             column.sortKey ? 'cursor-pointer' : 'cursor-move'
                           } relative`}
                           style={{ width: column.width || 'auto', minWidth: column.minWidth || 90 }}

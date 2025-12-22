@@ -26,12 +26,11 @@ export class ExcelService {
       });
 
       const excelResponse: AxiosResponse<ArrayBuffer> = await firstValueFrom(
-        this.httpService.post('https://13.61.75.15/api/excel/download', data, {
+        this.httpService.post('http://localhost:8080/api/excel/download', data, {
           responseType: 'arraybuffer',
           headers: {
             'Content-Type': 'application/json',
           },
-          httpsAgent: httpsAgent
         })
       );
 
@@ -149,28 +148,33 @@ export class ExcelService {
 
   async generatePDF(data: any): Promise<Buffer> {
     try {
-      const httpsAgent = new https.Agent({
-        rejectUnauthorized: false
-      });
-
       const pdfResponse: AxiosResponse<ArrayBuffer> = await firstValueFrom(
-        this.httpService.post('https://13.61.75.15/api/excel/pdf', data, {
+        this.httpService.post('http://localhost:8080/api/excel/pdf', data, {
           responseType: 'arraybuffer',
           headers: {
             'Content-Type': 'application/json',
           },
-          httpsAgent: httpsAgent
+          timeout: 30000, // 30 saniye timeout
         })
       );
 
       if (!pdfResponse.data) {
-        throw new Error('No data received from PDF service');
+        throw new Error('PDF servisinden veri alınamadı');
       }
 
       return Buffer.from(pdfResponse.data);
     } catch (error) {
       this.logger.error('Error generating PDF:', error);
-      throw new Error(`Failed to generate PDF: ${error.message}`);
+      
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Java PDF servisi çalışmıyor. Lütfen Java servisinin başlatıldığından emin olun (port 8080).');
+      } else if (error.code === 'ETIMEDOUT') {
+        throw new Error('PDF servisi yanıt vermiyor. Lütfen Java servisinin çalıştığını kontrol edin.');
+      } else if (error.response) {
+        throw new Error(`PDF servisi hatası: ${error.response.status} - ${error.response.statusText}`);
+      } else {
+        throw new Error(`PDF oluşturma hatası: ${error.message || 'Bilinmeyen hata'}`);
+      }
     }
   }
 

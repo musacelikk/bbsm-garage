@@ -463,12 +463,12 @@ function SonHareketler() {
                                 }
                                 
                                 return (
-                                  <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
-                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
+                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                       <div className="flex items-center gap-2">
-                                        <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
-                                          {getActionLabel(hareket.action)}
-                                        </span>
+                                    <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
+                                      {getActionLabel(hareket.action)}
+                                    </span>
                                         {hareket.action === 'stok_restore' && hareket.duzenleyen && (
                                           <span className="text-xs dark-text-muted whitespace-nowrap">{hareket.duzenleyen}</span>
                                         )}
@@ -487,11 +487,11 @@ function SonHareketler() {
                                       ) : (
                                         <span className="text-xs dark-text-muted">-</span>
                                       )}
-                                    </td>
+                                  </td>
                                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
-                                      {formatTarih(hareket.timestamp)}
-                                    </td>
-                                  </tr>
+                                    {formatTarih(hareket.timestamp)}
+                                  </td>
+                                </tr>
                                 );
                               })}
                             </tbody>
@@ -574,12 +574,12 @@ function SonHareketler() {
                                 }
                                 
                                 return (
-                                  <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
-                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                                      <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
-                                        {getActionLabel(hareket.action)}
-                                      </span>
-                                    </td>
+                                <tr key={hareket.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
+                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                    <span className={`inline-flex px-2 sm:px-3 py-1 text-xs font-semibold rounded-full ${getActionColor(hareket.action)}`}>
+                                      {getActionLabel(hareket.action)}
+                                    </span>
+                                  </td>
                                     <td className="px-3 sm:px-6 py-4">
                                       {musteriBilgisi && (musteriBilgisi.adSoyad || musteriBilgisi.plaka || musteriBilgisi.markaModel) ? (
                                         <div className="text-xs dark-text-secondary">
@@ -594,13 +594,13 @@ function SonHareketler() {
                                         <span className="text-xs dark-text-muted">-</span>
                                       )}
                                     </td>
-                                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                                       <div className="text-xs dark-text-secondary">{hareket.duzenleyen || '-'}</div>
-                                    </td>
+                                  </td>
                                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs dark-text-secondary">
-                                      {formatTarih(hareket.timestamp)}
-                                    </td>
-                                  </tr>
+                                    {formatTarih(hareket.timestamp)}
+                                  </td>
+                                </tr>
                                 );
                               })}
                             </tbody>

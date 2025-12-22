@@ -4,6 +4,10 @@ import { Type } from 'class-transformer';
 class VehicleInfoDto {
   @IsOptional()
   @IsString()
+  firmaAdi?: string;
+
+  @IsOptional()
+  @IsString()
   adSoyad?: string;
 
   @IsOptional()

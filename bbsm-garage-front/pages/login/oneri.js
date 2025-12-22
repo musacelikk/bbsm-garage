@@ -302,9 +302,9 @@ function Oneri() {
                     <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
                       <p className="font-semibold text-base md:text-lg dark-text-primary">Öneri & Ödül Sistemi</p>
                     </div>
-                  </div>
                 </div>
               </div>
+            </div>
 
             {/* Bildirimler Bölümü */}
             {notifications.length > 0 && (
@@ -605,28 +605,28 @@ function Oneri() {
                 {/* Submit Button */}
                 <div className="flex justify-end">
                   <div className="items-center p-2 pl-4 pr-4 rounded-full bg-blue-500">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || loading}
+                <button
+                  type="submit"
+                  disabled={isSubmitting || loading}
                       className="font-semibold text-md whitespace-nowrap text-white flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isSubmitting ? (
-                        <>
+                >
+                  {isSubmitting ? (
+                    <>
                           <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          <span>Gönderiliyor...</span>
-                        </>
-                      ) : (
-                        <>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                          </svg>
-                          <span>Öneriyi Gönder</span>
-                        </>
-                      )}
-                    </button>
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Gönderiliyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                      <span>Öneriyi Gönder</span>
+                    </>
+                  )}
+                </button>
                   </div>
                 </div>
               </form>
@@ -640,16 +640,16 @@ function Oneri() {
                     <div className="pr-4 items-center">
                       <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
                         <p className="font-semibold text-base md:text-lg dark-text-primary">Öneri Geçmişim</p>
-                      </div>
+                    </div>
                     </div>
                   </div>
                   <div className="items-center p-2 pl-4 pr-4 rounded-full bg-blue-500">
-                    <button
-                      onClick={() => setOneriGecmisiGoster(!oneriGecmisiGoster)}
+                  <button
+                    onClick={() => setOneriGecmisiGoster(!oneriGecmisiGoster)}
                       className="font-semibold text-md whitespace-nowrap text-white"
-                    >
-                      {oneriGecmisiGoster ? 'Gizle' : 'Göster'}
-                    </button>
+                  >
+                    {oneriGecmisiGoster ? 'Gizle' : 'Göster'}
+                  </button>
                   </div>
                 </div>
 
@@ -666,7 +666,7 @@ function Oneri() {
                         </tr>
                       </thead>
                       <tbody className="dark-card-bg divide-y dark-border">
-                        {oneriGecmisi.map((oneri) => (
+                    {oneriGecmisi.map((oneri) => (
                           <tr key={oneri.id} className="hover:dark-bg-tertiary active:dark-bg-secondary transition-colors">
                             <td className="px-6 py-4 font-medium dark-text-primary text-xs whitespace-nowrap">
                               {oneri.oneriBaslik}
@@ -675,36 +675,36 @@ function Oneri() {
                               <div className="line-clamp-2">{oneri.sorunTanimi}</div>
                             </td>
                             <td className="px-6 py-4 dark-text-secondary text-xs whitespace-nowrap">
-                              {oneri.tarih ? new Date(oneri.tarih).toLocaleDateString('tr-TR', {
-                                day: '2-digit',
-                                month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
+                                {oneri.tarih ? new Date(oneri.tarih).toLocaleDateString('tr-TR', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
                               }) : '-'}
                             </td>
                             <td className="px-6 py-4 dark-text-secondary text-xs">
                               {oneri.etkiAlani && oneri.etkiAlani.length > 0 ? `${oneri.etkiAlani.length} alan` : '-'}
                             </td>
                             <td className="px-6 py-4">
-                              <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(oneri.status)}`}>
-                                {getStatusText(oneri.status)}
-                              </div>
-                              {oneri.admin_response && (
+                          <div className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(oneri.status)}`}>
+                            {getStatusText(oneri.status)}
+                        </div>
+                        {oneri.admin_response && (
                                 <div className={`mt-2 p-2 rounded-lg text-xs ${
-                                  oneri.status === 'approved' 
-                                    ? 'bg-green-500/10 border border-green-500/20 text-green-300'
-                                    : oneri.status === 'rejected'
-                                    ? 'bg-red-500/10 border border-red-500/20 text-red-300'
-                                    : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
-                                }`}>
-                                  <p className="font-semibold mb-1">Yanıt:</p>
-                                  <p>{oneri.admin_response}</p>
-                                </div>
-                              )}
+                            oneri.status === 'approved' 
+                              ? 'bg-green-500/10 border border-green-500/20 text-green-300'
+                              : oneri.status === 'rejected'
+                              ? 'bg-red-500/10 border border-red-500/20 text-red-300'
+                              : 'bg-blue-500/10 border border-blue-500/20 text-blue-300'
+                          }`}>
+                            <p className="font-semibold mb-1">Yanıt:</p>
+                            <p>{oneri.admin_response}</p>
+                          </div>
+                        )}
                             </td>
                           </tr>
-                        ))}
+                    ))}
                       </tbody>
                     </table>
                   </div>

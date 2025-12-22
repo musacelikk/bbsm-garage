@@ -24,14 +24,7 @@ function AdminPanel() {
   const [oneriler, setOneriler] = useState([]);
   const [selectedOneri, setSelectedOneri] = useState(null);
   const [isOneriModalOpen, setIsOneriModalOpen] = useState(false);
-  const [isSystemSettingsOpen, setIsSystemSettingsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [systemSettings, setSystemSettings] = useState({
-    maintenanceMode: false,
-    maxUsers: 100,
-    emailNotifications: true,
-    smsNotifications: false,
-  });
   const [activeTab, setActiveTab] = useState('dashboard');
   const [dashboardStats, setDashboardStats] = useState({
     totalUsers: 0,
@@ -137,11 +130,11 @@ function AdminPanel() {
         e.preventDefault();
         setShowKeyboardShortcuts(!showKeyboardShortcuts);
       }
-      // Ctrl/Cmd + 1-5 ile tab'lar arası geçiş
-      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '5') {
+      // Ctrl/Cmd + 1-4 ile tab'lar arası geçiş
+      if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
         e.preventDefault();
         const tabIndex = parseInt(e.key) - 1;
-        const tabs = ['dashboard', 'users', 'requests', 'oneriler', 'settings'];
+        const tabs = ['dashboard', 'users', 'requests', 'oneriler'];
         if (tabs[tabIndex]) {
           setActiveTab(tabs[tabIndex]);
         }
@@ -172,13 +165,6 @@ function AdminPanel() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [isAuthenticated, showKeyboardShortcuts, isEmailModalOpen, isUserDetailModalOpen, isOneriModalOpen, isMembershipModalOpen, isDeleteUserModalOpen]);
-
-  // Sistem ayarlarını yükle
-  useEffect(() => {
-    if (isAuthenticated) {
-      loadSystemSettings();
-    }
-  }, [isAuthenticated]);
 
   // Kullanıcıları ve teklifleri yükle
   useEffect(() => {
@@ -228,48 +214,6 @@ function AdminPanel() {
     }
   };
 
-  const loadSystemSettings = async () => {
-    try {
-      // Backend endpoint'i yoksa localStorage'dan yükle
-      const savedSettings = localStorage.getItem('adminSystemSettings');
-      if (savedSettings) {
-        setSystemSettings(JSON.parse(savedSettings));
-      }
-      // TODO: Backend endpoint'i eklendiğinde buraya entegre edilecek
-      // const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/settings`);
-      // if (response.ok) {
-      //   const data = await response.json();
-      //   setSystemSettings(data);
-      // }
-    } catch (error) {
-      console.error('Sistem ayarları yüklenirken hata:', error);
-    }
-  };
-
-  const saveSystemSettings = async () => {
-    try {
-      setLoading(true);
-      // Backend endpoint'i yoksa localStorage'a kaydet
-      localStorage.setItem('adminSystemSettings', JSON.stringify(systemSettings));
-      alert('Sistem ayarları kaydedildi');
-      // TODO: Backend endpoint'i eklendiğinde buraya entegre edilecek
-      // const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/settings`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(systemSettings),
-      // });
-      // if (response.ok) {
-      //   alert('Sistem ayarları kaydedildi');
-      // } else {
-      //   throw new Error('Ayarlar kaydedilemedi');
-      // }
-    } catch (error) {
-      console.error('Sistem ayarları kaydedilirken hata:', error);
-      alert('Sistem ayarları kaydedilirken bir hata oluştu');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Dashboard istatistiklerini hesapla
   useEffect(() => {
@@ -491,12 +435,26 @@ function AdminPanel() {
   const fetchOneriler = async () => {
     try {
       const response = await fetchWithAdminAuth(`${API_URL}/auth/admin/oneriler`);
+      if (!response) return; // fetchWithAdminAuth logout yaptıysa response null olabilir
+      
       if (response.ok) {
         const data = await response.json();
         setOneriler(data || []);
+      } else if (response.status === 401) {
+        // Token süresi dolmuş, fetchWithAdminAuth zaten logout yaptı
+        return;
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Öneriler yüklenirken hata:', errorData);
       }
     } catch (error) {
       console.error('Öneriler yüklenirken hata:', error);
+      if (error.message?.includes('expired') || error.message?.includes('jwt')) {
+        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        router.replace('/admin/login');
+      }
     }
   };
 
@@ -850,7 +808,13 @@ function AdminPanel() {
 
   const fetchWithAdminAuth = async (url, options = {}) => {
     const adminToken = localStorage.getItem('adminToken');
-    return fetch(url, {
+    if (!adminToken) {
+      alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      router.replace('/admin/login');
+      return;
+    }
+
+    const response = await fetch(url, {
       ...options,
       headers: {
         ...options.headers,
@@ -858,6 +822,29 @@ function AdminPanel() {
         'Content-Type': 'application/json',
       },
     });
+
+    // Token süresi dolmuşsa veya geçersizse logout yap
+    if (response.status === 401) {
+      try {
+        const errorData = await response.json().catch(() => ({}));
+        if (errorData.message?.includes('expired') || errorData.message?.includes('jwt') || errorData.message?.includes('Token')) {
+          alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+          localStorage.removeItem('adminToken');
+          localStorage.removeItem('adminUser');
+          router.replace('/admin/login');
+          return response;
+        }
+      } catch (e) {
+        // JSON parse hatası olsa bile 401 ise logout yap
+        alert('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminUser');
+        router.replace('/admin/login');
+        return response;
+      }
+    }
+
+    return response;
   };
 
   return (
@@ -1123,16 +1110,6 @@ function AdminPanel() {
                 }`}
               >
                 Öneriler
-              </button>
-              <button
-                onClick={() => setActiveTab('settings')}
-                className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'settings'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                Ayarlar
               </button>
             </nav>
           </div>
@@ -2086,86 +2063,6 @@ function AdminPanel() {
             </div>
           )}
 
-          {/* Ayarlar Tab */}
-          {activeTab === 'settings' && (
-            <div>
-              {/* Sistem Ayarları */}
-              <div className="bg-white rounded-xl shadow-md p-5 md:p-6 mb-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                  <h2 className="text-xl md:text-2xl font-bold text-my-siyah mb-4 md:mb-0">Sistem Ayarları</h2>
-                  <button
-                    onClick={() => setIsSystemSettingsOpen(!isSystemSettingsOpen)}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    {isSystemSettingsOpen ? 'Gizle' : 'Göster'}
-                  </button>
-                </div>
-
-                {isSystemSettingsOpen && (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <span className="text-gray-700 font-medium">Bakım Modu</span>
-                          <input
-                            type="checkbox"
-                            checked={systemSettings.maintenanceMode}
-                            onChange={(e) => setSystemSettings({ ...systemSettings, maintenanceMode: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                        <p className="text-xs text-gray-500 mt-1">Sistem bakım moduna alınır</p>
-                      </div>
-                      <div>
-                        <label className="block text-gray-700 font-medium mb-2">Maksimum Kullanıcı Sayısı</label>
-                        <input
-                          type="number"
-                          value={systemSettings.maxUsers}
-                          onChange={(e) => setSystemSettings({ ...systemSettings, maxUsers: parseInt(e.target.value, 10) || 100 })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                      <div>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <span className="text-gray-700 font-medium">E-posta Bildirimleri</span>
-                          <input
-                            type="checkbox"
-                            checked={systemSettings.emailNotifications}
-                            onChange={(e) => setSystemSettings({ ...systemSettings, emailNotifications: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                      </div>
-                      <div>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <span className="text-gray-700 font-medium">SMS Bildirimleri</span>
-                          <input
-                            type="checkbox"
-                            checked={systemSettings.smsNotifications}
-                            onChange={(e) => setSystemSettings({ ...systemSettings, smsNotifications: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <button
-                        onClick={saveSystemSettings}
-                        disabled={loading}
-                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {loading ? 'Kaydediliyor...' : 'Ayarları Kaydet'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Öneri Detay Modal */}
           {isOneriModalOpen && selectedOneri && (
@@ -2777,10 +2674,6 @@ function AdminPanel() {
                 <div className="flex items-center justify-between py-2 border-b border-gray-200">
                   <span className="text-gray-700">Öneriler</span>
                   <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+4</kbd>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                  <span className="text-gray-700">Ayarlar</span>
-                  <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono">Ctrl+5</kbd>
                 </div>
                 <div className="flex items-center justify-between py-2">
                   <span className="text-gray-700">Modal Kapat</span>

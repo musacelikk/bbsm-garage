@@ -21,7 +21,7 @@ function Ayarlar() {
   const username = getUsername() || 'Kullanıcı';
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState('profil'); // 'profil', 'bildirimler', 'sifre', 'tema', 'veri', 'gizlilik'
+  const [activeTab, setActiveTab] = useState('profil'); // 'profil', 'sifre', 'tema', 'veri', 'gizlilik'
   
   // Profil form state
   const [profileFormData, setProfileFormData] = useState({
@@ -44,18 +44,6 @@ function Ayarlar() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [forgotPasswordStatus, setForgotPasswordStatus] = useState(''); // '', 'success', 'error'
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState('');
-  
-  const [preferences, setPreferences] = useState({
-    emailEnabled: true,
-    smsEnabled: false,
-    oneriApproved: true,
-    oneriRejected: true,
-    paymentReminder: true,
-    maintenanceReminder: true,
-    notificationVolume: 50,
-    notificationTimeStart: '09:00',
-    notificationTimeEnd: '18:00',
-  });
 
   // Gizlilik ayarları
   const [privacySettings, setPrivacySettings] = useState({
@@ -66,7 +54,6 @@ function Ayarlar() {
 
 
   useEffect(() => {
-    loadPreferences();
     loadProfileData();
     loadPrivacySettings();
   }, []);
@@ -316,43 +303,6 @@ function Ayarlar() {
     }
   };
 
-  const loadPreferences = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}/notification/preferences`, { method: 'GET' });
-      if (response && response.ok) {
-        const data = await response.json();
-        setPreferences(data);
-      }
-    } catch (error) {
-      console.error('Bildirim tercihleri yükleme hatası:', error);
-    }
-    setLoading(false);
-  };
-
-  const handleSavePreferences = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}/notification/preferences`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(preferences),
-      });
-
-      if (response && response.ok) {
-        success('Bildirim tercihleri başarıyla kaydedildi!');
-      } else {
-        showError('Bildirim tercihleri kaydedilirken bir hata oluştu.');
-      }
-    } catch (error) {
-      console.error('Bildirim tercihleri kaydetme hatası:', error);
-      showError('Bildirim tercihleri kaydedilirken bir hata oluştu.');
-    }
-    setLoading(false);
-  };
-
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -422,27 +372,6 @@ function Ayarlar() {
     }
   };
 
-  // Test bildirimi gönderme
-  const handleTestNotification = async () => {
-    setLoading(true);
-    try {
-      const response = await fetchWithAuth(`${API_URL}/notification/test`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type: 'test' }),
-      });
-      if (response && response.ok) {
-        success('Test bildirimi gönderildi!');
-      } else {
-        showError('Test bildirimi gönderilemedi.');
-      }
-    } catch (error) {
-      console.error('Test bildirimi hatası:', error);
-      showError('Test bildirimi gönderilemedi.');
-    }
-    setLoading(false);
-  };
-
   return (
     <div 
       className="min-h-screen dark-bg-primary"
@@ -490,21 +419,6 @@ function Ayarlar() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
                         <span>Profil</span>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('bildirimler')}
-                      className={`px-4 md:px-6 py-3 text-sm md:text-base font-medium transition-all touch-manipulation min-h-[44px] whitespace-nowrap ${
-                        activeTab === 'bildirimler'
-                          ? 'dark-text-primary border-b-2 border-blue-500'
-                          : 'dark-text-muted hover:dark-text-primary'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                        </svg>
-                        <span>Bildirimler</span>
                       </div>
                     </button>
                     <button
@@ -815,151 +729,6 @@ function Ayarlar() {
                           </button>
                         </div>
                       )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Bildirimler Sekmesi */}
-                {activeTab === 'bildirimler' && (
-                  <div className="dark-card-bg neumorphic-inset rounded-lg p-4 md:p-6">
-                    <h2 className="text-lg font-medium dark-text-primary mb-4">Bildirim Ayarları</h2>
-                    
-                    {/* Genel Ayarlar */}
-                    <div className="mb-6">
-                      <h3 className="text-base font-medium dark-text-primary mb-3">Genel Ayarlar</h3>
-                      <div className="space-y-4">
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <span className="dark-text-primary">E-posta Bildirimleri</span>
-                          <input
-                            type="checkbox"
-                            checked={preferences.emailEnabled}
-                            onChange={(e) => setPreferences({ ...preferences, emailEnabled: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <span className="dark-text-primary">SMS Bildirimleri</span>
-                          <input
-                            type="checkbox"
-                            checked={preferences.smsEnabled}
-                            onChange={(e) => setPreferences({ ...preferences, smsEnabled: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Bildirim Türleri */}
-                    <div className="mb-6">
-                      <h3 className="text-base font-medium dark-text-primary mb-3">Bildirim Türleri</h3>
-                      <div className="space-y-4">
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <div>
-                            <span className="dark-text-primary font-medium">Öneri Onaylandı</span>
-                            <p className="text-sm dark-text-muted">Öneriniz onaylandığında bildirim alın</p>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={preferences.oneriApproved}
-                            onChange={(e) => setPreferences({ ...preferences, oneriApproved: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <div>
-                            <span className="dark-text-primary font-medium">Öneri Reddedildi</span>
-                            <p className="text-sm dark-text-muted">Öneriniz reddedildiğinde bildirim alın</p>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={preferences.oneriRejected}
-                            onChange={(e) => setPreferences({ ...preferences, oneriRejected: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <div>
-                            <span className="dark-text-primary font-medium">Ödeme Hatırlatıcısı</span>
-                            <p className="text-sm dark-text-muted">Ödeme bekleyen kartlar için hatırlatma alın</p>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={preferences.paymentReminder}
-                            onChange={(e) => setPreferences({ ...preferences, paymentReminder: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                        <label className="flex items-center justify-between cursor-pointer">
-                          <div>
-                            <span className="dark-text-primary font-medium">Bakım Hatırlatıcısı</span>
-                            <p className="text-sm dark-text-muted">Periyodik bakım zamanı geldiğinde bildirim alın</p>
-                          </div>
-                          <input
-                            type="checkbox"
-                            checked={preferences.maintenanceReminder}
-                            onChange={(e) => setPreferences({ ...preferences, maintenanceReminder: e.target.checked })}
-                            className="w-5 h-5 rounded"
-                          />
-                        </label>
-                      </div>
-                    </div>
-
-                    {/* Bildirim Ses ve Zaman Ayarları */}
-                    <div className="mb-6">
-                      <h3 className="text-base font-medium dark-text-primary mb-3">Bildirim Ses ve Zaman Ayarları</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium dark-text-primary mb-2">
-                            Bildirim Ses Seviyesi: {preferences.notificationVolume}%
-                          </label>
-                          <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={preferences.notificationVolume}
-                            onChange={(e) => setPreferences({ ...preferences, notificationVolume: parseInt(e.target.value) })}
-                            className="w-full"
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-medium dark-text-primary mb-2">Bildirim Başlangıç Saati</label>
-                            <input
-                              type="time"
-                              value={preferences.notificationTimeStart}
-                              onChange={(e) => setPreferences({ ...preferences, notificationTimeStart: e.target.value })}
-                              className="w-full p-2 rounded-lg neumorphic-input dark-text-primary"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-medium dark-text-primary mb-2">Bildirim Bitiş Saati</label>
-                            <input
-                              type="time"
-                              value={preferences.notificationTimeEnd}
-                              onChange={(e) => setPreferences({ ...preferences, notificationTimeEnd: e.target.value })}
-                              className="w-full p-2 rounded-lg neumorphic-input dark-text-primary"
-                            />
-                          </div>
-                        </div>
-                        <button
-                          onClick={handleTestNotification}
-                          disabled={loading}
-                          className={`w-full px-4 py-2 bg-green-500 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
-                        >
-                          Test Bildirimi Gönder
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Kaydet Butonu */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleSavePreferences}
-                        disabled={loading}
-                        className={`px-6 py-3 rounded-lg font-medium bg-blue-500 hover:bg-blue-600 transition-all touch-manipulation min-h-[44px] active:scale-95 disabled:opacity-50 ${activeTheme === 'modern' ? 'text-gray-900' : 'text-white'}`}
-                      >
-                        {loading ? 'Kaydediliyor...' : 'Bildirim Ayarlarını Kaydet'}
-                      </button>
                     </div>
                   </div>
                 )}

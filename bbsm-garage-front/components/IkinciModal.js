@@ -296,9 +296,14 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
     // Number alanlar için validation
     if (field === 'birimAdedi' || field === 'birimFiyati') {
       const numValue = field === 'birimAdedi' ? parseInt(value, 10) : parseFloat(value);
-      item[field] = isNaN(numValue) ? '' : numValue;
+      // Negatif değerleri engelle
+      if (!isNaN(numValue) && numValue < 0) {
+        item[field] = '';
+      } else {
+        item[field] = isNaN(numValue) ? '' : numValue;
+      }
     } else {
-      item[field] = value;
+    item[field] = value;
     }
 
     // Parça adı manuel değişirse stok bilgisini sıfırla
@@ -383,9 +388,21 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                       className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
                       contentEditable
                       suppressContentEditableWarning
+                      onInput={(e) => {
+                        // Sadece sayı karakterlerine izin ver
+                        const value = e.target.textContent.replace(/[^0-9]/g, '');
+                        e.target.textContent = value;
+                      }}
                       onBlur={(e) => handleCellBlur(index, 'birimAdedi', e)}
-                      onKeyDown={(e) => handleCellKeyDown(e, index, 'birimAdedi')}
-                      ref={(el) => { cellRefs.current[`${index}-birimAdedi`] = el; }}
+                      onKeyDown={(e) => {
+                        // Eksi, artı ve e karakterlerini engelle
+                        if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault();
+                          return;
+                        }
+                        handleCellKeyDown(e, index, 'birimAdedi');
+                      }}
+                        ref={(el) => { cellRefs.current[`${index}-birimAdedi`] = el; }}
                     >
                       {asd.birimAdedi ?? ''}
                     </td>
@@ -415,9 +432,24 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                       className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
                       contentEditable
                       suppressContentEditableWarning
+                      onInput={(e) => {
+                        // Sadece sayı ve nokta karakterlerine izin ver (ondalık için)
+                        const value = e.target.textContent.replace(/[^0-9.]/g, '');
+                        // Birden fazla nokta olmasını engelle
+                        const parts = value.split('.');
+                        const filteredValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                        e.target.textContent = filteredValue;
+                      }}
                       onBlur={(e) => handleCellBlur(index, 'birimFiyati', e)}
-                      onKeyDown={(e) => handleCellKeyDown(e, index, 'birimFiyati')}
-                      ref={(el) => { cellRefs.current[`${index}-birimFiyati`] = el; }}
+                      onKeyDown={(e) => {
+                        // Eksi ve artı karakterlerini engelle
+                        if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault();
+                          return;
+                        }
+                        handleCellKeyDown(e, index, 'birimFiyati');
+                      }}
+                        ref={(el) => { cellRefs.current[`${index}-birimFiyati`] = el; }}
                     >
                       {asd.birimFiyati ?? ''}
                     </td>
@@ -439,11 +471,22 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                     className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
                     contentEditable
                     suppressContentEditableWarning
+                    onInput={(e) => {
+                      // Sadece sayı karakterlerine izin ver
+                      const value = e.target.textContent.replace(/[^0-9]/g, '');
+                      e.target.textContent = value;
+                      setBirimAdedi(value);
+                    }}
                     onBlur={(e) => {
                       const value = e.target.textContent.trim();
                       setBirimAdedi(value);
                     }}
                     onKeyDown={(e) => {
+                      // Eksi, artı ve e karakterlerini engelle
+                      if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                        e.preventDefault();
+                        return;
+                      }
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         // Önce değeri kaydet
@@ -457,7 +500,7 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                         handleArrowNavigation(e, localYapilanlar.length, 'birimAdedi');
                       }
                     }}
-                    ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimAdedi`] = el; }}
+                      ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimAdedi`] = el; }}
                   >
                     {birimAdedi}
                   </td>
@@ -483,9 +526,9 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                             const value = e.target.textContent.trim();
                             setParcaAdi(value);
                             if (value !== parcaAdi) {
-                              setSelectedStockId(null);
-                              setStockWarning('');
-                              setStokArama('');
+                          setSelectedStockId(null);
+                          setStockWarning('');
+                          setStokArama('');
                             }
                             // Sonra bir sonraki hücreye geç
                             setTimeout(() => {
@@ -537,13 +580,27 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                     className="px-4 md:px-6 py-2 whitespace-nowrap border-r dark-border dark-text-primary font-medium text-center cursor-text"
                     contentEditable
                     suppressContentEditableWarning
+                    onInput={(e) => {
+                      // Sadece sayı ve nokta karakterlerine izin ver (ondalık için)
+                      const value = e.target.textContent.replace(/[^0-9.]/g, '');
+                      // Birden fazla nokta olmasını engelle
+                      const parts = value.split('.');
+                      const filteredValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : value;
+                      e.target.textContent = filteredValue;
+                      setBirimFiyati(filteredValue);
+                    }}
                     onBlur={(e) => {
                       const value = e.target.textContent.trim();
                       setBirimFiyati(value);
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
+                      onKeyDown={(e) => {
+                        // Eksi ve artı karakterlerini engelle
+                        if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                          e.preventDefault();
+                          return;
+                        }
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
                         // Önce mevcut değeri kaydet
                         const value = e.target.textContent.trim();
                         setBirimFiyati(value);
@@ -565,10 +622,10 @@ const IkinciModal = ({ onIkinciModalClose, ilkModalBilgi, onClose, onKartEkle, o
                           e.target.blur();
                         }
                         return;
-                      }
-                      handleArrowNavigation(e, localYapilanlar.length, 'birimFiyati');
-                    }}
-                    ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimFiyati`] = el; }}
+                        }
+                        handleArrowNavigation(e, localYapilanlar.length, 'birimFiyati');
+                      }}
+                      ref={(el) => { cellRefs.current[`${localYapilanlar.length}-birimFiyati`] = el; }}
                   >
                     {birimFiyati}
                   </td>

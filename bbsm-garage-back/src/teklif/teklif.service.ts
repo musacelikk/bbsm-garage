@@ -71,7 +71,8 @@ export class TeklifService {
   findAll(tenant_id: number): Promise<TeklifEntity[]> {
     return this.databaseRepository.find({ 
       where: { tenant_id },
-      relations: ['yapilanlar'] 
+      relations: ['yapilanlar'],
+      order: { teklif_id: 'DESC' } // En son eklenen en üstte
     });
   }
 

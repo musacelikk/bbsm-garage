@@ -513,8 +513,8 @@ function Gelir() {
             {/* PDF Export Butonu */}
             <div className="mb-6 flex justify-end">
               <div className="items-center p-2 pl-4 pr-4 rounded-full bg-blue-500">
-                <button
-                  onClick={async () => {
+              <button
+                onClick={async () => {
                   setLoading(true);
                   try {
                     const reportData = {
@@ -564,9 +564,9 @@ function Gelir() {
                   setLoading(false);
                 }}
                     className="font-semibold text-md whitespace-nowrap text-white"
-                  >
-                    PDF Rapor İndir
-                  </button>
+              >
+                PDF Rapor İndir
+              </button>
                 </div>
             </div>
 

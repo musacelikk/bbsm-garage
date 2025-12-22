@@ -233,7 +233,7 @@ function Stok() {
                   <div className="flex items-center">
                     <div className="pr-4 items-center">
                       <div className="flex flex-column sm:flex-row flex-wrap items-center justify-between">
-                        <p className="font-semibold text-base md:text-lg dark-text-primary">Stok Ekle</p>
+                  <p className="font-semibold text-base md:text-lg dark-text-primary">Stok Ekle</p>
                       </div>
                     </div>
                   </div>
@@ -304,31 +304,31 @@ function Stok() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <select
-                        value={seciliKategori}
-                        onChange={(e) => {
-                          setSeciliKategori(e.target.value);
-                          if (e.target.value === 'hepsi') {
-                            setFilteredStokListesi(stokListesi.filter(stok => 
-                              stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              stok.info.toLowerCase().includes(searchTerm.toLowerCase())
-                            ));
-                          } else {
-                            setFilteredStokListesi(stokListesi.filter(stok => 
-                              (stok.kategori || 'Genel') === e.target.value &&
-                              (stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              stok.info.toLowerCase().includes(searchTerm.toLowerCase()))
-                            ));
-                          }
-                        }}
+                  <select
+                    value={seciliKategori}
+                    onChange={(e) => {
+                      setSeciliKategori(e.target.value);
+                      if (e.target.value === 'hepsi') {
+                        setFilteredStokListesi(stokListesi.filter(stok => 
+                          stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          stok.info.toLowerCase().includes(searchTerm.toLowerCase())
+                        ));
+                      } else {
+                        setFilteredStokListesi(stokListesi.filter(stok => 
+                          (stok.kategori || 'Genel') === e.target.value &&
+                          (stok.stokAdi.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          stok.info.toLowerCase().includes(searchTerm.toLowerCase()))
+                        ));
+                      }
+                    }}
                         className="neumorphic-input dark-text-primary text-sm rounded-lg block w-full md:w-48 p-2 ps-8 touch-manipulation min-h-[44px]"
-                      >
-                        <option value="hepsi">Tüm Kategoriler</option>
-                        {Array.from(new Set(stokListesi.map(s => s.kategori || 'Genel'))).map(kat => (
-                          <option key={kat} value={kat}>{kat}</option>
-                        ))}
-                      </select>
-                    </div>
+                  >
+                    <option value="hepsi">Tüm Kategoriler</option>
+                    {Array.from(new Set(stokListesi.map(s => s.kategori || 'Genel'))).map(kat => (
+                      <option key={kat} value={kat}>{kat}</option>
+                    ))}
+                  </select>
+                </div>
                     <div className="items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500">
                       <button onClick={handleClearItems} className="font-semibold text-md whitespace-nowrap text-white">Seçilenleri Sil</button>
                     </div>

@@ -206,7 +206,17 @@ function Detay() {
     const { name, value } = event.target;
     const updatedYapilanlar = [...yapilanlar];
     const mevcut = updatedYapilanlar[index] || {};
-    updatedYapilanlar[index] = { ...mevcut, [name]: value };
+    
+    // Negatif değerleri engelle
+    let processedValue = value;
+    if (name === 'birimAdedi' || name === 'birimFiyati') {
+      const numValue = name === 'birimAdedi' ? parseInt(value, 10) : parseFloat(value);
+      if (!isNaN(numValue) && numValue < 0) {
+        processedValue = '';
+      }
+    }
+    
+    updatedYapilanlar[index] = { ...mevcut, [name]: processedValue };
     
     // Parça adı manuel değişirse, stoktan bağımsız kabul et
     if (name === 'parcaAdi') {
@@ -216,7 +226,7 @@ function Detay() {
     
     // Birim adedi değiştiğinde ve stoktan seçilmişse stok kontrolü yap
     if (name === 'birimAdedi' && mevcut.isFromStock && mevcut.stockId) {
-      const yeniAdet = parseInt(value, 10) || 0;
+      const yeniAdet = parseInt(processedValue, 10) || 0;
       const stok = stoklar.find(s => s.id === mevcut.stockId);
       if (stok && stok.adet < yeniAdet) {
         warning(`Uyarı: Stokta sadece ${stok.adet} adet var! Girdiğiniz adet: ${yeniAdet}`);
@@ -588,6 +598,7 @@ function Detay() {
     setLoading(true);
     const dataToSend = {
         vehicleInfo: {
+            firmaAdi: profileData?.firmaAdi || '',
             adSoyad,
             telNo,
             markaModel,
@@ -619,10 +630,16 @@ function Detay() {
         });
 
         if (!response || !response.ok) {
-            throw new Error(`HTTP error! status: ${response?.status || 'unknown'}`);
+            const errorText = await response.text().catch(() => 'Bilinmeyen hata');
+            throw new Error(`PDF indirme hatası: ${response?.status || 'Bilinmeyen'} - ${errorText}`);
         }
 
         const blob = await response.blob();
+        
+        if (!blob || blob.size === 0) {
+            throw new Error('PDF dosyası boş geldi');
+        }
+
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.style.display = 'none';
@@ -631,8 +648,11 @@ function Detay() {
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        success('PDF başarıyla indirildi');
     } catch (error) {
         console.error('PDF download error:', error);
+        showError(error.message || 'PDF indirme sırasında bir hata oluştu. Lütfen Java servisinin çalıştığından emin olun.');
     }
     setLoading(false);
 };
@@ -737,6 +757,14 @@ function Detay() {
                           value={yapilan.birimAdedi || ''}
                           type="number"
                           name="birimAdedi"
+                          min="0"
+                          step="1"
+                          onKeyDown={(e) => {
+                            // Eksi, artı ve e karakterlerini engelle
+                            if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                              e.preventDefault();
+                            }
+                          }}
                           className="neumorphic-input p-2 rounded-md w-full dark-text-primary"
                         />
                       </td>
@@ -787,6 +815,14 @@ function Detay() {
                           value={yapilan.birimFiyati || ''}
                           type="number"
                           name="birimFiyati"
+                          min="0"
+                          step="0.01"
+                          onKeyDown={(e) => {
+                            // Eksi ve artı karakterlerini engelle
+                            if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+                              e.preventDefault();
+                            }
+                          }}
                           className="neumorphic-input p-2 rounded-md w-full dark-text-primary"
                         />
                       </td>

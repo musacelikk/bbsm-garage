@@ -614,6 +614,10 @@ export class AuthService {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
+      // JWT token süresi dolmuşsa daha anlamlı hata mesajı ver
+      if (error.name === 'TokenExpiredError' || error.message?.includes('jwt expired')) {
+        throw new UnauthorizedException('Token süresi dolmuş. Lütfen yeniden giriş yapın.');
+      }
       console.error('getAllUsersForAdmin error:', error);
       throw new Error(error.message || 'Kullanıcılar yüklenirken bir hata oluştu');
     }
@@ -686,6 +690,14 @@ export class AuthService {
       // Admin kendisini silemez
       if (userToDelete.username === 'musacelik') {
         throw new Error('Admin kullanıcısı silinemez');
+      }
+
+      // Kullanıcıya ait membership_request kayıtlarını sil (foreign key constraint hatasını önlemek için)
+      try {
+        await this.membershipRequestRepository.delete({ user_id: userId });
+      } catch (error) {
+        console.error('Membership request silme hatası:', error);
+        // Hata olsa bile devam et, çünkü kayıt olmayabilir
       }
 
       // Kullanıcıyı sil

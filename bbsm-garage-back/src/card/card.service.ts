@@ -296,7 +296,8 @@ export class CardService {
   findAll(tenant_id: number) {
     return this.databaseRepository.find({ 
       where: { tenant_id },
-      relations: ['yapilanlar'] 
+      relations: ['yapilanlar'],
+      order: { card_id: 'DESC' } // En son eklenen en üstte
     });
   }
 
@@ -418,7 +419,7 @@ export class CardService {
         }
       }
     }
-
+    
     // Silme logunu kaydet (kart silinmeden önce)
     if (username) {
       try {

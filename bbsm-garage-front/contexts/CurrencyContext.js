@@ -65,8 +65,8 @@ export function CurrencyProvider({ children }) {
           try {
             const altinResponse = await fetch('https://api.genelpara.com/embed/altin.json');
             if (altinResponse.ok) {
-              const altinData = await altinResponse.json();
-              altinFiyat = altinData?.gram_altin?.satis ? parseFloat(altinData.gram_altin.satis.replace(',', '.')) : null;
+            const altinData = await altinResponse.json();
+            altinFiyat = altinData?.gram_altin?.satis ? parseFloat(altinData.gram_altin.satis.replace(',', '.')) : null;
             }
           } catch (altinError) {
             // Altın API çalışmazsa yaklaşık hesaplama
@@ -116,15 +116,15 @@ export function CurrencyProvider({ children }) {
       if (rates.usd || rates.eur || rates.altin) {
         // Eğer localStorage'dan previousRates yüklenmediyse, mevcut değerleri previous olarak kaydet
         if (!prevRatesRef.current.usd && !prevRatesRef.current.eur && !prevRatesRef.current.altin) {
-          prevRatesRef.current = {
-            usd: rates.usd || null,
-            eur: rates.eur || null,
-            altin: rates.altin || null
-          };
-          // localStorage'a kaydet
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('currency_previous_rates', JSON.stringify(prevRatesRef.current));
-          }
+        prevRatesRef.current = {
+          usd: rates.usd || null,
+          eur: rates.eur || null,
+          altin: rates.altin || null
+        };
+        // localStorage'a kaydet
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('currency_previous_rates', JSON.stringify(prevRatesRef.current));
+        }
         } else {
           // localStorage'dan yüklenen previousRates varsa, state'e de set et
           setPreviousRates(prevRatesRef.current);
@@ -140,31 +140,31 @@ export function CurrencyProvider({ children }) {
       // Önceki değerlerle karşılaştır
       const hasChanged = (
         prevRatesRef.current.usd !== rates.usd || 
-        prevRatesRef.current.eur !== rates.eur || 
+         prevRatesRef.current.eur !== rates.eur || 
         prevRatesRef.current.altin !== rates.altin
       );
       
       if (hasChanged) {
-        // Önceki değerleri state'e kaydet (re-render tetikler)
-        const previousToSave = {
-          usd: prevRatesRef.current.usd,
-          eur: prevRatesRef.current.eur,
-          altin: prevRatesRef.current.altin
-        };
-        
-        setPreviousRates(previousToSave);
-        
-        // Ref'i yeni değerlerle güncelle
-        const newPrevRates = {
-          usd: rates.usd || prevRatesRef.current.usd,
-          eur: rates.eur || prevRatesRef.current.eur,
-          altin: rates.altin || prevRatesRef.current.altin
-        };
-        prevRatesRef.current = newPrevRates;
-        
-        // localStorage'a kaydet
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('currency_previous_rates', JSON.stringify(newPrevRates));
+      // Önceki değerleri state'e kaydet (re-render tetikler)
+      const previousToSave = {
+        usd: prevRatesRef.current.usd,
+        eur: prevRatesRef.current.eur,
+        altin: prevRatesRef.current.altin
+      };
+      
+      setPreviousRates(previousToSave);
+      
+      // Ref'i yeni değerlerle güncelle
+      const newPrevRates = {
+        usd: rates.usd || prevRatesRef.current.usd,
+        eur: rates.eur || prevRatesRef.current.eur,
+        altin: rates.altin || prevRatesRef.current.altin
+      };
+      prevRatesRef.current = newPrevRates;
+      
+      // localStorage'a kaydet
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('currency_previous_rates', JSON.stringify(newPrevRates));
         }
       }
     }

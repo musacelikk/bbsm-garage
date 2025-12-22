@@ -27,7 +27,7 @@ function Teklif() {
   const [teklifler, setTeklifler] = useState([]);
   const [secilenTeklifler, setSecilenTeklifler] = useState([]);
   const [aramaTerimi, setAramaTerimi] = useState('');
-  const [sortConfig, setSortConfig] = useState({ key: 'girisTarihi', direction: 'desc' });
+  const [sortConfig, setSortConfig] = useState({ key: 'teklif_id', direction: 'desc' });
   const [isActionDropdownOpen, setIsActionDropdownOpen] = useState(false);
   const [stoklar, setStoklar] = useState([]);
   const actionDropdownRef = useRef(null);
@@ -214,7 +214,7 @@ function Teklif() {
             
             return {
               birimAdedi: Number(y.birimAdedi) || 0,
-              parcaAdi: y.parcaAdi || "",
+            parcaAdi: y.parcaAdi || "",
               birimFiyati: Number(y.birimFiyati) || 0,
               toplamFiyat: Number(y.toplamFiyat) || 0,
               stockId: stockId, // Stok ID'sini koru (number olarak)
@@ -363,7 +363,7 @@ function Teklif() {
       
       return {
         birimAdedi: Number(y.birimAdedi) || 0,
-        parcaAdi: y.parcaAdi || "",
+      parcaAdi: y.parcaAdi || "",
         birimFiyati: Number(y.birimFiyati) || 0,
         toplamFiyat: Number(y.toplamFiyat) || 0,
         stockId: stockId, // Stok ID'sini koru (number olarak)
@@ -471,36 +471,47 @@ function Teklif() {
   const sortedTeklifler = useMemo(() => {
     let sortableItems = [...teklifler];
   
-    // Varsayılan olarak tarihe göre sırala (en yeni üstte)
-    const currentSortKey = sortConfig.key || 'girisTarihi';
+    // Varsayılan olarak ID'ye göre sırala (en son eklenen en üstte)
+    const currentSortKey = sortConfig.key || 'teklif_id';
     const currentDirection = sortConfig.key ? sortConfig.direction : 'desc';
   
-    sortableItems.sort((a, b) => {
-      if (currentSortKey === 'girisTarihi') {
-        const dateA = parseDate(a.girisTarihi);
-        const dateB = parseDate(b.girisTarihi);
-    
-        if (dateA === null && dateB !== null) return 1;
-        if (dateA !== null && dateB === null) return -1;
-        if (dateA === null && dateB === null) return 0;
-    
-        if (dateA < dateB) {
+      sortableItems.sort((a, b) => {
+      if (currentSortKey === 'teklif_id') {
+        // ID'ye göre sırala (en yüksek ID = en son eklenen)
+        const idA = a.teklif_id || 0;
+        const idB = b.teklif_id || 0;
+        if (idA < idB) {
           return currentDirection === 'asc' ? -1 : 1;
         }
-        if (dateA > dateB) {
+        if (idA > idB) {
           return currentDirection === 'asc' ? 1 : -1;
         }
         return 0;
-      } else {
+      } else if (currentSortKey === 'girisTarihi') {
+          const dateA = parseDate(a.girisTarihi);
+          const dateB = parseDate(b.girisTarihi);
+    
+          if (dateA === null && dateB !== null) return 1;
+          if (dateA !== null && dateB === null) return -1;
+          if (dateA === null && dateB === null) return 0;
+    
+          if (dateA < dateB) {
+          return currentDirection === 'asc' ? -1 : 1;
+          }
+          if (dateA > dateB) {
+          return currentDirection === 'asc' ? 1 : -1;
+          }
+          return 0;
+        } else {
         if (a[currentSortKey] < b[currentSortKey]) {
           return currentDirection === 'asc' ? -1 : 1;
-        }
+          }
         if (a[currentSortKey] > b[currentSortKey]) {
           return currentDirection === 'asc' ? 1 : -1;
+          }
+          return 0;
         }
-        return 0;
-      }
-    });
+      });
   
     return sortableItems;
   }, [teklifler, sortConfig]);
@@ -578,6 +589,73 @@ function Teklif() {
     setLoading(false);
 };
 
+const handlePrint = async (teklifId) => {
+  setLoading(true);
+
+  const teklif = teklifler.find(t => t.teklif_id === teklifId);
+  if (!teklif) {
+    console.error("Seçilen teklif bulunamadı");
+    setLoading(false);
+    return;
+  }
+
+  const dataToSend = {
+    vehicleInfo: {
+      firmaAdi: profileData?.firmaAdi || '',
+      adSoyad: teklif.adSoyad,
+      telNo: teklif.telNo,
+      markaModel: teklif.markaModel,
+      plaka: teklif.plaka,
+      km: teklif.km,
+      modelYili: teklif.modelYili,
+      sasi: teklif.sasi,
+      renk: teklif.renk,
+      girisTarihi: teklif.girisTarihi,
+      notlar: teklif.notlar,
+      adres: teklif.adres,
+    },
+    data: teklif.yapilanlar.map(item => ({
+      birimAdedi: item.birimAdedi,
+      parcaAdi: item.parcaAdi,
+      birimFiyati: item.birimFiyati,
+      toplamFiyat: item.birimFiyati * item.birimAdedi,
+    })),
+    notes: teklif.notlar
+  };
+
+  try {
+    const response = await fetchWithAuth(`${API_URL}/excel/pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToSend)
+    });
+
+    if (!response || !response.ok) {
+      const errorText = await response.text().catch(() => 'Bilinmeyen hata');
+      throw new Error(`PDF yazdırma hatası: ${response?.status || 'Bilinmeyen'} - ${errorText}`);
+    }
+
+    const blob = await response.blob();
+    
+    if (!blob || blob.size === 0) {
+      throw new Error('PDF dosyası boş geldi');
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) {
+      printWindow.onload = () => {
+        printWindow.focus();
+        printWindow.print();
+      };
+    }
+  } catch (error) {
+    console.error('PDF yazdırma hatası:', error);
+    showError(error.message || 'PDF yazdırma sırasında bir hata oluştu.');
+    }
+    setLoading(false);
+};
+
 const handlePDFDownload = async (teklifId) => {
   setLoading(true);
 
@@ -591,6 +669,7 @@ const handlePDFDownload = async (teklifId) => {
 
   const dataToSend = {
       vehicleInfo: {
+          firmaAdi: profileData?.firmaAdi || '',
           adSoyad: teklif.adSoyad,
           telNo: teklif.telNo,
           markaModel: teklif.markaModel,
@@ -621,11 +700,17 @@ const handlePDFDownload = async (teklifId) => {
           body: JSON.stringify(dataToSend),
       });
 
-      if (!response.ok) {
-          throw new Error('Network response was not ok');
+      if (!response || !response.ok) {
+          const errorText = await response.text().catch(() => 'Bilinmeyen hata');
+          throw new Error(`PDF indirme hatası: ${response?.status || 'Bilinmeyen'} - ${errorText}`);
       }
 
       const blob = await response.blob();
+      
+      if (!blob || blob.size === 0) {
+          throw new Error('PDF dosyası boş geldi');
+      }
+
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
@@ -634,8 +719,11 @@ const handlePDFDownload = async (teklifId) => {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      success('PDF başarıyla indirildi');
   } catch (error) {
       console.error('PDF download error:', error);
+      showError(error.message || 'PDF indirme sırasında bir hata oluştu. Lütfen Java servisinin çalıştığından emin olun.');
   }
   setLoading(false);
 };
@@ -712,7 +800,7 @@ const secilenTeklifleriIndir = async (type) => {
               Kartlara Aktar
             </button>
             <div className="relative" ref={actionDropdownRef}>
-              <button 
+            <button 
                 onClick={() => setIsActionDropdownOpen(!isActionDropdownOpen)} 
                 className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500 flex items-center justify-center gap-2"
               >
@@ -737,9 +825,9 @@ const secilenTeklifleriIndir = async (type) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    Seçilenleri Sil
-                  </button>
-                  <button
+              Seçilenleri Sil
+            </button>
+            <button 
                     onClick={() => {
                       secilenTeklifleriIndir('excel');
                       setIsActionDropdownOpen(false);
@@ -749,9 +837,9 @@ const secilenTeklifleriIndir = async (type) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                     </svg>
-                    Seçilenleri Excel İndir
-                  </button>
-                  <button
+              Seçilenleri Excel İndir
+            </button>
+            <button 
                     onClick={() => {
                       secilenTeklifleriIndir('pdf');
                       setIsActionDropdownOpen(false);
@@ -761,8 +849,8 @@ const secilenTeklifleriIndir = async (type) => {
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
-                    Seçilenleri PDF İndir
-                  </button>
+              Seçilenleri PDF İndir
+            </button>
                 </div>
               )}
             </div>
@@ -804,22 +892,22 @@ const secilenTeklifleriIndir = async (type) => {
                     </svg>
                   </Link>
                   <div className="flex gap-1 justify-center items-center">
-                    <button 
-                      onClick={() => handleExcelDownload(teklif.teklif_id)} 
-                      className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
-                      title="Excel indir"
+                    <button
+                      onClick={() => handlePDFDownload(teklif.teklif_id)}
+                      className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center"
+                      title="PDF indir"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
                     </button>
-                    <button 
-                      onClick={() => handlePDFDownload(teklif.teklif_id)} 
-                      className="bg-red-600 p-1.5 rounded-md hover:bg-red-700 active:scale-90 transition-transform text-white inline-flex items-center justify-center touch-manipulation"
-                      title="PDF indir"
+                    <button
+                      onClick={() => handlePrint(teklif.teklif_id)}
+                      className="p-1.5 rounded-md active:scale-95 transition-transform text-white bg-red-600 hover:bg-red-600 inline-flex items-center justify-center"
+                      title="Yazdır"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                       </svg>
                     </button>
                   </div>
@@ -857,7 +945,7 @@ const secilenTeklifleriIndir = async (type) => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </button>
-                    </div>
+                </div>
                     {isActionDropdownOpen && (
                       <div className="absolute top-full left-4 mt-2 w-56 bg-gray-800 rounded-lg shadow-xl z-50 border border-gray-700">
                         <button
@@ -900,7 +988,7 @@ const secilenTeklifleriIndir = async (type) => {
                           </svg>
                           Seçilenleri PDF İndir
                         </button>
-                      </div>
+                </div>
                     )}
                   </div>
                 </div>
@@ -1003,14 +1091,22 @@ const secilenTeklifleriIndir = async (type) => {
                       </td>
                       <td className="px-2 py-3 text-center">
                         <div className="flex gap-1 justify-center items-center">
-                          <button onClick={() => handleExcelDownload(teklif.teklif_id)} className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center" title="Excel indir">
+                          <button
+                            onClick={() => handlePDFDownload(teklif.teklif_id)}
+                            className="bg-green-600 p-1.5 rounded-md hover:bg-green-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center"
+                            title="PDF indir"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                             </svg>
                           </button>
-                          <button onClick={() => handlePDFDownload(teklif.teklif_id)} className="bg-red-600 p-1.5 rounded-md hover:bg-red-700 active:scale-95 transition-transform text-white inline-flex items-center justify-center" title="PDF indir">
+                          <button
+                            onClick={() => handlePrint(teklif.teklif_id)}
+                            className="p-1.5 rounded-md active:scale-95 transition-transform text-white bg-red-600 hover:bg-red-600 inline-flex items-center justify-center"
+                            title="Yazdır"
+                          >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                             </svg>
                           </button>
                         </div>
