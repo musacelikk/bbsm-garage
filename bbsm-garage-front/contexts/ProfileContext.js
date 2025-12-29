@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { useAuth } from '../auth-context';
 import { API_URL } from '../config';
 
@@ -36,7 +36,7 @@ export function ProfileProvider({ children }) {
     loadProfile();
   }, [fetchWithAuth, user]); // fetchWithAuth ve user hazır olduğunda çalış
 
-  const refreshProfile = async () => {
+  const refreshProfile = useCallback(async () => {
     try {
       const response = await fetchWithAuth(`${API_URL}/auth/profile`);
       if (response.ok) {
@@ -47,12 +47,21 @@ export function ProfileProvider({ children }) {
     } catch (error) {
       console.error('Profil yenileme hatası:', error);
     }
-  };
+  }, [fetchWithAuth]);
 
   const firmaAdi = profileData?.firmaAdi ? profileData.firmaAdi.toUpperCase() : 'KULLANICI';
 
+  // Context value'yu memoize et
+  const contextValue = useMemo(() => ({
+    profileData,
+    setProfileData,
+    loading,
+    refreshProfile,
+    firmaAdi
+  }), [profileData, loading, refreshProfile, firmaAdi]);
+
   return (
-    <ProfileContext.Provider value={{ profileData, setProfileData, loading, refreshProfile, firmaAdi }}>
+    <ProfileContext.Provider value={contextValue}>
       {children}
     </ProfileContext.Provider>
   );

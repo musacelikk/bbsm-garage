@@ -123,15 +123,15 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
     const isActive = activePage === key;
     
     if (isLocked) {
-      return `flex items-center gap-3 p-3 font-medium text-md dark-text-muted opacity-50 cursor-not-allowed rounded-xl transition-all`;
+      return `flex items-center gap-2.5 py-2.5 px-3 font-medium text-sm dark-text-muted opacity-50 cursor-not-allowed rounded-xl transition-all`;
     }
     
     if (isActive) {
       const textColor = activeTheme === 'modern' ? 'text-gray-900' : 'text-white';
-      return `flex items-center gap-3 p-3 text-md font-semibold ${textColor} sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg relative`;
+      return `flex items-center gap-2.5 py-2.5 px-3 text-sm font-semibold ${textColor} sidebar-active neumorphic-outset rounded-xl group transition-all shadow-lg relative`;
     }
     
-    return `flex items-center gap-3 p-3 font-medium text-md dark-text-secondary rounded-xl hover:dark-text-primary hover:dark-bg-tertiary group transition-all`;
+    return `flex items-center gap-2.5 py-2.5 px-3 font-medium text-sm dark-text-secondary rounded-xl hover:dark-text-primary hover:dark-bg-tertiary group transition-all`;
   };
   
   const isPageLocked = (key) => {
@@ -150,9 +150,9 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
           />
         )}
       <aside className={`fixed top-0 left-0 z-50 w-64 h-screen transition-all duration-500 ease-out lg:transition-none ${isOpen ? 'translate-x-0 sidebar-enter' : '-translate-x-full sidebar-exit'} sidebar-bg lg:translate-x-0`} aria-label="Sidebar" style={{ boxShadow: '2px 0 10px rgba(0, 0, 0, 0.3)' }}>
-        <div className="h-full px-4 pt-6 pb-4 overflow-y-auto sidebar-bg relative z-40 flex flex-col">
+        <div className="h-full px-4 pt-5 pb-3 sidebar-bg relative z-40 flex flex-col overflow-hidden">
           {/* Profil Bölümü */}
-          <div className="mb-6 px-2 pt-2">
+          <div className="mb-4 px-2 pt-2 flex-shrink-0">
             <Link href="/login/ayarlar" className="w-full flex flex-col items-center justify-center p-2 rounded-xl transition-all cursor-pointer">
               <img 
                 src={profileData?.profileImage ? `${API_URL}${profileData.profileImage}` : '/images/yasin.webp'} 
@@ -169,7 +169,7 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
           </div>
 
           {/* Navigation Items */}
-          <ul className="space-y-2 flex-1">
+          <ul className="space-y-1.5 flex-1 min-h-0">
             {menuItems.map((item) => (
               <li key={item.key}>
                 {isPageLocked(item.key) ? (
@@ -194,12 +194,12 @@ const Sidebar = ({ isOpen, onClose, activePage, setIsProfileModalOpen, setIsChan
           </ul>
 
           {/* Çıkış Yap Butonu */}
-          <div className="mt-4">
+          <div className="mt-3 flex-shrink-0">
             <button
               onClick={() => {
                 logout();
               }}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-sm transition-colors rounded-lg neumorphic-inset ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm transition-colors rounded-lg neumorphic-inset ${
                 activeTheme === 'modern' 
                   ? 'text-red-600 hover:bg-red-50' 
                   : 'text-red-400 hover:bg-red-900/20'

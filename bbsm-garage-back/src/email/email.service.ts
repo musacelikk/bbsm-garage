@@ -94,6 +94,65 @@ export class EmailService {
     }
   }
 
+  async sendVerificationCode(email: string, code: string, username: string): Promise<void> {
+    const mailOptions = {
+      from: this.configService.get<string>('SMTP_FROM') || this.configService.get<string>('SMTP_USER'),
+      to: email,
+      subject: 'BBSM Garage - Email Doğrulama Kodu',
+      html: `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background-color: #2563eb; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
+            .content { background-color: #f9fafb; padding: 30px; border-radius: 0 0 5px 5px; }
+            .code-box { background-color: #ffffff; border: 2px solid #2563eb; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
+            .code { font-size: 32px; font-weight: bold; color: #2563eb; letter-spacing: 8px; font-family: 'Courier New', monospace; }
+            .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
+            .warning { background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>BBSM Garage</h1>
+            </div>
+            <div class="content">
+              <h2>Email Doğrulama Kodu</h2>
+              <p>Merhaba <strong>${username}</strong>,</p>
+              <p>BBSM Garage'a hoş geldiniz! Hesabınızı aktifleştirmek için aşağıdaki doğrulama kodunu kullanın:</p>
+              <div class="code-box">
+                <div class="code">${code}</div>
+              </div>
+              <p>Bu kodu kayıt sayfasındaki doğrulama ekranına girin.</p>
+              <div class="warning">
+                <p><strong>⚠️ Güvenlik Uyarısı:</strong></p>
+                <p>Bu kodu kimseyle paylaşmayın. BBSM Garage hiçbir zaman sizden bu kodu istemez.</p>
+              </div>
+              <p><strong>Not:</strong> Bu kod 24 saat geçerlidir.</p>
+            </div>
+            <div class="footer">
+              <p>Bu email otomatik olarak gönderilmiştir. Lütfen yanıtlamayın.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+    };
+
+    try {
+      const transporter = this.getTransporter();
+      await transporter.sendMail(mailOptions);
+      this.logger.log(`Verification code sent to ${email}`);
+    } catch (error) {
+      this.logger.error(`Failed to send verification code to ${email}:`, error);
+      throw new Error('Email gönderilemedi');
+    }
+  }
+
   async sendPasswordResetEmail(email: string, token: string, username: string): Promise<void> {
     const resetUrl = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${token}`;
     

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { themes, DEFAULT_THEME } from './themes';
 
 const ThemeContext = createContext({
@@ -58,8 +58,14 @@ export const ThemeProvider = ({ children }) => {
     window.localStorage.setItem('activeTheme', activeTheme);
   }, [activeTheme]);
 
+  // Context value'yu memoize et
+  const contextValue = useMemo(() => ({
+    activeTheme,
+    setActiveTheme
+  }), [activeTheme]);
+
   return (
-    <ThemeContext.Provider value={{ activeTheme, setActiveTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

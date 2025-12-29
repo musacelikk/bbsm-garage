@@ -701,10 +701,10 @@ const handlePrint = async (kartId) => {
       adres: kart.adres,
     },
     data: kart.yapilanlar.map(item => ({
-      birimAdedi: item.birimAdedi,
+      birimAdedi: parseInt(item.birimAdedi, 10) || 0,
       parcaAdi: item.parcaAdi,
-      birimFiyati: item.birimFiyati,
-      toplamFiyat: item.birimFiyati * item.birimAdedi,
+      birimFiyati: parseFloat(item.birimFiyati) || 0,
+      toplamFiyat: (parseFloat(item.birimFiyati) || 0) * (parseInt(item.birimAdedi, 10) || 0),
     })),
     notes: kart.notlar
   };
@@ -909,7 +909,7 @@ const secilenKartlariIndir = async (type) => {
 
               {/* Desktop action buttons and search bar - only show on md and up */}
               <div className="flex items-center">
-                <div className={`items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 ${activeTheme === 'modern' ? 'bg-red-600' : 'bg-blue-500'}`}>
+                <div className={`items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500`}>
                   <button 
                     onClick={(e) => {
                       e.preventDefault();
@@ -921,10 +921,10 @@ const secilenKartlariIndir = async (type) => {
                     Seçilenleri Sil
                   </button>
                 </div>
-                <div className={`items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 ${activeTheme === 'modern' ? 'bg-red-600' : 'bg-blue-500'}`}>
+                <div className={`items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500`}>
                   <button onClick={toggleYeniKartEkleModal} className="font-semibold text-md whitespace-nowrap text-white">Yeni Kart Ekle</button>
                 </div>
-                <div className={`items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 ${activeTheme === 'modern' ? 'bg-red-600' : 'bg-blue-500'}`}>
+                <div className={`items-center p-2 pl-4 pr-4 rounded-full ml-2 md:ml-4 bg-blue-500`}>
                   <button onClick={togglePeriyodikBakimModal} className="font-semibold text-md whitespace-nowrap text-white">Periyodik Bakım</button>
                 </div>
                 <div className="hidden md:block pr-4 items-center pl-4">
@@ -1048,19 +1048,19 @@ const secilenKartlariIndir = async (type) => {
                       e.stopPropagation();
                       silSecilenleri();
                     }}
-                    className={`w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white ${activeTheme === 'modern' ? 'bg-red-600' : 'bg-blue-500'}`}
+                    className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
                   >
                     Seçilenleri Sil
                   </button>
                   <button 
                     onClick={toggleYeniKartEkleModal} 
-                    className={`w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white ${activeTheme === 'modern' ? 'bg-red-600' : 'bg-blue-500'}`}
+                    className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
                   >
                     Yeni Kart Ekle
                   </button>
                   <button 
                     onClick={togglePeriyodikBakimModal} 
-                    className={`w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white ${activeTheme === 'modern' ? 'bg-red-600' : 'bg-blue-500'}`}
+                    className="w-full font-semibold py-3.5 rounded-full active:scale-95 transition-transform touch-manipulation min-h-[44px] text-white bg-blue-500"
                   >
                     Periyodik Bakım Ekle
                   </button>

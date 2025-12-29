@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 
 const AuthContext = createContext();
@@ -17,11 +17,11 @@ export const AuthProvider = ({ children }) => {
   const IDLE_TIMEOUT = 30 * 60 * 1000; // 30 dakika
   const WARNING_TIME = 5 * 60 * 1000; // 5 dakika kala uyarı
 
-  const login = (token) => {
+  const login = useCallback((token) => {
     const userData = { token };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
-  };
+  }, []);
 
   const logout = useCallback(async (isIdleTimeout = false) => {
     // Modal'ı kapat
@@ -137,7 +137,7 @@ export const AuthProvider = ({ children }) => {
     };
   }, [user?.token, logout]);
 
-  const fetchWithAuth = async (url, options = {}) => {
+  const fetchWithAuth = useCallback(async (url, options = {}) => {
     const token = user?.token;
     if (!token) {
       logout();
@@ -158,10 +158,10 @@ export const AuthProvider = ({ children }) => {
     }
 
     return response;
-  };
+  }, [user?.token, logout]);
 
   // JWT token'dan username'i decode et
-  const getUsername = () => {
+  const getUsername = useCallback(() => {
     if (!user?.token) return null;
     try {
       const base64Url = user.token.split('.')[1];
@@ -175,7 +175,7 @@ export const AuthProvider = ({ children }) => {
       console.error('Token decode hatası:', error);
       return null;
     }
-  };
+  }, [user?.token]);
 
   // Idle warning modal'ı kapat ve timer'ı sıfırla
   const handleContinueSession = useCallback(() => {
@@ -187,8 +187,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  // Context value'yu memoize et
+  const contextValue = useMemo(() => ({
+    user,
+    login,
+    logout,
+    fetchWithAuth,
+    getUsername,
+    isLoading
+  }), [user, login, logout, fetchWithAuth, getUsername, isLoading]);
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, fetchWithAuth, getUsername, isLoading }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
       {/* Idle Warning Modal */}
       {showIdleWarning && (

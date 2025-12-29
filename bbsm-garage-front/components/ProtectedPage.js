@@ -12,14 +12,32 @@ const ProtectedPage = ({ children }) => {
       return false;
     }
 
-          // Üyelik süresi tanımlı mı ve gelecekte mi kontrol et
-    const hasValidMembership = profileData.membership_end_date && new Date(profileData.membership_end_date) > new Date();
+    // Aktif üyelik kontrolü: bitiş tarihi gelecekte VE status 'active' olmalı
+    const hasValidMembership = profileData.membership_end_date && 
+                                new Date(profileData.membership_end_date) > new Date() && 
+                                profileData.membership_status === 'active';
     
-    // Bekleyen teklif varsa sayfayı kilitle (varsayılan false - API'den gelmiyorsa false kabul et)
+    // Bekleyen teklif kontrolü
     const hasPendingRequest = profileData.hasPendingRequest === true;
-          
-          // Üyelik geçerliyse ve bekleyen teklif yoksa sayfa açık
-    return hasValidMembership && !hasPendingRequest;
+    
+    // DOĞRU MANTIK:
+    // 1. Eğer aktif üyelik varsa → kullanıcı çalışabilir (pending request olsa bile)
+    // 2. Eğer aktif üyelik yoksa VE pending request varsa → kilitle
+    // 3. Eğer aktif üyelik yoksa VE pending request yoksa → kilitle (üyelik yok)
+    
+    if (hasValidMembership) {
+      // Aktif üyelik varsa, pending request olsa bile çalışabilir
+      return true;
+    }
+    
+    // Aktif üyelik yoksa
+    if (hasPendingRequest) {
+      // Pending request varsa kilitle
+      return false;
+    }
+    
+    // Aktif üyelik yoksa ve pending request yoksa da kilitle (üyelik yok)
+    return false;
   };
 
   const hasMembership = checkMembership();

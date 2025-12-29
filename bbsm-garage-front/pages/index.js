@@ -142,28 +142,28 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-green-400 mb-2 text-center animate-fade-in">Giriş Başarılı!</h2>
-                <p className="text-my-beyaz text-center animate-fade-in-delay">{successMessage}</p>
+                <h2 className="text-base md:text-lg font-semibold text-green-400 mb-2 text-center animate-fade-in">Giriş Başarılı!</h2>
+                <p className="text-my-beyaz text-xs md:text-sm text-center animate-fade-in-delay">{successMessage}</p>
                 <div className="mt-6">
                   <div className="flex items-center justify-center gap-2">
                     <svg className="animate-spin h-6 w-6 text-blue-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span className="text-my-açıkgri text-sm">Yönlendiriliyor...</span>
+                    <span className="text-my-açıkgri text-xs md:text-sm">Yönlendiriliyor...</span>
                   </div>
                 </div>
               </div>
             ) : (
               <>
-                <h1 className="font-extrabold text-transparent text-2xl sm:text-3xl bg-clip-text bg-gradient-to-r from-blue-400 via-blue-900 to-red-600 text-center">Hoş Geldiniz!</h1>
-                <h2 className="text-xl sm:text-2xl font-bold text-my-beyaz mb-4 text-center">Giriş Yapınız</h2>
+                <h1 className="font-extrabold text-transparent text-xl md:text-2xl bg-clip-text bg-gradient-to-r from-blue-400 via-blue-900 to-red-600 text-center">Hoş Geldiniz!</h1>
+                <h2 className="text-base md:text-lg font-semibold text-my-beyaz mb-3 md:mb-4 text-center">Giriş Yapınız</h2>
             
             <div className="space-y-2 sm:space-y-4">
               <div>
-                <p className="font-semibold text-my-beyaz">Kullanıcı Adı</p>
+                <p className="font-medium text-my-beyaz text-xs md:text-sm">Kullanıcı Adı</p>
                 <input 
-                  className="w-full p-2 mt-1 rounded-xl border border-my-açıkgri bg-white/90 text-black focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300" 
+                  className="w-full px-3 py-2 md:py-1.5 mt-1 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300" 
                   type="text" 
                   placeholder="Kullanıcı Adı" 
                   value={username} 
@@ -174,13 +174,13 @@ export default function Home() {
               
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <p className="font-semibold text-my-beyaz">Şifre</p>
-                  <Link href="/forgot-password" className="text-sm text-blue-300 hover:text-blue-200 font-medium">
+                  <p className="font-medium text-my-beyaz text-xs md:text-sm">Şifre</p>
+                  <Link href="/forgot-password" className="text-xs md:text-sm text-blue-300 hover:text-blue-200 font-medium">
                     Şifremi Unuttum
                   </Link>
                 </div>
                 <input 
-                  className="w-full p-2 mt-1 rounded-xl border border-my-açıkgri bg-white/90 text-black focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300" 
+                  className="w-full px-3 py-2 md:py-1.5 mt-1 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300" 
                   type="password" 
                   placeholder="Şifre" 
                   value={password} 
@@ -197,40 +197,36 @@ export default function Home() {
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 cursor-pointer"
                 />
-                <label htmlFor="rememberMe" className="ml-2 text-sm text-my-beyaz cursor-pointer select-none">
+                <label htmlFor="rememberMe" className="ml-2 text-xs md:text-sm text-my-beyaz cursor-pointer select-none">
                   Beni Hatırla
                 </label>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 mt-4 md:mt-6">
               <Link 
                 href="/kayit" 
-                className="flex-1 p-2 font-semibold rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah hover:bg-my-4b4b4bgri text-center transition-all duration-300 ease-in-out"
+                className="flex-1 px-4 py-2 md:py-2.5 font-medium rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah hover:bg-my-4b4b4bgri text-center transition-all duration-300 ease-in-out"
               >
-                <p className="font-extrabold text-transparent text-sm sm:text-lg bg-clip-text bg-gradient-to-r from-my-beyaz to-my-açıkgri">
+                <span className="text-xs md:text-sm text-my-beyaz">
                   Kayıt Ol
-                </p>
+                </span>
               </Link>
               <button 
                 type="submit" 
-                className="flex-1 p-2 font-semibold rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah text-my-beyaz hover:bg-my-4b4b4bgri disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-my-siyah disabled:hover:transform-none transition-all duration-300 ease-in-out"
+                className="flex-1 px-4 py-2 md:py-2.5 text-xs md:text-sm font-medium rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah text-my-beyaz hover:bg-my-4b4b4bgri disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-my-siyah disabled:hover:transform-none transition-all duration-300 ease-in-out"
                 disabled={loading}
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-4 w-4 text-blue-400 transition-opacity duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-4 w-4 md:h-5 md:w-5 text-blue-400 transition-opacity duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="font-extrabold text-transparent text-sm sm:text-lg bg-clip-text bg-gradient-to-r from-blue-400 to-blue-900">
-                      Giriş Yapılıyor...
-                    </p>
+                    <span>Giriş Yapılıyor...</span>
                   </div>
                 ) : (
-                  <p className="font-extrabold text-transparent text-sm sm:text-lg bg-clip-text bg-gradient-to-r from-blue-400 to-blue-900">
-                    Giriş Yap
-                  </p>
+                  <span>Giriş Yap</span>
                 )}
               </button>
             </div>

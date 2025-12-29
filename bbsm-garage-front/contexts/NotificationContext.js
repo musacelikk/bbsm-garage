@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../auth-context';
 import { API_URL } from '../config';
 
@@ -80,16 +80,17 @@ const NotificationProviderContent = ({ children }) => {
     }
   }, [user, fetchNotifications]);
 
+  // Context value'yu memoize et
+  const contextValue = useMemo(() => ({
+    notifications,
+    unreadCount,
+    fetchNotifications,
+    markAsRead,
+    markAllAsRead
+  }), [notifications, unreadCount, fetchNotifications, markAsRead, markAllAsRead]);
+
   return (
-    <NotificationContext.Provider 
-      value={{ 
-        notifications, 
-        unreadCount, 
-        fetchNotifications, 
-        markAsRead, 
-        markAllAsRead 
-      }}
-    >
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );

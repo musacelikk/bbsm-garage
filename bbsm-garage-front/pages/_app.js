@@ -1,6 +1,6 @@
 import '@/styles/globals.css';
 import { AuthProvider } from '../auth-context'; // auth-context dosyanızın yolu
-import React, { useState, createContext, useContext, useEffect } from 'react';
+import React, { useState, createContext, useContext, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import { ToastProvider, useToast } from '../contexts/ToastContext';
 import { CurrencyProvider } from '../contexts/CurrencyContext';
@@ -31,12 +31,18 @@ function MyApp({ Component, pageProps }) {
 
   useEffect(() => {
     // PWA Service Worker kaydı
-    if ('serviceWorker' in navigator) {
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {
         // Service worker kayıt hatası (opsiyonel)
       });
     }
   }, []);
+
+  // LoadingContext value'yu memoize et
+  const loadingContextValue = useMemo(() => ({
+    loading,
+    setLoading
+  }), [loading]);
 
   return (
     <>
@@ -46,7 +52,7 @@ function MyApp({ Component, pageProps }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </Head>
-    <LoadingContext.Provider value={{ loading, setLoading }}>
+    <LoadingContext.Provider value={loadingContextValue}>
       <AuthProvider>
         <ProfileProvider>
           <CurrencyProvider>

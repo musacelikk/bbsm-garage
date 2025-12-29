@@ -129,8 +129,11 @@ export default function Kayit() {
       const data = await response.json();
       
       if (response.ok) {
-        alert('Kayıt başarılı! Giriş yapabilirsiniz.');
-        router.push('/');
+        // Kayıt başarılı, kod doğrulama sayfasına yönlendir
+        router.push({
+          pathname: '/verify-code',
+          query: { username: formData.username.trim(), email: formData.email.trim() }
+        });
       } else {
         const errorMessage = data.message || 'Kayıt olurken bir hata oluştu. Lütfen tekrar deneyin.';
         alert(errorMessage);
@@ -158,18 +161,18 @@ export default function Kayit() {
       <div className="min-h-screen bg-my-home bg-cover bg-center bg-fixed page-enter">
         <div className="min-h-screen flex items-center justify-center p-4 sm:p-8 py-8">
           <form onSubmit={handleSubmit} className="form-container bg-my-siyah border-2 border-my-4b4b4bgri bg-opacity-50 backdrop-blur-sm p-4 sm:p-8 rounded-3xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h1 className="font-extrabold text-transparent text-2xl sm:text-3xl bg-clip-text bg-gradient-to-r from-blue-400 via-blue-900 to-red-600 text-center mb-2">BBSM GARAGE</h1>
-            <h2 className="text-xl sm:text-2xl font-bold text-my-beyaz mb-6 text-center">Firma Kayıt Formu</h2>
+            <h1 className="font-extrabold text-transparent text-xl md:text-2xl bg-clip-text bg-gradient-to-r from-blue-400 via-blue-900 to-red-600 text-center mb-2">BBSM GARAGE</h1>
+            <h2 className="text-base md:text-lg font-semibold text-my-beyaz mb-4 md:mb-6 text-center">Firma Kayıt Formu</h2>
             
             <div className="space-y-3 sm:space-y-4">
               <div className="form-section border-b border-my-açıkgri pb-3">
-                <h3 className="text-lg font-bold text-my-beyaz mb-3">Firma Bilgileri</h3>
+                <h3 className="text-sm md:text-base font-semibold text-my-beyaz mb-2 md:mb-3">Firma Bilgileri</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Firma Adı <span className="text-red-400">*</span></p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Firma Adı <span className="text-red-400">*</span></p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="text" 
                       placeholder="Firma Adı" 
                       name="firmaAdi"
@@ -180,9 +183,9 @@ export default function Kayit() {
                   </div>
 
                   <div>
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Vergi No</p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Vergi No</p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="text" 
                       placeholder="Vergi Numarası" 
                       name="vergiNo"
@@ -194,13 +197,13 @@ export default function Kayit() {
               </div>
 
               <div className="form-section border-b border-my-açıkgri pb-3">
-                <h3 className="text-lg font-bold text-my-beyaz mb-3">İletişim Bilgileri</h3>
+                <h3 className="text-sm md:text-base font-semibold text-my-beyaz mb-2 md:mb-3">İletişim Bilgileri</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Yetkili Kişi</p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Yetkili Kişi</p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="text" 
                       placeholder="Yetkili Kişi Adı" 
                       name="yetkiliKisi"
@@ -210,9 +213,9 @@ export default function Kayit() {
                   </div>
 
                   <div>
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Telefon</p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Telefon</p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="tel" 
                       placeholder="05XX XXX XX XX" 
                       name="telefon"
@@ -222,9 +225,9 @@ export default function Kayit() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">E-posta</p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">E-posta</p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="email" 
                       placeholder="ornek@firma.com" 
                       name="email"
@@ -234,9 +237,9 @@ export default function Kayit() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Adres</p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Adres</p>
                     <textarea 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       rows="2"
                       placeholder="Firma Adresi" 
                       name="adres"
@@ -248,13 +251,13 @@ export default function Kayit() {
               </div>
 
               <div className="form-section pb-3">
-                <h3 className="text-lg font-bold text-my-beyaz mb-3">Giriş Bilgileri</h3>
+                <h3 className="text-sm md:text-base font-semibold text-my-beyaz mb-2 md:mb-3">Giriş Bilgileri</h3>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Kullanıcı Adı <span className="text-red-400">*</span></p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Kullanıcı Adı <span className="text-red-400">*</span></p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="text" 
                       placeholder="Kullanıcı Adı" 
                       name="username"
@@ -265,9 +268,9 @@ export default function Kayit() {
                   </div>
 
                   <div>
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Şifre <span className="text-red-400">*</span></p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Şifre <span className="text-red-400">*</span></p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="password" 
                       placeholder="Şifre (min. 8 karakter)" 
                       name="password"
@@ -306,9 +309,9 @@ export default function Kayit() {
                   </div>
 
                   <div className="sm:col-span-2">
-                    <p className="font-semibold text-my-beyaz text-sm mb-1">Şifre Tekrar <span className="text-red-400">*</span></p>
+                    <p className="font-medium text-my-beyaz text-xs md:text-sm mb-1">Şifre Tekrar <span className="text-red-400">*</span></p>
                     <input 
-                      className="w-full p-2 rounded-xl border border-my-açıkgri bg-white/90 text-black text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
+                      className="w-full px-3 py-2 md:py-1.5 rounded-xl border border-my-açıkgri bg-white/90 text-black text-xs md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-400" 
                       type="password" 
                       placeholder="Şifre Tekrar" 
                       name="confirmPassword"
@@ -322,34 +325,30 @@ export default function Kayit() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 mt-4 md:mt-6">
               <Link 
                 href="/" 
-                className="flex-1 p-2 font-semibold rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah hover:bg-my-4b4b4bgri text-center transition-all duration-300 ease-in-out"
+                className="flex-1 px-4 py-2 md:py-2.5 font-medium rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah hover:bg-my-4b4b4bgri text-center transition-all duration-300 ease-in-out"
               >
-                <p className="font-extrabold text-transparent text-sm sm:text-lg bg-clip-text bg-gradient-to-r from-my-beyaz to-my-açıkgri">
+                <span className="text-xs md:text-sm text-my-beyaz">
                   İptal
-                </p>
+                </span>
               </Link>
               <button 
                 type="submit" 
-                className="flex-1 p-3 font-semibold rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah text-my-beyaz hover:bg-my-4b4b4bgri disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-my-siyah disabled:hover:transform-none transition-all duration-300 ease-in-out"
+                className="flex-1 px-4 py-2 md:py-2.5 text-xs md:text-sm font-medium rounded-xl border-2 border-my-4b4b4bgri bg-my-siyah text-my-beyaz hover:bg-my-4b4b4bgri disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-my-siyah disabled:hover:transform-none transition-all duration-300 ease-in-out"
                 disabled={loading}
               >
                 {loading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5 text-blue-400 transition-opacity duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-4 w-4 md:h-5 md:w-5 text-blue-400 transition-opacity duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <p className="font-extrabold text-transparent text-sm sm:text-lg bg-clip-text bg-gradient-to-r from-blue-400 to-blue-900">
-                      Kayıt Yapılıyor...
-                    </p>
+                    <span>Kayıt Yapılıyor...</span>
                   </div>
                 ) : (
-                  <p className="font-extrabold text-transparent text-sm sm:text-lg bg-clip-text bg-gradient-to-r from-blue-400 to-blue-900">
-                    Kayıt Ol
-                  </p>
+                  <span>Kayıt Ol</span>
                 )}
               </button>
             </div>

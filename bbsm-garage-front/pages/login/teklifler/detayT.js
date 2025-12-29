@@ -647,10 +647,10 @@ function Detay() {
             adres,
         },
         data: yapilanlar.map(item => ({
-            birimAdedi: item.birimAdedi,
+            birimAdedi: parseInt(item.birimAdedi, 10) || 0,
             parcaAdi: item.parcaAdi,
-            birimFiyati: item.birimFiyati,
-            toplamFiyat: item.birimFiyati * item.birimAdedi,
+            birimFiyati: parseFloat(item.birimFiyati) || 0,
+            toplamFiyat: (parseFloat(item.birimFiyati) || 0) * (parseInt(item.birimAdedi, 10) || 0),
         })),
         notes: notlar
     };

@@ -90,6 +90,24 @@ export class AuthController {
     return this.authService.verifyEmail(token);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('verify-code')
+  async verifyCode(@Body() body: { username: string; code: string }) {
+    if (!body.username || !body.code) {
+      throw new Error('Kullanıcı adı ve kod gereklidir');
+    }
+    return this.authService.verifyEmailCode(body.username, body.code);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 300000 } })
+  @Post('resend-verification-code')
+  async resendVerificationCode(@Body() body: { username: string }) {
+    if (!body.username) {
+      throw new Error('Kullanıcı adı gereklidir');
+    }
+    return this.authService.resendVerificationCodeForRegistration(body.username);
+  }
+
   @UseGuards(JwtAuthGuard)
   @Post('resend-verification')
   async resendVerification(@Request() req) {

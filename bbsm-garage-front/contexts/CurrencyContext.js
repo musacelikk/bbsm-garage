@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 
 const CurrencyContext = createContext();
 
@@ -116,15 +116,15 @@ export function CurrencyProvider({ children }) {
       if (rates.usd || rates.eur || rates.altin) {
         // Eğer localStorage'dan previousRates yüklenmediyse, mevcut değerleri previous olarak kaydet
         if (!prevRatesRef.current.usd && !prevRatesRef.current.eur && !prevRatesRef.current.altin) {
-        prevRatesRef.current = {
-          usd: rates.usd || null,
-          eur: rates.eur || null,
-          altin: rates.altin || null
-        };
-        // localStorage'a kaydet
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('currency_previous_rates', JSON.stringify(prevRatesRef.current));
-        }
+          prevRatesRef.current = {
+            usd: rates.usd || null,
+            eur: rates.eur || null,
+            altin: rates.altin || null
+          };
+          // localStorage'a kaydet
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('currency_previous_rates', JSON.stringify(prevRatesRef.current));
+          }
         } else {
           // localStorage'dan yüklenen previousRates varsa, state'e de set et
           setPreviousRates(prevRatesRef.current);
@@ -140,38 +140,54 @@ export function CurrencyProvider({ children }) {
       // Önceki değerlerle karşılaştır
       const hasChanged = (
         prevRatesRef.current.usd !== rates.usd || 
-         prevRatesRef.current.eur !== rates.eur || 
+        prevRatesRef.current.eur !== rates.eur || 
         prevRatesRef.current.altin !== rates.altin
       );
       
       if (hasChanged) {
-      // Önceki değerleri state'e kaydet (re-render tetikler)
-      const previousToSave = {
-        usd: prevRatesRef.current.usd,
-        eur: prevRatesRef.current.eur,
-        altin: prevRatesRef.current.altin
-      };
-      
-      setPreviousRates(previousToSave);
-      
-      // Ref'i yeni değerlerle güncelle
-      const newPrevRates = {
-        usd: rates.usd || prevRatesRef.current.usd,
-        eur: rates.eur || prevRatesRef.current.eur,
-        altin: rates.altin || prevRatesRef.current.altin
-      };
-      prevRatesRef.current = newPrevRates;
-      
-      // localStorage'a kaydet
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('currency_previous_rates', JSON.stringify(newPrevRates));
+        // Önceki değerleri state'e kaydet (re-render tetikler)
+        const previousToSave = {
+          usd: prevRatesRef.current.usd,
+          eur: prevRatesRef.current.eur,
+          altin: prevRatesRef.current.altin
+        };
+        
+        setPreviousRates(prev => {
+          // Sadece gerçekten değiştiyse güncelle
+          if (prev.usd !== previousToSave.usd || 
+              prev.eur !== previousToSave.eur || 
+              prev.altin !== previousToSave.altin) {
+            return previousToSave;
+          }
+          return prev;
+        });
+        
+        // Ref'i yeni değerlerle güncelle
+        const newPrevRates = {
+          usd: rates.usd || prevRatesRef.current.usd,
+          eur: rates.eur || prevRatesRef.current.eur,
+          altin: rates.altin || prevRatesRef.current.altin
+        };
+        prevRatesRef.current = newPrevRates;
+        
+        // localStorage'a kaydet
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('currency_previous_rates', JSON.stringify(newPrevRates));
         }
       }
     }
-  }, [rates]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rates.usd, rates.eur, rates.altin]);
+
+  // Context value'yu memoize et
+  const contextValue = useMemo(() => ({
+    rates,
+    previousRates,
+    loading
+  }), [rates, previousRates, loading]);
 
   return (
-    <CurrencyContext.Provider value={{ rates, previousRates, loading }}>
+    <CurrencyContext.Provider value={contextValue}>
       {children}
     </CurrencyContext.Provider>
   );

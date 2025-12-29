@@ -135,21 +135,26 @@ function Dashboard() {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
-    // Son 7 günlük ciro (bugün dahil son 7 gün)
-    const bugunSonu = new Date(bugun);
-    bugunSonu.setHours(23, 59, 59, 999); // Bugünün sonu
-    const yediGunOnce = new Date(bugun);
-    yediGunOnce.setDate(yediGunOnce.getDate() - 6); // Bugün dahil 7 gün (bugün + 6 gün önce)
-    yediGunOnce.setHours(0, 0, 0, 0); // Günün başlangıcı
+    // Bu hafta ciro (Pazartesi-Pazar)
+    const bugunGunu = bugun.getDay(); // 0 = Pazar, 1 = Pazartesi, ..., 6 = Cumartesi
+    const pazartesiFarki = bugunGunu === 0 ? -6 : 1 - bugunGunu; // Pazar ise 6 gün geriye, değilse Pazartesi'ye kadar
+    
+    const haftaBaslangic = new Date(bugun);
+    haftaBaslangic.setDate(bugun.getDate() + pazartesiFarki);
+    haftaBaslangic.setHours(0, 0, 0, 0);
+    
+    const haftaBitis = new Date(haftaBaslangic);
+    haftaBitis.setDate(haftaBaslangic.getDate() + 6); // Pazar günü
+    haftaBitis.setHours(23, 59, 59, 999);
 
-    const son7GunKartlar = kartlar.filter(kart => {
+    const buHaftaKartlar = kartlar.filter(kart => {
       if (!kart.girisTarihi) return false;
       const kartTarihi = new Date(kart.girisTarihi);
-      // Tarih aralığı kontrolü: yediGunOnce <= kartTarihi <= bugunSonu
-      return kart.odemeAlindi && kartTarihi >= yediGunOnce && kartTarihi <= bugunSonu;
+      // Tarih aralığı kontrolü: haftaBaslangic <= kartTarihi <= haftaBitis
+      return kart.odemeAlindi && kartTarihi >= haftaBaslangic && kartTarihi <= haftaBitis;
     });
 
-    const son7GunlukCiro = son7GunKartlar.reduce((toplam, kart) => {
+    const son7GunlukCiro = buHaftaKartlar.reduce((toplam, kart) => {
       return toplam + hesaplaToplamFiyat(kart.yapilanlar);
     }, 0);
 
@@ -491,7 +496,7 @@ function Dashboard() {
                 <p className="text-[10px] dark-text-muted">Yeni kayıt</p>
               </div>
 
-              {/* Son 7 Günlük Ciro */}
+              {/* Bu Hafta Ciro */}
               <div className="dark-card-bg neumorphic-outset rounded-lg p-3 md:p-4 border border-blue-500/20">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -500,7 +505,7 @@ function Dashboard() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 12h16M4 12l4 4m-4-4l4-4" />
                       </svg>
                 </div>
-                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">7 Günlük Ciro</h3>
+                    <h3 className="text-xs md:text-sm font-medium dark-text-secondary">Bu Hafta</h3>
                   </div>
                 </div>
                 <p className="text-lg md:text-xl font-bold dark-text-primary mb-0.5">{formatPara(istatistikler.son7GunlukCiro)}</p>
